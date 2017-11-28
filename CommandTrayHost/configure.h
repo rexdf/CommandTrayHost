@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 std::vector<HMENU> get_command_submenu(nlohmann::json&);
 int init_global(nlohmann::json&, HANDLE&);

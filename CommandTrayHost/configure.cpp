@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "configure.h"
 
 //extern nlohmann::json* global_stat;
@@ -58,18 +58,18 @@ bool initial_configure()
 	std::string config = isZHCN ? u8R"json({
     "configs": [
         {
-            // ÏÂÃæ8¸öÒ»¸ö²»ÄÜÉÙ
-            "name":"cmdÀı×Ó", // ÏµÍ³ÍĞÅÌ²Ëµ¥Ãû×Ö
-            "path":"C:\\Windows\\System32", // cmdµÄexeËùÔÚÄ¿Â¼
-            "cmd":"cmd.exe", //cmdÃüÁî£¬±ØĞëº¬ÓĞ.exe
-            "working_directory":"", // ÃüÁîĞĞµÄ¹¤×÷Ä¿Â¼£¬Îª¿ÕÊ±×Ô¶¯ÓÃpath
-            "addition_env_path":"",   //dllËÑË÷Ä¿Â¼£¬ÔİÊ±Ã»ÓÃµ½
-            "use_builtin_console":false,  //ÊÇ·ñÓÃCREATE_NEW_CONSOLE£¬ÔİÊ±Ã»ÓÃµ½
-            "is_gui":false, // ÊÇ·ñÊÇ GUIÍ¼ĞÎ½çÃæ³ÌĞò
-            "enabled":true,  // ÊÇ·ñµ±CommandTrayHostÆô¶¯Ê±£¬×Ô¶¯¿ªÊ¼ÔËĞĞ
+            // ä¸‹é¢8ä¸ªä¸€ä¸ªä¸èƒ½å°‘
+            "name":"cmdä¾‹å­", // ç³»ç»Ÿæ‰˜ç›˜èœå•åå­—
+            "path":"C:\\Windows\\System32", // cmdçš„exeæ‰€åœ¨ç›®å½•
+            "cmd":"cmd.exe", //cmdå‘½ä»¤ï¼Œå¿…é¡»å«æœ‰.exe
+            "working_directory":"", // å‘½ä»¤è¡Œçš„å·¥ä½œç›®å½•ï¼Œä¸ºç©ºæ—¶è‡ªåŠ¨ç”¨path
+            "addition_env_path":"",   //dllæœç´¢ç›®å½•ï¼Œæš‚æ—¶æ²¡ç”¨åˆ°
+            "use_builtin_console":false,  //æ˜¯å¦ç”¨CREATE_NEW_CONSOLEï¼Œæš‚æ—¶æ²¡ç”¨åˆ°
+            "is_gui":false, // æ˜¯å¦æ˜¯ GUIå›¾å½¢ç•Œé¢ç¨‹åº
+            "enabled":true,  // æ˜¯å¦å½“CommandTrayHostå¯åŠ¨æ—¶ï¼Œè‡ªåŠ¨å¼€å§‹è¿è¡Œ
         },
         {
-            "name":"cmdÀı×Ó2",
+            "name":"cmdä¾‹å­2",
             "path":"C:\\Windows\\System32",
             "cmd":"cmd.exe",
             "working_directory":"",
@@ -268,7 +268,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob)
 		i["pid"] = -1;
 		i["show"] = false;
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
-		TCHAR commandLine[MAX_PATH * 128]; // Õâ¸ö±ØĞëÒªÇóÊÇ¿ÉĞ´µÄ×Ö·û´®£¬²»ÄÜÊÇconstµÄ¡£
+		TCHAR commandLine[MAX_PATH * 128]; // è¿™ä¸ªå¿…é¡»è¦æ±‚æ˜¯å¯å†™çš„å­—ç¬¦ä¸²ï¼Œä¸èƒ½æ˜¯constçš„ã€‚
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
 		{
 			PTSTR pIdx = StrStr(commandLine, L".exe");
@@ -331,11 +331,11 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 	//return {};
 
 	LPCTSTR MENUS_LEVEL2_CN[] = {
-		L"ÏÔÊ¾",
-		L"Òş²Ø" ,
-		L"ÆôÓÃ",
-		L"½ûÓÃ",
-		L"ÖØÆôÃüÁî"
+		L"æ˜¾ç¤º",
+		L"éšè—" ,
+		L"å¯ç”¨",
+		L"ç¦ç”¨",
+		L"é‡å¯å‘½ä»¤"
 	};
 	LPCTSTR MENUS_LEVEL2_EN[] = {
 		L"Show",
@@ -531,7 +531,7 @@ void create_process(
 	const HANDLE& ghJob
 )
 {
-	//±ØĞëÏÈÓÃwstring½Ó×¡£¬²»È»×÷ÓÃÓò»áÏûÊ§
+	//å¿…é¡»å…ˆç”¨wstringæ¥ä½ï¼Œä¸ç„¶ä½œç”¨åŸŸä¼šæ¶ˆå¤±
 	std::wstring cmd_wstring = utf8_to_wstring(js["configs"][cmd_idx]["cmd"]);
 	std::wstring path_wstring = utf8_to_wstring(js["configs"][cmd_idx]["path"]);
 	std::wstring working_directory_wstring = utf8_to_wstring(js["configs"][cmd_idx]["working_directory"]);
@@ -575,7 +575,7 @@ void create_process(
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
 
-	TCHAR commandLine[MAX_PATH * 128]; // Õâ¸ö±ØĞëÒªÇóÊÇ¿ÉĞ´µÄ×Ö·û´®£¬²»ÄÜÊÇconstµÄ¡£
+	TCHAR commandLine[MAX_PATH * 128]; // è¿™ä¸ªå¿…é¡»è¦æ±‚æ˜¯å¯å†™çš„å­—ç¬¦ä¸²ï¼Œä¸èƒ½æ˜¯constçš„ã€‚
 	if (NULL == PathCombine(commandLine, path, cmd))
 		//if (0 != wcscpy_s(commandLine, MAX_PATH * 128, cmd))
 	{
