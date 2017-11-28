@@ -16,7 +16,7 @@ A Command Line program systray for Windows
 
 配置样例
 
-```json
+```javascript
 {
     "configs": [
         {

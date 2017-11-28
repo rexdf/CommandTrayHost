@@ -16,7 +16,7 @@ configure file name is `config.json`, in the same folder as CommandTrayHost.exe.
 
 example configure
 
-```json
+```javascript
 {
     "configs": [
         {
