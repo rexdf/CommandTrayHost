@@ -35,6 +35,7 @@ A Command Line program systray for Windows
             "enabled":true,  // 是否当CommandTrayHost启动时，自动开始运行
             // 下面的是可选参数
             "require_admin":false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
+            "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
         },
         {
             "name":"kcptun 1081 8.8.8.1:12346",
@@ -107,8 +108,8 @@ A Command Line program systray for Windows
 
 **提示2**: 管理员比较复杂，如果不是真的需要。配置中不要出现任何`require_admin`。 
 简而言之：
-- 如果CommandTrayHost是以管理员启动的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
-- 如果CommandTrayHost是普通用户，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":false,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
+- 如果CommandTrayHost是以管理员运行的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
+- 如果CommandTrayHost是以普通用户运行的，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":false,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
 
 **注意**： 所有的路劲，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 

@@ -70,6 +70,7 @@ bool initial_configure()
             // 下面的是可选参数
             // 当CommandTrayHost不是以管理员运行的情况下，由于UIPI，显示/隐藏会失效，其他功能正常。
             "require_admin":false, // 是否要用管理员运行
+            "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
         },
         {
             "name":"cmd例子2",
@@ -97,6 +98,7 @@ bool initial_configure()
             "enabled":true,  // run when CommandTrayHost starts
             // Optional
             "require_admin":false, // to run as administrator, problems: User Interface Privilege Isolation
+            "start_show":false, // whether to show when start process 
         },
         {
             "name":"cmd example 2",
@@ -568,12 +570,25 @@ void create_process(
 
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
 	}
+	
+	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
+
+	bool require_admin = false, start_show = false;
+	try
+	{
+		require_admin = js["configs"][cmd_idx].at("require_admin");
+		start_show = js["configs"][cmd_idx].at("start_show");
+	}
+	catch (std::out_of_range& e)
+	{
+		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
+	}
+	LOGMESSAGE(L"require_admin %d\n", require_admin);
+
 	js["configs"][cmd_idx]["handle"] = 0;
 	js["configs"][cmd_idx]["pid"] = -1;
 	js["configs"][cmd_idx]["running"] = false;
-	js["configs"][cmd_idx]["show"] = false;
-
-	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
+	js["configs"][cmd_idx]["show"] = start_show;
 
 	std::wstring name = utf8_to_wstring(js["configs"][cmd_idx]["name"]);
 	TCHAR nameStr[256];
@@ -583,7 +598,7 @@ void create_process(
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = SW_HIDE;
+	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
 	si.lpTitle = nameStr;
 
 	PROCESS_INFORMATION pi;
@@ -601,16 +616,7 @@ void create_process(
 	LOGMESSAGE(L"cmd_idx:%d\n path: %s\n cmd: %s\n", cmd_idx, path, commandLine);
 
 
-	bool require_admin = false;
-	try
-	{
-		require_admin = js["configs"][cmd_idx].at("require_admin");
-	}
-	catch (std::out_of_range& e)
-	{
-		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
-	}
-	LOGMESSAGE(L"require_admin %d\n", require_admin);
+
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
@@ -660,7 +666,7 @@ void create_process(
 			shExInfo.lpFile = file_wstring.c_str();       // Application to start    
 			shExInfo.lpParameters = parameters_wstring.c_str();                  // Additional parameters
 			shExInfo.lpDirectory = working_directory;
-			shExInfo.nShow = SW_HIDE;
+			shExInfo.nShow = start_show ? SW_SHOW : SW_HIDE;
 			shExInfo.hInstApp = NULL;
 
 			if (ShellExecuteEx(&shExInfo))
