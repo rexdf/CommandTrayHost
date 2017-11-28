@@ -577,13 +577,22 @@ void create_process(
 	try
 	{
 		require_admin = js["configs"][cmd_idx].at("require_admin");
+	}
+	catch (std::out_of_range& e)
+	{
+		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
+	}
+
+	try
+	{
 		start_show = js["configs"][cmd_idx].at("start_show");
 	}
 	catch (std::out_of_range& e)
 	{
 		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
 	}
-	LOGMESSAGE(L"require_admin %d\n", require_admin);
+
+	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
 
 	js["configs"][cmd_idx]["handle"] = 0;
 	js["configs"][cmd_idx]["pid"] = -1;
