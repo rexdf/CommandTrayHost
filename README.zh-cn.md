@@ -98,6 +98,7 @@ A Command Line program systray for Windows
 ```
 
 **提示**: `"path"`必须包含`.exe`.如果要运行批处理.bat, 可以使用 `cmd.exe /c`.
+
 **注意**： 所有的路劲，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 
 # 如何编译

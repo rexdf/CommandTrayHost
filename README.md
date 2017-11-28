@@ -97,6 +97,7 @@ example configure
 ```
 
 **Tips**: `"path"` have to include `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
+
 **Note**: All path must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
 
 # How to Build
