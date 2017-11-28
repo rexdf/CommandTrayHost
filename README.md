@@ -13,7 +13,9 @@ A Command Line program systray for Windows
 
 # Usage
 
-configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Encoding is `utf-8`.
+[Download](https://github.com/rexdf/CommandTrayHost/releases)
+
+configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Encoding is `utf-8`.
 
 example configure
 

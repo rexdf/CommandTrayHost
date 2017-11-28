@@ -13,7 +13,9 @@ A Command Line program systray for Windows
 
 # 使用
 
-配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。编码为UTF-8.
+[下载](https://github.com/rexdf/CommandTrayHost/releases)
+
+配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。编码为UTF-8.
 
 配置样例
 
