@@ -13,7 +13,7 @@ A Command Line program systray for Windows
 
 # Usage
 
-configure file name is `config.json`, in the same folder as CommandTrayHost.exe.
+configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Encoding is `utf-8`.
 
 example configure
 

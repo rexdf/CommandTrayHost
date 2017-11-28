@@ -13,7 +13,7 @@ A Command Line program systray for Windows
 
 # 使用
 
-配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。
+配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。编码为UTF-8.
 
 配置样例
 
