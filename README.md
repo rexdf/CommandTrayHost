@@ -7,9 +7,10 @@ A Command Line program systray for Windows
 
 - json configure
 - systray
+- run privileged child
 - show/hide enable/disable daemon
-- multiple command line program
-- when CommandTrayHost quits, all child process will be killed.
+- multiple command line programs
+- when CommandTrayHost quits, all child processes will be killed.
 
 # Usage
 
@@ -31,6 +32,8 @@ example configure
             "use_builtin_console":false,  //CREATE_NEW_CONSOLE
             "is_gui":false,
             "enabled":true,  // run when CommandTrayHost starts
+            // Optional
+            "require_admin":false, // to run as administrator, problems keywords: User Interface Privilege Isolation
         },
         {
             "name":"kcptun 1081 8.8.8.1:12346",
@@ -94,11 +97,16 @@ example configure
             "enabled":true
         },
     ],
-    "global":true
+    "global":true,
+    "require_admin":false // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
 }
 ```
 
-**Tips**: `"path"` have to include `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
+**Tips1**: `"cmd"` have to include `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
+
+**Tips2**: If you don't need privileged child, you can remove all `"require_admin"`.
+- CommandTrayHost run as an unprivileged user: you can run a privileged child process and restart it, but you cannot hide/show it. Because of User Interface Privilege Isolation.
+- CommandTrayHost run as Administrator, everthing should work as you want. But you cannot use the builtin startup management.
 
 **Note**: All path must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
 
@@ -109,6 +117,18 @@ example configure
 3. Hook up user-wide integration, run (note: requires admin on first use) `vcpkg integrate install`
 4. Install rapidjson and nlohmann::json. `vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows`
 5. Open `CommandTrayHost.sln`, and build.
+
+# Help wanted
+
+- When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)
+
+- Auto update check for some github projects, etc kcptun-windows.
+
+- ProxyAgent，Socks5--> http，IE Proxy setting。
+
+- [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
+
+- UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
 
 
 # Thanks

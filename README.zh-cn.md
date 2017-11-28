@@ -7,6 +7,7 @@ A Command Line program systray for Windows
 
 - json配置文件
 - 系统托盘
+- 支持以管理员运行
 - 显示隐藏命令行界面，方便查看日志 启动禁用管理
 - 可以配置任意多数量的(几十个应该没啥问题)后台命令行
 - 当CommandTrayHost退出时，由操作系统保证清理所有的子进程。
@@ -32,6 +33,8 @@ A Command Line program systray for Windows
             "use_builtin_console":false,  //是否用CREATE_NEW_CONSOLE，暂时没用到
             "is_gui":false, // 是否是 GUI图形界面程序，暂时没用到
             "enabled":true,  // 是否当CommandTrayHost启动时，自动开始运行
+            // 下面的是可选参数
+            "require_admin":false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
         },
         {
             "name":"kcptun 1081 8.8.8.1:12346",
@@ -95,11 +98,17 @@ A Command Line program systray for Windows
             "enabled":true
         },
     ],
-    "global":true
+    "global":true,
+    "require_admin":false //大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
 }
 ```
 
-**提示**: `"path"`必须包含`.exe`.如果要运行批处理.bat, 可以使用 `cmd.exe /c`.
+**提示1**: `"cmd"`必须包含`.exe`.如果要运行批处理.bat, 可以使用 `cmd.exe /c`.
+
+**提示2**: 管理员比较复杂，如果不是真的需要。配置中不要出现任何`require_admin`。 
+简而言之：
+- 如果CommandTrayHost是以管理员启动的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
+- 如果CommandTrayHost是普通用户，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":false,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
 
 **注意**： 所有的路劲，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 
@@ -113,11 +122,15 @@ A Command Line program systray for Windows
 
 # TODO
 
-现在一旦重启某个应用，那么之前的窗口就会被关掉，然后重新开启一个。这样之前的日志就丢失了。希望对每个应用，启动一个独立辅助Console，即使重新启动应用，历史日志(标准IO输出)依然可以保留。 `use_builtin_console`就是用来做这个用途的。可以参考的有 [ConEmu](https://github.com/Maximus5/ConEmu)，看上去必须要注入子进程，将其标准IO导入到ConsoleHelper才行。
+- 现在一旦重启某个应用，那么之前的窗口就会被关掉，然后重新开启一个。这样之前的日志就丢失了。希望对每个应用，启动一个独立辅助Console，即使重新启动应用，历史日志(标准IO输出)依然可以保留。 `use_builtin_console`就是用来做这个用途的。可以参考的有 [ConEmu](https://github.com/Maximus5/ConEmu)，看上去必须要注入子进程，将其标准IO导入到ConsoleHelper才行。
 
-可以自动更新应用，比如kcptun-windows，提供github地址然后检测是否有更新。
+- 可以自动更新应用，比如kcptun-windows，提供github地址然后检测是否有更新。
 
-内置代理转换，如Socks5--> http，IE代理快速设置。
+- 内置代理转换，如Socks5--> http，IE代理快速设置。
+
+- 尝试集成 [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
+
+- UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
 
 # 感谢
 

@@ -67,6 +67,9 @@ bool initial_configure()
             "use_builtin_console":false,  //是否用CREATE_NEW_CONSOLE，暂时没用到
             "is_gui":false, // 是否是 GUI图形界面程序
             "enabled":true,  // 是否当CommandTrayHost启动时，自动开始运行
+            // 下面的是可选参数
+            // 当CommandTrayHost不是以管理员运行的情况下，由于UIPI，显示/隐藏会失效，其他功能正常。
+            "require_admin":false, // 是否要用管理员运行
         },
         {
             "name":"cmd例子2",
@@ -79,7 +82,8 @@ bool initial_configure()
             "enabled":false,
         },
     ],
-    "global":true
+    "global":true,
+	"require_admin":false // 是否让CommandTrayHost运行时弹出UAC对自身提权
 })json" : u8R"json({
     "configs": [
         {
@@ -91,6 +95,8 @@ bool initial_configure()
             "use_builtin_console":false,  //CREATE_NEW_CONSOLE
             "is_gui":false,
             "enabled":true,  // run when CommandTrayHost starts
+            // Optional
+            "require_admin":false, // to run as administrator, problems: User Interface Privilege Isolation
         },
         {
             "name":"cmd example 2",
@@ -103,7 +109,8 @@ bool initial_configure()
             "enabled":false,
         },
     ],
-    "global":true
+    "global":true,
+	"require_admin":false // To Run CommandTrayHost runas privileged
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
@@ -240,6 +247,12 @@ int configure_reader(std::string& out)
 /*
  * return NULL : failed
  * return 1 : sucess
+ * enabled bool
+ * running bool
+ * handle int64_t
+ * pid int64_t
+ * show bool
+ * exe_seperator idx ".exe"
  */
 int init_global(nlohmann::json& js, HANDLE& ghJob)
 {
@@ -282,6 +295,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob)
 				i["enabled"] = false;
 				LOGMESSAGE(L"File not exist! %S %s\n", i["name"], commandLine);
 			}
+			i["exe_seperator"] = static_cast<int>(pIdx - commandLine);
 		}
 	}
 
@@ -382,11 +396,11 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 			utf8_to_wstring(itm["path"]).c_str());
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
 			utf8_to_wstring(itm["cmd"]).c_str());
-		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
-			utf8_to_wstring(itm["working_directory"]).c_str());
+		//AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
+			//utf8_to_wstring(itm["working_directory"]).c_str());
 		AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
 
-		const int info_items_cnt = 3;
+		const int info_items_cnt = 2;
 		uSubFlags = is_enabled ? (MF_STRING) : (MF_STRING | MF_GRAYED);
 		for (int j = 0; j < 3; j++)
 		{
@@ -581,15 +595,31 @@ void create_process(
 	{
 		//assert(false);
 		LOGMESSAGE(L"Copy cmd failed\n");
-		MessageBox(0, L"wcscpy_s Failed", L"Error", MB_OK);
+		MessageBox(0, L"PathCombine Failed", L"Error", MB_OK);
 	}
 
 	LOGMESSAGE(L"cmd_idx:%d\n path: %s\n cmd: %s\n", cmd_idx, path, commandLine);
 
+
+	bool require_admin = false;
+	try
+	{
+		require_admin = js["configs"][cmd_idx].at("require_admin");
+	}
+	catch (std::out_of_range& e)
+	{
+		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
+	}
+	LOGMESSAGE(L"require_admin %d\n", require_admin);
+
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
-	if (CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
+	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
 	{
+#ifdef _DEBUG
+		DWORD error_code = GetLastError();
+		LOGMESSAGE(L"CreateProcess Failed. %d\n", error_code);
+#endif
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
@@ -609,7 +639,57 @@ void create_process(
 	}
 	else
 	{
-		LOGMESSAGE(L"CreateProcess Failed. %d\n", GetLastError());
+
+		DWORD error_code = GetLastError();
+		LOGMESSAGE(L"CreateProcess Failed. %d\n", error_code);
+		if (require_admin || ERROR_ELEVATION_REQUIRED == error_code)
+		{
+			js["configs"][cmd_idx]["require_admin"] = true;
+			int exe_seperator = js["configs"][cmd_idx]["exe_seperator"];
+
+			std::wstring parameters_wstring = commandLine + exe_seperator + 4;
+			*(commandLine + exe_seperator + 4) = 0;
+			std::wstring file_wstring = commandLine;
+
+			LOGMESSAGE(L"ERROR_ELEVATION_REQUIRED! %s %s\n", file_wstring.c_str(), parameters_wstring.c_str());
+			SHELLEXECUTEINFO shExInfo = { 0 };
+			shExInfo.cbSize = sizeof(shExInfo);
+			shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+			shExInfo.hwnd = NULL;
+			shExInfo.lpVerb = _T("runas");                // Operation to perform
+			shExInfo.lpFile = file_wstring.c_str();       // Application to start    
+			shExInfo.lpParameters = parameters_wstring.c_str();                  // Additional parameters
+			shExInfo.lpDirectory = working_directory;
+			shExInfo.nShow = SW_HIDE;
+			shExInfo.hInstApp = NULL;
+
+			if (ShellExecuteEx(&shExInfo))
+			{
+				DWORD pid = GetProcessId(shExInfo.hProcess);
+				LOGMESSAGE(L"ShellExecuteEx success! pid:%d\n", pid);
+				if (ghJob)
+				{
+					if (0 == AssignProcessToJobObject(ghJob, shExInfo.hProcess))
+					{
+						MessageBox(0, L"Could not AssignProcessToObject", L"Error", MB_OK);
+					}
+					else
+					{
+						js["configs"][cmd_idx]["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
+						js["configs"][cmd_idx]["pid"] = static_cast<int64_t>(pid);
+						js["configs"][cmd_idx]["running"] = true;
+					}
+				}
+				//WaitForSingleObject(shExInfo.hProcess, INFINITE);
+				//CloseHandle(shExInfo.hProcess);
+				return;
+			}
+			else
+			{
+				LOGMESSAGE(L"User rejected UAC prompt.\n");
+			}
+		}
+		js["configs"][cmd_idx]["enabled"] = false;
 		MessageBox(0, L"CreateProcess Failed.", L"Msg", MB_ICONERROR);
 	}
 }
@@ -819,4 +899,113 @@ BOOL EnableStartup()
 	TCHAR szPathToExe[MAX_PATH];
 	GetModuleFileName(NULL, szPathToExe, MAX_PATH);
 	return RegisterMyProgramForStartup(CommandTrayHost, szPathToExe, L"");
+}
+
+BOOL IsRunAsAdministrator()
+{
+	BOOL fIsRunAsAdmin = FALSE;
+	DWORD dwError = ERROR_SUCCESS;
+	PSID pAdministratorsGroup = NULL;
+
+	// Allocate and initialize a SID of the administrators group.
+	SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+	if (!AllocateAndInitializeSid(
+		&NtAuthority,
+		2,
+		SECURITY_BUILTIN_DOMAIN_RID,
+		DOMAIN_ALIAS_RID_ADMINS,
+		0, 0, 0, 0, 0, 0,
+		&pAdministratorsGroup))
+	{
+		dwError = GetLastError();
+		goto Cleanup;
+	}
+
+	// Determine whether the SID of administrators group is enabled in 
+	// the primary access token of the process.
+	if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin))
+	{
+		dwError = GetLastError();
+		goto Cleanup;
+	}
+
+Cleanup:
+	// Centralized cleanup for all allocated resources.
+	if (pAdministratorsGroup)
+	{
+		FreeSid(pAdministratorsGroup);
+		pAdministratorsGroup = NULL;
+	}
+
+	// Throw the error if something failed in the function.
+	if (ERROR_SUCCESS != dwError)
+	{
+		throw dwError;
+	}
+
+	return fIsRunAsAdmin;
+}
+
+void ElevateNow()
+{
+	BOOL bAlreadyRunningAsAdministrator = FALSE;
+	try
+	{
+		bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
+	}
+	catch (...)
+	{
+		LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
+		DWORD dwErrorCode = GetLastError();
+		LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
+	}
+	if (!bAlreadyRunningAsAdministrator)
+	{
+		wchar_t szPath[MAX_PATH];
+		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+		{
+			// Launch itself as admin
+			SHELLEXECUTEINFO sei = { sizeof(sei) };
+			sei.lpVerb = L"runas";
+			sei.lpFile = szPath;
+			sei.hwnd = NULL;
+			sei.nShow = SW_NORMAL;
+
+			if (!ShellExecuteEx(&sei))
+			{
+				DWORD dwError = GetLastError();
+				if (dwError == ERROR_CANCELLED)
+				{
+					// The user refused to allow privileges elevation.
+					::MessageBox(0, L"End user did not allow elevation!", L"Error", MB_OK);
+				}
+			}
+			else
+			{
+				_exit(1);  // Quit itself
+			}
+		}
+	}
+	else
+	{
+		Sleep(200); // Child process wait for parents to quit.
+	}
+}
+
+void check_admin(nlohmann::json& js)
+{
+	bool require_admin = false;
+	try
+	{
+		require_admin = js.at("require_admin");
+	}
+	catch (std::out_of_range& e)
+	{
+		LOGMESSAGE(L"check_admin out_of_range %S\n", e.what());
+		return;
+	}
+	if (require_admin)
+	{
+		ElevateNow();
+	}
 }
