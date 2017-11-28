@@ -302,6 +302,7 @@ BOOL ShowPopupMenuJson3()
 	return TRUE;
 }
 
+/*
 BOOL ShowPopupMenuJson2()
 {
 	POINT pt;
@@ -469,6 +470,8 @@ BOOL ShowPopupMenu()
 	DestroyMenu(hMenu);
 	return TRUE;
 }
+
+*/
 
 BOOL ParseProxyList()
 {
