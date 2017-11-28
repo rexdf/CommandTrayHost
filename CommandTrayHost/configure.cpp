@@ -532,8 +532,10 @@ void create_process(
 	//必须先用wstring接住，不然作用域会消失
 	std::wstring cmd_wstring = utf8_to_wstring(js["configs"][cmd_idx]["cmd"]);
 	std::wstring path_wstring = utf8_to_wstring(js["configs"][cmd_idx]["path"]);
+	std::wstring working_directory_wstring = utf8_to_wstring(js["configs"][cmd_idx]["working_directory"]);
 	LPCTSTR cmd = cmd_wstring.c_str();
 	LPCTSTR path = path_wstring.c_str();
+	LPCTSTR working_directory = working_directory_wstring.c_str();
 
 	LPVOID env = NULL;
 
@@ -583,7 +585,7 @@ void create_process(
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
-	if (CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, path, &si, &pi))
+	if (CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
 	{
 		if (ghJob)
 		{
