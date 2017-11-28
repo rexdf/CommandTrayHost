@@ -382,9 +382,11 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 			utf8_to_wstring(itm["path"]).c_str());
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
 			utf8_to_wstring(itm["cmd"]).c_str());
+		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
+			utf8_to_wstring(itm["working_directory"]).c_str());
 		AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
 
-		const int info_items_cnt = 2;
+		const int info_items_cnt = 3;
 		uSubFlags = is_enabled ? (MF_STRING) : (MF_STRING | MF_GRAYED);
 		for (int j = 0; j < 3; j++)
 		{
@@ -555,6 +557,7 @@ void create_process(
 	js["configs"][cmd_idx]["handle"] = 0;
 	js["configs"][cmd_idx]["pid"] = -1;
 	js["configs"][cmd_idx]["running"] = false;
+	js["configs"][cmd_idx]["show"] = false;
 
 	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
 
