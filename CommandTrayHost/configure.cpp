@@ -309,7 +309,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob)
 		}
 	}
 	return 1;
-		}
+}
 
 void start_all(nlohmann::json& js, HANDLE ghJob)
 {
@@ -325,7 +325,7 @@ void start_all(nlohmann::json& js, HANDLE ghJob)
 	}
 }
 
-std::vector<HMENU> get_command_submenu(const nlohmann::json& js)
+std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 {
 	LOGMESSAGE(L"get_command_submenu json %S\n", js.dump().c_str());
 	//return {};
@@ -357,6 +357,25 @@ std::vector<HMENU> get_command_submenu(const nlohmann::json& js)
 		bool is_enabled = static_cast<bool>(itm["enabled"]);
 		bool is_running = static_cast<bool>(itm["running"]);
 		bool is_show = static_cast<bool>(itm["show"]);
+
+		int64_t handle = itm["handle"];
+		if (is_running)
+		{
+			DWORD lpExitCode;
+			BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
+			if (retValue != 0 && lpExitCode != STILL_ACTIVE)
+			{
+				itm["running"] = false;
+				itm["handle"] = 0;
+				itm["pid"] = -1;
+				itm["show"] = false;
+				itm["enabled"] = false;
+
+				is_running = false;
+				is_show = false;
+				is_enabled = false;
+			}
+		}
 
 		UINT uSubFlags = is_running ? (MF_STRING) : (MF_STRING | MF_GRAYED);
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
@@ -643,8 +662,35 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 	return true;
 }
 
+void hide_all(nlohmann::json& js)
+{
+	for (auto& itm : js["configs"])
+	{
+		bool is_show = itm["show"];
+		int64_t handle_int64 = itm["handle"];
+		HANDLE hProcess = (HANDLE)handle_int64;
+		WaitForInputIdle(hProcess, INFINITE);
 
-void show_terminal(nlohmann::json& js, int cmd_idx)
+		ProcessWindowsInfo Info(GetProcessId(hProcess));
+
+		EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
+			reinterpret_cast<LPARAM>(&Info));
+
+		size_t num_of_windows = Info.Windows.size();
+		LOGMESSAGE(L"show_terminal size: %d\n", num_of_windows);
+		if (num_of_windows > 0)
+		{
+			if (is_show)
+			{
+				ShowWindow(Info.Windows[0], SW_HIDE);
+				itm["show"] = false;
+			}
+		}
+	}
+
+}
+
+void show_hide_toggle(nlohmann::json& js, int cmd_idx)
 {
 	bool is_show = js["configs"][cmd_idx]["show"];
 	int64_t handle_int64 = js["configs"][cmd_idx]["handle"];
