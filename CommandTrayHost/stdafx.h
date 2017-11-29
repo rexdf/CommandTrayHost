@@ -64,3 +64,4 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define CommandTrayHost (L"Command_Tray_Host")
 
 #define VERSION_NUMS L"0.6.0"
+

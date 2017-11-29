@@ -11,14 +11,16 @@ clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
     vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
-# before_build:
-#   - cmd: cd c:\projects\CommandTrayHost
-#   - cmd: dir /a CommandTrayHost
+before_build:
+    - cmd: >-
+        cd c:\projects\CommandTrayHost
+        C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER%
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal
 after_build:
 - cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=XP-Release /p:Platform=x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmd: >-
     cd c:\projects\CommandTrayHost
 
@@ -26,9 +28,13 @@ after_build:
 
     mkdir CommandTrayHost-x86
 
+    mkdir CommandTrayHost-xp-x86
+
     copy x64\Release\CommandTrayHost.exe CommandTrayHost-x64\
 
     copy Release\CommandTrayHost.exe CommandTrayHost-x86\
+
+    copy XP-Release\CommandTrayHost.exe CommandTrayHost-xp-x86\
 
     curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.94/upx394w.zip
 
@@ -38,7 +44,9 @@ after_build:
 
     upx CommandTrayHost-x86\CommandTrayHost.exe
 
-    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
+    upx CommandTrayHost-xp-x86\CommandTrayHost.exe
+
+    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\ .CommandTrayHost-xp-x86\
 artifacts:
 - path: CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip
   name: CommandTrayHost
