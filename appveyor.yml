@@ -16,7 +16,7 @@ before_build:
         cd c:\projects\CommandTrayHost
 
         C:\Python36\Scripts\pip.exe install chardet
-        
+
         C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER%
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
@@ -49,7 +49,7 @@ after_build:
 
     upx CommandTrayHost-xp-x86\CommandTrayHost.exe
 
-    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\ .CommandTrayHost-xp-x86\
+    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\ .\CommandTrayHost-xp-x86\
 artifacts:
 - path: CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip
   name: CommandTrayHost

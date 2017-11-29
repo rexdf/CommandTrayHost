@@ -71,11 +71,12 @@ def main():
         try:
             content = content.decode(encoding)
         except:
+            traceback.print_exc()
             print("binary.decode failed!")
             detect = chardet.detect(content)
             print(detect)
-            traceback.print_exc()
-            content = content.decode(detect['encoding'])
+            encoding = detect['encoding']
+            content = content.decode(encoding)
 
         if pattern_re.search(content) is None:
             return False
