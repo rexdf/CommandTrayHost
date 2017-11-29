@@ -14,6 +14,7 @@ install:
 before_build:
     - cmd: >-
         cd c:\projects\CommandTrayHost
+        
         C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER%
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
