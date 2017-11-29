@@ -5,7 +5,7 @@
 
 *.h filter=utf16 diff
 *.cpp filter=utf16 diff
-*.rc filter=utf16 diff
+#*.rc filter=utf16 diff
 
 ###############################################################################
 # Set default behavior for command prompt diff.
