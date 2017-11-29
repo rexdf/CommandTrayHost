@@ -38,7 +38,7 @@ after_build:
 
     upx CommandTrayHost-x86\CommandTrayHost.exe
 
-    7z a -tzip CommandTrayHost-0.6-b{build}.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
+    7z a -tzip CommandTrayHost.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
 artifacts:
 - path: CommandTrayHost.zip
   name: CommandTrayHost
