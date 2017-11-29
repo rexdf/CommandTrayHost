@@ -9,19 +9,12 @@ clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
     vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
-    # cd c:\projects\CommandTrayHost
-    # 
-    # git submodule update --init
-    # mkdir build
-    # cd build
-    # cmake -G "Visual Studio 15 2017" -DCMAKE_TOOLCHAIN_FILE=C:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal
 after_build:
 - cmd: >-
     cd c:\projects\CommandTrayHost
-    # mkdir 
     mkdir CommandTrayHost-x64
     mkdir CommandTrayHost-x86
     copy x64\Release\CommandTrayHost.exe CommandTrayHost-x64\
