@@ -629,7 +629,6 @@ void create_process(
 	// Launch child process - example is notepad.exe
 	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
 	{
-
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
