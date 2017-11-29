@@ -9,6 +9,9 @@ clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
     vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
+before_build:
+  - cmd: cd c:\projects\CommandTrayHost
+  - cmd: dir /a CommandTrayHost
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal
@@ -50,4 +53,4 @@ deploy:
     branch: master                 # release from master branch only
     appveyor_repo_tag: true        # deploy on tag push only
 
-cache: c:\tools\vcpkg\installed\ -> vcpkg_cache.txt
+cache: c:\tools\vcpkg\installed\
