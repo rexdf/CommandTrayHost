@@ -38,9 +38,9 @@ after_build:
 
     upx CommandTrayHost-x86\CommandTrayHost.exe
 
-    7z a -tzip CommandTrayHost.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
+    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
 artifacts:
-- path: CommandTrayHost.zip
+- path: CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip
   name: CommandTrayHost
 
 deploy:
