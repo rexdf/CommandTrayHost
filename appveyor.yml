@@ -1,10 +1,10 @@
-version: 0.1 b{build}
+version: 0.5 b{build}
 image: Visual Studio 2017
 configuration: Release
 platform:
   - x86
   - x64
-clone_depth: 1
+# clone_depth: 1
 clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
@@ -15,14 +15,23 @@ build:
 after_build:
 - cmd: >-
     cd c:\projects\CommandTrayHost
+
     mkdir CommandTrayHost-x64
+
     mkdir CommandTrayHost-x86
+
     copy x64\Release\CommandTrayHost.exe CommandTrayHost-x64\
+
     copy Release\CommandTrayHost.exe CommandTrayHost-x86\
+
     curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.94/upx394w.zip
+
     7z e upx.zip *.exe -r
+
     upx CommandTrayHost-x64\CommandTrayHost.exe
+
     upx CommandTrayHost-x86\CommandTrayHost.exe
+
     7z a -tzip CommandTrayHost.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\
 artifacts:
 - path: CommandTrayHost.zip
