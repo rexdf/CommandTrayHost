@@ -42,7 +42,7 @@ artifacts:
   name: CommandTrayHost
 
 deploy:
-  release: myproduct-v$(appveyor_build_version)
+  release: CommandTrayHost-v$(appveyor_build_version)
   description: 'nightly'
   provider: GitHub
   auth_token:
@@ -50,8 +50,9 @@ deploy:
   artifact: CommandTrayHost            # upload all NuGet packages to release assets
   draft: false
   prerelease: true
+  force_update: true
   on:
-    branch: master                 # release from master branch only
+    # branch: master                 # release from master branch only
     appveyor_repo_tag: true        # deploy on tag push only
 
 cache: c:\tools\vcpkg\installed\
