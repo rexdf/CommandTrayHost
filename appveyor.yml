@@ -42,7 +42,7 @@ artifacts:
   name: CommandTrayHost
 
 deploy:
-  release: CommandTrayHost-$(appveyor_build_version)
+  release: $(appveyor_build_version)
   description: 'nightly'
   provider: GitHub
   auth_token:
