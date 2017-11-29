@@ -1,4 +1,4 @@
-version: 0.6 b{build}
+version: 0.6-b{build}
 image: Visual Studio 2017
 configuration: Release
 platform:
@@ -49,7 +49,9 @@ deploy:
     secure: 6BqGKqbQbDfnZ3Y7SHvdQkPVCjXcJ1GIgPe41oD8K7ttPY/ivWN3iMyq2eZ1s4RD # your encrypted token from GitHub
   artifact: CommandTrayHost            # upload all NuGet packages to release assets
   prerelease: true
+  force_update: true
   on:
-    appveyor_repo_tag: true        # deploy on tag push only
+    branch: release
+    # appveyor_repo_tag: true        # deploy on tag push only
 
 cache: c:\tools\vcpkg\installed\
