@@ -1,6 +1,8 @@
 # CommandTrayHost
 A Command Line program systray for Windows
 
+[![Build status](https://ci.appveyor.com/api/projects/status/github/rexdf/CommandTrayHost?svg=true)](https://ci.appveyor.com/project/rexdf/commandtrayhost)
+
 [English](README.md)
 
 # 特性
