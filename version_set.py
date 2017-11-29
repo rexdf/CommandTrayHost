@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import codecs
+import traceback
+import chardet
 
 MAJOR_VERSION = '0'
 MINOR_VERSION = '6'
@@ -64,8 +66,16 @@ def main():
         else:
             bom = codecs.BOM_UTF8
         if content.startswith(bom):
+            print("file have a bom:", repr(bom))
             content = content[len(bom):]
-        content = content.decode(encoding)
+        try:
+            content = content.decode(encoding)
+        except:
+            print("binary.decode failed!")
+            detect = chardet.detect(content)
+            print(detect)
+            traceback.print_exc()
+            content = content.decode(detect['encoding'])
 
         if pattern_re.search(content) is None:
             return False
@@ -87,6 +97,7 @@ def main():
 if __name__ == '__main__':
     print(f"""{__file__} <build_number> [MAJOR_VERSION] [MINOR_VERSION] [FIX_VERSION]
 [MAJOR_VERSION] [MINOR_VERSION] [FIX_VERSION] are optional.""")
+    print(sys.version_info)
     if (sys.version_info < (3, 0)):
         sys.exit(2)
     if not main():
