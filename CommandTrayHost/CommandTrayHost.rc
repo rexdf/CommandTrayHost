@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+﻿//Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
 
@@ -21,7 +21,7 @@
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(936)
+//#pragma code_page(936)
 #endif //_WIN32
 
 #ifndef _MAC
@@ -128,9 +128,9 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-IDS_CMDLINE             "cmd /v"
-IDS_ENVIRONMENT         "TASKBAR_VISIBLE=0\nTASKBAR_TOOLTIP=CommandTrayHost\nTASKBAR_TITLE=CommandTrayHost Notify\nTASKBAR_BALLOON=CommandTrayHost 已经启动，单击托盘图标可以最小化。\n"
-IDS_PROXYLIST           "http://127.0.0.1:8087/proxy.pac\n127.0.0.1:8087\n"
+IDS_CMDLINE             L"cmd /v"
+IDS_ENVIRONMENT         L"TASKBAR_VISIBLE=0\nTASKBAR_TOOLTIP=CommandTrayHost\nTASKBAR_TITLE=CommandTrayHost Notify\nTASKBAR_BALLOON=CommandTrayHost 已经启动，单击托盘图标可以最小化。\n"
+IDS_PROXYLIST           L"http://127.0.0.1:8087/proxy.pac\n127.0.0.1:8087\n"
 IDS_RASPBK              "%APPDATA%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Application Data\\Microsoft\\Network\\Connections\\Pbk\\rasphone.pbk\n"
 END
 

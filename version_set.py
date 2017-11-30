@@ -83,11 +83,13 @@ def main():
         print(len(content), end=" ")
         content = pattern_re.sub(replace_string, content)
         print(len(content), end=" ")
+        if file_name.endswith(".rc"):
+            encoding = 'utf-16le'
         if encoding == 'utf-16le':
             content = bom + content.encode(encoding)
         else:
             content = content.encode(encoding)
-        print(len(content))
+        print(len(content), encoding)
         with open(file_name, "wb") as f:
             f.write(content)
         print(file_name, "repalced!\n")

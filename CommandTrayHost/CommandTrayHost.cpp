@@ -551,6 +551,13 @@ BOOL SetEenvironment()
 	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
 	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
 
+	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
+	if(not isZHCN)
+	{
+		ZeroMemory(szBalloon,sizeof(szBalloon));
+		wcscpy_s(szBalloon, L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.");
+	}
+
 	return TRUE;
 }
 
@@ -840,7 +847,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	CreateConsole();
 	ExecCmdline();
 	ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
-	TryDeleteUpdateFiles();
+	//TryDeleteUpdateFiles();
 
 	while (GetMessage(&msg, NULL, 0, 0))
 	{

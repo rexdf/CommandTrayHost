@@ -45,13 +45,6 @@ std::string wstring_to_utf8(const std::wstring& str)
 	return myconv.to_bytes(str);
 }
 
-void code_change()
-{
-	std::string myString = "";
-	std::wstring stemp = s2ws(myString);
-	LPCWSTR result = stemp.c_str(); //bad code
-}
-
 bool initial_configure()
 {
 	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
