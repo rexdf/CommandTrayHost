@@ -55,6 +55,7 @@ def main():
         (rc_file, pattern_rc, rc_string, 'utf-16le'),
     ):
         # CommandTrayHost.rc # stdafx.h
+        print(f'opening {file_name}')
         try:
             with open(file_name, "rb") as f:
                 content = f.read()
@@ -62,21 +63,26 @@ def main():
             print(f"open {file_name} failed!")
             return False
         print(len(content), end=" ")
+
+        detect = chardet.detect(content)
+        print(detect, end=' ')
+        encoding = detect['encoding']
+
         if encoding == 'utf-16le':
             bom = codecs.BOM_UTF16_LE
         else:
             bom = codecs.BOM_UTF8
-        if content.startswith(bom):
+
+        if encoding == 'utf-16le' and content.startswith(bom):
             print("file have a bom:", repr(bom))
             content = content[len(bom):]
+
         try:
             content = content.decode(encoding)
         except:
             traceback.print_exc()
             print("binary.decode failed!")
-            detect = chardet.detect(content)
-            print(detect)
-            encoding = detect['encoding']
+
             content = content.decode(encoding)
 
         if pattern_re.search(content) is None:
