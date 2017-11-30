@@ -59,6 +59,7 @@ def main():
             with open(file_name, "rb") as f:
                 content = f.read()
         except:
+            print(f"open {file_name} failed!")
             return False
         print(len(content), end=" ")
         if encoding == 'utf-16le':

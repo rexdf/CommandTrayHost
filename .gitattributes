@@ -9,7 +9,7 @@
 *.cpp text
 *.c++ text
 *.hpp text
-#*.h text
+*.h text
 *.h++ text
 *.hh text
 
@@ -37,8 +37,11 @@
 #CommandTrayHost\resource.h filter=utf16 diff
 #CommandTrayHost\CommandTrayHost.rc filter=utf16 diff
 
-CommandTrayHost/resource.h merge=binary
-*.rc merge=binary
+# CommandTrayHost/resource.h merge=binary
+# *.rc merge=binary
+
+*.rc filter=utf16
+resource.h filter=utf16
 
 ###############################################################################
 # Set default behavior for command prompt diff.

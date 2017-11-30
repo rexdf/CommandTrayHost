@@ -122,6 +122,15 @@ example configure
 4. Install rapidjson and nlohmann::json. `vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows`
 5. Open `CommandTrayHost.sln`, and build.
 
+In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in encoding UTF-16LE(UCS-2) with BOM. Before run `git clone`, you need to add following script to `%HOME%\.gitconfig` .
+
+```ini
+[filter "utf16"]
+    clean = iconv -f utf-16le -t utf-8
+    smudge = iconv -f utf-8 -t utf-16le
+    required
+```
+
 # Help wanted
 
 - When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)

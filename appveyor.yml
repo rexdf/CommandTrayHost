@@ -6,6 +6,10 @@ configuration: Release
 platform:
   - x86
   # - x64
+init:
+- cmd: echo %cd%
+- cmd: curl -L -o %temp%\add_gitutf16.py https://raw.githubusercontent.com/rexdf/CommandTrayHost/master/add_gitutf16.py
+- cmd: C:\Python36\python.exe %temp%\add_gitutf16.py
 # clone_depth: 1
 clone_folder: c:\projects\CommandTrayHost
 install:
@@ -67,4 +71,4 @@ deploy:
     branch: release
     appveyor_repo_tag: false        # deploy on tag push only
 
-cache: c:\tools\vcpkg\installed\
+cache: c:\tools\vcpkg\installed\  -> vcpkg_cache.txt
