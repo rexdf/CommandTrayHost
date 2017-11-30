@@ -103,8 +103,10 @@ Windows命令行程序系统托盘管理工具
         },
     ],
     "global":true,
-    "require_admin":false // 是否CommandTrayHost要对自身提权
+    "require_admin":false, // 是否CommandTrayHost要对自身提权
     //大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
+    "icon":"E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // 自定义托盘图标路径，空为默认内置 256x256
+    "icon_size":256, // 256 32 16
 }
 ```
 
@@ -115,7 +117,9 @@ Windows命令行程序系统托盘管理工具
 - 如果CommandTrayHost是以管理员运行的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
 - 如果CommandTrayHost是以普通用户运行的，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":true,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
 
-**注意**： 所有的路劲，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
+**提示3**: icon制作可以参考 [这里](http://www.imagemagick.org/Usage/thumbnails/#favicon)
+
+**注意**： 所有的路径，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 
 # 如何编译
 

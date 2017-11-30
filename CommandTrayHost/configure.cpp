@@ -77,7 +77,9 @@ bool initial_configure()
         },
     ],
     "global":true,
-	"require_admin":false // 是否让CommandTrayHost运行时弹出UAC对自身提权
+    "require_admin":false // 是否让CommandTrayHost运行时弹出UAC对自身提权
+    "icon":"", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
+    "icon_size":256, // 图标尺寸 可以用值有256 32 16
 })json" : u8R"json({
     "configs": [
         {
@@ -105,7 +107,9 @@ bool initial_configure()
         },
     ],
     "global":true,
-	"require_admin":false // To Run CommandTrayHost runas privileged
+    "require_admin":false, // To Run CommandTrayHost runas privileged
+    "icon":"", // icon path, empty for default
+    "icon_size":256, // icon size, valid value: 256 32 16
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
@@ -249,7 +253,7 @@ int configure_reader(std::string& out)
  * show bool
  * exe_seperator idx ".exe"
  */
-int init_global(nlohmann::json& js, HANDLE& ghJob)
+int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 {
 	std::string js_string;
 	int cmd_cnt = configure_reader(js_string);
@@ -316,6 +320,46 @@ int init_global(nlohmann::json& js, HANDLE& ghJob)
 			::MessageBox(0, L"Could not SetInformationJobObject", L"Error", MB_OK);
 			return NULL;
 		}
+	}
+
+	try
+	{
+		std::string icon = js.at("icon");
+		std::wstring wicon = utf8_to_wstring(icon);
+		LPCWSTR pLoad = wicon.c_str();
+		if (TRUE == PathFileExists(pLoad))
+		{
+			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
+			wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
+			/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
+				NULL,             // hInstance must be NULL when loading from a file
+				wicon.c_str(),   // the icon file name
+				IMAGE_ICON,       // specifies that the file is an icon
+				16,                // width of the image (we'll specify default later on)
+				16,                // height of the image
+				LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
+				//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
+				//LR_SHARED         // let the system release the handle when it's no longer used
+			));*/
+		}
+		int icon_size = js.at("icon_size");
+		if (icon_size == 16 || icon_size == 32 || icon_size == 256)
+		{
+			out_icon_size = icon_size;
+		}
+	}
+#ifdef _DEBUG
+	catch (std::out_of_range& e)
+#else
+	catch (std::out_of_range&)
+#endif
+	{
+		LOGMESSAGE(L"init_global icon out_of_range %S\n", e.what());
+	}
+	catch (...)
+	{
+		::MessageBox(0, L"icon or icon_size failed!", L"Error", MB_OK);
+		LOGMESSAGE(L"init_global icon error\n");
 	}
 	return 1;
 }
@@ -504,7 +548,11 @@ DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
 	return dwRet;
 }
 
+#ifdef _DEBUG
 void check_and_kill(HANDLE hProcess, DWORD pid, PCSTR name)
+#else
+void check_and_kill(HANDLE hProcess, DWORD pid)
+#endif
 {
 	assert(GetProcessId(hProcess) == pid);
 	if (GetProcessId(hProcess) == pid)
@@ -557,11 +605,15 @@ void create_process(
 	{
 		int64_t handle = js["configs"][cmd_idx]["handle"];
 		int64_t pid = js["configs"][cmd_idx]["pid"];
-		std::string name = js["configs"][cmd_idx]["name"];
 
 		LOGMESSAGE(L"create_process process running, now kill it\n");
 
+#ifdef _DEBUG
+		std::string name = js["configs"][cmd_idx]["name"];
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+#else
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+#endif
 	}
 
 	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
@@ -571,18 +623,34 @@ void create_process(
 	{
 		require_admin = js["configs"][cmd_idx].at("require_admin");
 	}
+#ifdef _DEBUG
 	catch (std::out_of_range& e)
+#else
+	catch (std::out_of_range&)
+#endif
 	{
 		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
+	}
+	catch (...)
+	{
+		::MessageBox(0, L"require_admin failed!", L"Error", MB_OK);
 	}
 
 	try
 	{
 		start_show = js["configs"][cmd_idx].at("start_show");
 	}
+#ifdef _DEBUG
 	catch (std::out_of_range& e)
+#else
+	catch (std::out_of_range&)
+#endif
 	{
 		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
+	}
+	catch (...)
+	{
+		::MessageBox(0, L"start_show failed!", L"Error", MB_OK);
 	}
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
@@ -705,11 +773,15 @@ void disable_enable_menu(nlohmann::json& js, int cmd_idx, HANDLE ghJob)
 		{
 			int64_t handle = js["configs"][cmd_idx]["handle"];
 			int64_t pid = js["configs"][cmd_idx]["pid"];
-			std::string name = js["configs"][cmd_idx]["name"];
 
 			LOGMESSAGE(L"disable_enable_menu disable_menu process running, now kill it\n");
 
+#ifdef _DEBUG
+			std::string name = js["configs"][cmd_idx]["name"];
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+#else
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+#endif
 		}
 		js["configs"][cmd_idx]["handle"] = 0;
 		js["configs"][cmd_idx]["pid"] = -1;
@@ -803,6 +875,37 @@ void show_hide_toggle(nlohmann::json& js, int cmd_idx)
 			ShowWindow(Info.Windows[0], SW_SHOW);
 			SetForegroundWindow(Info.Windows[0]);
 			js["configs"][cmd_idx]["show"] = true;
+		}
+	}
+
+}
+
+void kill_all(nlohmann::json& js, bool is_exit/* = true*/)
+{
+	for (auto& itm : js["configs"])
+	{
+		bool is_running = itm["running"];
+		if (is_running)
+		{
+			int64_t handle = itm["handle"];
+			int64_t pid = itm["pid"];
+
+			LOGMESSAGE(L"create_process process running, now kill it\n");
+
+#ifdef _DEBUG
+			std::string name = itm["name"];
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+#else
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+#endif
+			if (is_exit == false)
+			{
+				itm["handle"] = 0;
+				itm["pid"] = -1;
+				itm["running"] = false;
+				itm["show"] = false;
+				itm["enabled"] = false;
+			}
 		}
 	}
 
@@ -1001,10 +1104,18 @@ void check_admin(nlohmann::json& js)
 	{
 		require_admin = js.at("require_admin");
 	}
+#ifdef _DEBUG
 	catch (std::out_of_range& e)
+#else
+	catch (std::out_of_range&)
+#endif
 	{
 		LOGMESSAGE(L"check_admin out_of_range %S\n", e.what());
 		return;
+	}
+	catch (...)
+	{
+		::MessageBox(0, L"check_admin failed!", L"Error", MB_OK);
 	}
 	if (require_admin)
 	{

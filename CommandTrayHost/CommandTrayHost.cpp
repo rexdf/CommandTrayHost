@@ -25,7 +25,9 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 
 nlohmann::json global_stat;
 HANDLE ghJob;
-
+//HICON gHicon;
+WCHAR szHIcon[MAX_PATH * 2];
+int icon_size;
 
 HINSTANCE hInst;
 HWND hWnd;
@@ -100,7 +102,25 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 	nid.uFlags = NIF_ICON | NIF_MESSAGE;
 	nid.dwInfoFlags = NIIF_INFO;
 	nid.uCallbackMessage = WM_TASKBARNOTIFY;
-	nid.hIcon = LoadIcon(hInst, (LPCTSTR)IDI_SMALL);
+	HICON hIcon = NULL;
+	if (szHIcon[0] != NULL)
+	{
+		LOGMESSAGE(L"ShowTrayIcon Load from file %s\n", szHIcon);
+		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
+			szHIcon,
+			IMAGE_ICON,
+			icon_size ? icon_size : 256,
+			icon_size ? icon_size : 256,
+			LR_LOADFROMFILE)
+			);
+		if (hIcon == NULL)
+		{
+			LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
+		}
+	}
+
+	nid.hIcon = (hIcon == NULL) ? LoadIcon(hInst, (LPCTSTR)IDI_SMALL) : hIcon;
+
 	nid.uTimeout = 3 * 1000 | NOTIFYICON_VERSION;
 	lstrcpy(nid.szInfoTitle, szTitle);
 	if (lpszProxy)
@@ -118,6 +138,14 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		}
 	}
 	Shell_NotifyIcon(dwMessage ? dwMessage : NIM_ADD, &nid);
+	if (hIcon)
+	{
+		BOOL hSuccess = DestroyIcon(hIcon);
+		if (NULL == hSuccess)
+		{
+			LOGMESSAGE(L"DestroyIcon Failed! %d\n", GetLastError());
+		}
+	}
 	return TRUE;
 }
 
@@ -128,6 +156,7 @@ BOOL DeleteTrayIcon()
 	nid.hWnd = hWnd;
 	nid.uID = NID_UID;
 	Shell_NotifyIcon(NIM_DELETE, &nid);
+	kill_all(global_stat);
 	return TRUE;
 }
 
@@ -552,9 +581,9 @@ BOOL SetEenvironment()
 	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
 
 	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
-	if(not isZHCN)
+	if (not isZHCN)
 	{
-		ZeroMemory(szBalloon,sizeof(szBalloon));
+		ZeroMemory(szBalloon, sizeof(szBalloon));
 		wcscpy_s(szBalloon, L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.");
 	}
 
@@ -815,14 +844,48 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
+	/*HICON hIcon = NULL, hIconSm = NULL;
+	if (szHIcon[0] != NULL)
+	{
+		LOGMESSAGE(L"MyRegisterClass Load from file %s\n", szHIcon);
+		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
+			szHIcon, IMAGE_ICON, 256, 256, LR_LOADFROMFILE)
+			);
+		if (hIcon == NULL)
+		{
+			LOGMESSAGE(L"MyRegisterClass Load IMAGE_ICON failed!\n");
+		}
+		hIconSm = reinterpret_cast<HICON>(LoadImage(NULL,
+			szHIcon, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+			);
+		if (hIconSm == NULL)
+		{
+			LOGMESSAGE(L"MyRegisterClass Load hIconSm IMAGE_ICON failed!\n");
+		}
+		if (hIconSm && hIcon)
+		{
+			LOGMESSAGE(L"MyRegisterClass icon load ok!\n");
+		}
+	}*/
+	//wcex.hIcon = (hIcon == NULL) ? LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR) : hIcon;
 	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = (LPCTSTR)NULL;
 	wcex.lpszClassName = szWindowClass;
+	//wcex.hIconSm = (hIconSm == NULL) ? LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL) : hIconSm;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
-	return RegisterClassEx(&wcex);
+	ATOM ret = RegisterClassEx(&wcex);
+	/*if (hIcon)
+	{
+		DestroyIcon(hIcon);
+	}
+	if (hIconSm)
+	{
+		DestroyIcon(hIconSm);
+	}*/
+	return ret;
 }
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -832,17 +895,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	CDCurrentDirectory();
 	SetEenvironment();
 	ParseProxyList();
-	MyRegisterClass(hInstance);
-	if (!InitInstance(hInstance, SW_HIDE))
-	{
-		return FALSE;
-	}
-	if (NULL == init_global(global_stat, ghJob))
+	if (NULL == init_global(global_stat, ghJob, szHIcon, icon_size))
 	{
 		::MessageBox(0, L"Initialization failed!", L"Error", MB_OK);
 		return -1;
 	}
 	check_admin(global_stat);
+	MyRegisterClass(hInstance);
+	if (!InitInstance(hInstance, SW_HIDE))
+	{
+		return FALSE;
+	}
 	start_all(global_stat, ghJob);
 	CreateConsole();
 	ExecCmdline();

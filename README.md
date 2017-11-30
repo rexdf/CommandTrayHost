@@ -103,6 +103,9 @@ example configure
     "global":true,
     "require_admin":false // To Run CommandTrayHost as Administrator
     // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
+    "icon":"E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
+    // when empty, builtin default icon will be used. 256x256
+    "icon_size":256, // 256 32 16
 }
 ```
 
@@ -111,6 +114,8 @@ example configure
 **Tips2**: If you don't need privileged child, you can remove all `"require_admin"`.
 - CommandTrayHost run as an unprivileged user: you can run a privileged child process and restart it, but you cannot hide/show it. Because of User Interface Privilege Isolation.
 - CommandTrayHost run as Administrator, everthing should work as you want. But you cannot use the builtin startup management.
+
+**Tips3**: How to create ico format [Here](http://www.imagemagick.org/Usage/thumbnails/#favicon)
 
 **Note**: All path must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
 
