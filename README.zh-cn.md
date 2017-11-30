@@ -1,5 +1,6 @@
 # CommandTrayHost
-A Command Line program systray for Windows
+
+Windows命令行程序系统托盘管理工具
 
 [![Build status](https://ci.appveyor.com/api/projects/status/v5md4dc9q1oy6qxh?svg=true)](https://ci.appveyor.com/project/rexdf/commandtrayhost)
 
@@ -102,7 +103,8 @@ A Command Line program systray for Windows
         },
     ],
     "global":true,
-    "require_admin":false //大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
+    "require_admin":false // 是否CommandTrayHost要对自身提权
+    //大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
 }
 ```
 
@@ -111,7 +113,7 @@ A Command Line program systray for Windows
 **提示2**: 管理员比较复杂，如果不是真的需要。配置中不要出现任何`require_admin`。 
 简而言之：
 - 如果CommandTrayHost是以管理员运行的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
-- 如果CommandTrayHost是以普通用户运行的，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":false,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
+- 如果CommandTrayHost是以普通用户运行的，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":true,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
 
 **注意**： 所有的路劲，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 

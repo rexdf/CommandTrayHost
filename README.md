@@ -101,7 +101,8 @@ example configure
         },
     ],
     "global":true,
-    "require_admin":false // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
+    "require_admin":false // To Run CommandTrayHost as Administrator
+    // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
 }
 ```
 
