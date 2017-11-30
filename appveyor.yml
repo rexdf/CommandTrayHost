@@ -15,9 +15,11 @@ clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
     vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
+
+    C:\Python36\python.exe vcpkg_patch.py
 before_build:
     - cmd: >-
-        cd c:\projects\CommandTrayHost
+        # cd c:\projects\CommandTrayHost
 
         C:\Python36\Scripts\pip.exe install chardet
 
