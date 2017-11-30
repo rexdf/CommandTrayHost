@@ -52,7 +52,7 @@ def main():
 
     for file_name, pattern_re, replace_string, encoding in (
         (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-16le'),
-        (rc_file, pattern_rc, rc_string, 'utf-8'),
+        (rc_file, pattern_rc, rc_string, 'utf-16le'),
     ):
         # CommandTrayHost.rc # stdafx.h
         try:
