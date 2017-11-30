@@ -77,7 +77,7 @@ bool initial_configure()
         },
     ],
     "global":true,
-    "require_admin":false // 是否让CommandTrayHost运行时弹出UAC对自身提权
+    "require_admin":false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
     "icon":"", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size":256, // 图标尺寸 可以用值有256 32 16
 })json" : u8R"json({
