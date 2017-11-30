@@ -51,7 +51,7 @@ def main():
     print(stdafx_h_string, '\n', rc_string)
 
     for file_name, pattern_re, replace_string, encoding in (
-        (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-16le'),
+        (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-8'),
         (rc_file, pattern_rc, rc_string, 'utf-16le'),
     ):
         # CommandTrayHost.rc # stdafx.h
@@ -68,14 +68,14 @@ def main():
         print(detect, end=' ')
         encoding = detect['encoding']
 
-        if encoding == 'utf-16le':
-            bom = codecs.BOM_UTF16_LE
-        else:
-            bom = codecs.BOM_UTF8
+        if encoding.lower().startswith('utf-16'):
+            bom = codecs.BOM_UTF16_LE  # ''.encode('utf-16')
+        elif encoding.lower().startswith('utf-8'):
+            bom = codecs.BOM_UTF8  # ''.encode('utf-8-sig')
 
-        if encoding == 'utf-16le' and content.startswith(bom):
-            print("file have a bom:", repr(bom))
-            content = content[len(bom):]
+        if content.startswith(bom):
+            print("bom:", repr(bom), end=' ')
+            # content = content[len(bom):]
 
         try:
             content = content.decode(encoding)
@@ -83,19 +83,21 @@ def main():
             traceback.print_exc()
             print("binary.decode failed!")
 
-            content = content.decode(encoding)
-
         if pattern_re.search(content) is None:
+            print("search failed")
             return False
-        print(len(content), end=" ")
+        print(len(content), end=" sub-> ")
         content = pattern_re.sub(replace_string, content)
         print(len(content), end=" ")
+
         if file_name.endswith(".rc"):
-            encoding = 'utf-16le'
+            encoding = 'utf-16'
+
         if encoding == 'utf-16le':
             content = bom + content.encode(encoding)
         else:
             content = content.encode(encoding)
+
         print(len(content), encoding)
         with open(file_name, "wb") as f:
             f.write(content)
