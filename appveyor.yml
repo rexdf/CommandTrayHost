@@ -1,4 +1,4 @@
-version: 0.6-b{build}
+version: 0.7-b{build}
 # version: 0.6-latest
 skip_tags: true
 image: Visual Studio 2017
@@ -17,7 +17,7 @@ before_build:
 
         C:\Python36\Scripts\pip.exe install chardet
 
-        C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER%
+        C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 0 7
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal
