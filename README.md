@@ -122,7 +122,7 @@ example configure
 4. Install rapidjson and nlohmann::json. `vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows`
 5. Open `CommandTrayHost.sln`, and build.
 
-In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in encoding UTF-16LE(UCS-2) with BOM. Before run `git clone`, you need to add following script to `%HOME%\.gitconfig` .
+In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in encoding UTF-16LE(UCS-2) with BOM. Before run `git clone`, you need to add following script to `%USERPROFILE%\.gitconfig` .
 
 ```ini
 [filter "utf16"]

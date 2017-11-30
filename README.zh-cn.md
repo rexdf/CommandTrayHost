@@ -125,7 +125,7 @@ Windows命令行程序系统托盘管理工具
 4. 安装 rapidjson 和 nlohmann::json. `vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows`
 5. 打开 `CommandTrayHost.sln`, 点击编译.
 
-为了保证`resource.h`和`CommandTrayHost.rc`编码为UTF-16LE(UCS-2)带BOM，在`git clone`之前，可能需要在`%HOME%\.gitconfig`文件最后面(不存在新建一个)加上如下内容:
+为了保证`resource.h`和`CommandTrayHost.rc`编码为UTF-16LE(UCS-2)带BOM，在`git clone`之前，可能需要在`%USERPROFILE%\.gitconfig`文件最后面(不存在新建一个)加上如下内容:
 
 ```ini
 [filter "utf16"]
