@@ -663,7 +663,7 @@ BOOL ExecCmdline()
 	else
 	{
 		wprintf(L"ExecCmdline \"%s\" failed!\n", szCommandLine);
-		MessageBox(NULL, szCommandLine, L"Error: Cannot execute!", MB_OK);
+		MessageBox(NULL, szCommandLine, L"Error: Cannot execute!", MB_OK | MB_ICONERROR);
 		ExitProcess(0);
 	}
 	CloseHandle(pi.hThread);
@@ -897,7 +897,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	ParseProxyList();
 	if (NULL == init_global(global_stat, ghJob, szHIcon, icon_size))
 	{
-		::MessageBox(0, L"Initialization failed!", L"Error", MB_OK);
+		::MessageBox(0, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	check_admin(global_stat);

@@ -344,7 +344,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
 	{
-		::MessageBox(0, L"Load configure failed!", L"Error", MB_OK);
+		::MessageBox(0, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	//using json = nlohmann::json;
@@ -389,7 +389,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	ghJob = CreateJobObject(NULL, NULL); // GLOBAL
 	if (ghJob == NULL)
 	{
-		::MessageBox(0, L"Could not create job object", L"Error", MB_OK);
+		::MessageBox(0, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	else
@@ -400,7 +400,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 		if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
 		{
-			::MessageBox(0, L"Could not SetInformationJobObject", L"Error", MB_OK);
+			::MessageBox(0, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
 	}
@@ -441,7 +441,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"icon or icon_size failed!", L"Error", MB_OK);
+		::MessageBox(0, L"icon or icon_size failed!", L"Error", MB_OK | MB_ICONERROR);
 		LOGMESSAGE(L"init_global icon error\n");
 	}
 	return 1;
@@ -716,7 +716,7 @@ void create_process(
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"require_admin failed!", L"Error", MB_OK);
+		::MessageBox(0, L"require_admin failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	try
@@ -733,7 +733,7 @@ void create_process(
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"start_show failed!", L"Error", MB_OK);
+		::MessageBox(0, L"start_show failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
@@ -763,7 +763,7 @@ void create_process(
 	{
 		//assert(false);
 		LOGMESSAGE(L"Copy cmd failed\n");
-		MessageBox(0, L"PathCombine Failed", L"Error", MB_OK);
+		MessageBox(0, L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	LOGMESSAGE(L"cmd_idx:%d\n path: %s\n cmd: %s\n", cmd_idx, path, commandLine);
@@ -777,7 +777,7 @@ void create_process(
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 			{
-				MessageBox(0, L"Could not AssignProcessToObject", L"Error", MB_OK);
+				MessageBox(0, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 			else
 			{
@@ -1167,7 +1167,7 @@ void ElevateNow()
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
-					::MessageBox(0, L"End user did not allow elevation!", L"Error", MB_OK);
+					::MessageBox(0, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
 				}
 			}
 			else
@@ -1200,7 +1200,7 @@ void check_admin(nlohmann::json& js)
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"check_admin failed!", L"Error", MB_OK);
+		::MessageBox(0, L"check_admin failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 	if (require_admin)
 	{
