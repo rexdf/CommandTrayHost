@@ -9,6 +9,10 @@
 #pragma comment( lib, "wininet" )
 #pragma comment(lib, "Shlwapi")
 
+#if VER_PRODUCTBUILD == 7600
+#pragma comment(lib, "Psapi")
+#endif
+
 #ifdef _DEBUG
 void LOGMESSAGE(wchar_t* pszFormat, ...)
 {

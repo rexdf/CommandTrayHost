@@ -57,6 +57,11 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define LOGMESSAGE( str, ... )
 #endif
 
+#include <ntverp.h>
+#if VER_PRODUCTBUILD == 7600
+#include <Psapi.h>
+#endif
+
 
 // WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE+10*i 是一级菜单 显示名称
 // WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE+10*i+j 是二级菜单 显示命令 显示/隐藏 重启命令 启用/禁用

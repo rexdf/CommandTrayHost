@@ -158,7 +158,7 @@ int configure_reader(std::string& out)
 		return NULL;
 	}
 	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
-	char* readBuffer = reinterpret_cast<char*>(malloc(json_file_size + 5));
+	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 5)));
 	if (NULL == readBuffer)
 	{
 		return NULL;
