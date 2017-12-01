@@ -18,9 +18,8 @@ install:
 
     C:\Python36\python.exe vcpkg_patch.py
 before_build:
+    # - cmd: cd c:\projects\CommandTrayHost
     - cmd: >-
-        # cd c:\projects\CommandTrayHost
-
         C:\Python36\Scripts\pip.exe install chardet
 
         C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 0 8 0
