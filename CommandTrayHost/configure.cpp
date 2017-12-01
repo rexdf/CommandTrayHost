@@ -1220,8 +1220,6 @@ void makeSingleInstance()
 	if (TRUE == PathFileExists(lock_filename))
 	{
 		std::ifstream fi(lock_filename);
-
-
 		if (fi.good())
 		{
 			fi >> txt_pid;
@@ -1275,5 +1273,4 @@ void makeSingleInstance()
 		LOGMESSAGE(L"pid has wrote\n");
 	}
 	fo.close();
-
 }
