@@ -13,12 +13,13 @@ A Command Line program systray for Windows
 - show/hide enable/disable daemon
 - multiple command line programs
 - when CommandTrayHost quits, all child processes will be killed.
+- Customize systray icon
 
 # Usage
 
 [Download](https://github.com/rexdf/CommandTrayHost/releases)
 
-configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Encoding is `utf-8`.
+configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Supported encodings: `UTF-8 UTF-8BOM UTF-16LE UTF-16BE UTF-32LE UTF32-BE`.
 
 example configure
 

@@ -117,7 +117,7 @@ bool initial_configure()
 }
 
 
-int64_t FileSize(const wchar_t* name)
+int64_t FileSize(PCWSTR name)
 {
 	HANDLE hFile = CreateFile(name, GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
@@ -157,7 +157,8 @@ int configure_reader(std::string& out)
 	{
 		return NULL;
 	}
-	char* readBuffer = reinterpret_cast<char*>(malloc(json_file_size));
+	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
+	char* readBuffer = reinterpret_cast<char*>(malloc(json_file_size + 5));
 	if (NULL == readBuffer)
 	{
 		return NULL;
@@ -171,7 +172,7 @@ int configure_reader(std::string& out)
 		return NULL;
 	}
 
-#define SAFE_RETURN_NULL_FREE_FCLOSE(buf_p,f_p,val) {free(buf_p);fclose(f_p); return val; }
+#define SAFE_RETURN_VAL_FREE_FCLOSE(buf_p,f_p,val) {free(buf_p);fclose(f_p); return val; }
 
 	using namespace rapidjson;
 
@@ -207,7 +208,7 @@ int configure_reader(std::string& out)
 			(unsigned)d.GetErrorOffset(),
 			GetParseError_En(d.GetParseError()));
 		// ...
-		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
 		fclose(fp);
 		return NULL;*/
@@ -217,7 +218,7 @@ int configure_reader(std::string& out)
 	assert(!d.ObjectEmpty());
 	if (!d.IsObject() || d.ObjectEmpty())
 	{
-		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
 		fclose(fp);
 		return NULL;*/
@@ -227,7 +228,7 @@ int configure_reader(std::string& out)
 	assert(d.HasMember("configs"));
 	if (!d.HasMember("configs"))
 	{
-		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
 		fclose(fp);
 		return NULL;*/
@@ -239,7 +240,7 @@ int configure_reader(std::string& out)
 	assert(d["configs"].IsArray());
 	if (!d["configs"].IsArray())
 	{
-		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
 		fclose(fp);
 		return NULL;*/
@@ -306,7 +307,7 @@ int configure_reader(std::string& out)
 		}
 		else
 		{
-			SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			/*free(readBuffer);
 			fclose(fp);
 			return NULL;*/
@@ -318,7 +319,7 @@ int configure_reader(std::string& out)
 	out = sb.GetString();
 	//std::string ss = sb.GetString();
 	//out = ss;
-	SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, cnt);
+	SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, cnt);
 	/*free(readBuffer);
 	fclose(fp);
 	return cnt;*/

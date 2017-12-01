@@ -14,12 +14,13 @@ Windows命令行程序系统托盘管理工具
 - 显示隐藏命令行界面，方便查看日志 启动禁用管理
 - 可以配置任意多数量的(几十个应该没啥问题)后台命令行
 - 当CommandTrayHost退出时，由操作系统保证清理所有的子进程。
+- 自定义托盘图标
 
 # 使用
 
 [下载](https://github.com/rexdf/CommandTrayHost/releases)
 
-配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。编码为UTF-8.
+配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。支持的编码为UTF8 UTF-16LE UTF-16BE UTF-32等，支持BOM识别。也就是支持记事本保存的Unicode和UTF-8格式。
 
 配置样例
 
