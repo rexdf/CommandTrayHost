@@ -64,6 +64,7 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define WM_APP_END 0xBFFF
 
 #define CommandTrayHost (L"Command_Tray_Host")
+#define LOCK_FILE_NAME L"commandtrayhost_lock_pid.txt"
 
 #define VERSION_NUMS L"0.8.0"
 

@@ -157,6 +157,10 @@ BOOL DeleteTrayIcon()
 	nid.uID = NID_UID;
 	Shell_NotifyIcon(NIM_DELETE, &nid);
 	kill_all(global_stat);
+	if (NULL == DeleteFile(LOCK_FILE_NAME))
+	{
+		LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
+	}
 	return TRUE;
 }
 
@@ -548,7 +552,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 BOOL CDCurrentDirectory()
 {
 	WCHAR szPath[4096] = L"";
-	GetModuleFileName(NULL, szPath, sizeof(szPath) / sizeof(szPath[0]) - 1);
+	//GetModuleFileName(NULL, szPath, sizeof(szPath) / sizeof(szPath[0]) - 1);
+	GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));
 	*wcsrchr(szPath, L'\\') = 0;
 	SetCurrentDirectory(szPath);
 	SetEnvironmentVariableW(L"CWD", szPath);
@@ -893,11 +898,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	MSG msg;
 	hInst = hInstance;
 	CDCurrentDirectory();
+	makeSingleInstance();
 	SetEenvironment();
 	ParseProxyList();
 	if (NULL == init_global(global_stat, ghJob, szHIcon, icon_size))
 	{
-		::MessageBox(0, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	check_admin(global_stat);

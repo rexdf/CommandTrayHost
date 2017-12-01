@@ -13,4 +13,5 @@ void check_admin(nlohmann::json&);
 BOOL IsMyProgramRegisteredForStartup(PCWSTR);
 BOOL DisableStartUp();
 BOOL EnableStartup();
+void makeSingleInstance();
 

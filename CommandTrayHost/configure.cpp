@@ -167,7 +167,7 @@ int configure_reader(std::string& out)
 	errno_t err = _wfopen_s(&fp, json_filename, L"rb"); // 非 Windows 平台使用 "r"
 	if (0 != err)
 	{
-		::MessageBox(0, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		free(readBuffer);
 		return NULL;
 	}
@@ -334,6 +334,7 @@ int configure_reader(std::string& out)
  * handle int64_t
  * pid int64_t
  * show bool
+ * en_job bool
  * exe_seperator idx ".exe"
  */
 int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
@@ -344,7 +345,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
 	{
-		::MessageBox(0, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	//using json = nlohmann::json;
@@ -362,6 +363,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 		i["handle"] = 0;
 		i["pid"] = -1;
 		i["show"] = false;
+		i["en_job"] = true;
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
 		TCHAR commandLine[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
@@ -389,7 +391,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	ghJob = CreateJobObject(NULL, NULL); // GLOBAL
 	if (ghJob == NULL)
 	{
-		::MessageBox(0, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	else
@@ -400,7 +402,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 		if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
 		{
-			::MessageBox(0, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
+			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
 	}
@@ -441,7 +443,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"icon or icon_size failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"icon or icon_size failed!", L"Error", MB_OK | MB_ICONERROR);
 		LOGMESSAGE(L"init_global icon error\n");
 	}
 	return 1;
@@ -493,6 +495,7 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 		bool is_enabled = static_cast<bool>(itm["enabled"]);
 		bool is_running = static_cast<bool>(itm["running"]);
 		bool is_show = static_cast<bool>(itm["show"]);
+		bool is_en_job = static_cast<bool>(itm["en_job"]);
 
 		int64_t handle = itm["handle"];
 		if (is_running)
@@ -513,7 +516,7 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 			}
 		}
 
-		UINT uSubFlags = is_running ? (MF_STRING) : (MF_STRING | MF_GRAYED);
+		UINT uSubFlags = (is_en_job && is_running) ? (MF_STRING) : (MF_STRING | MF_GRAYED);
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
 			utf8_to_wstring(itm["path"]).c_str());
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
@@ -716,7 +719,7 @@ void create_process(
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"require_admin failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"require_admin failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	try
@@ -733,7 +736,7 @@ void create_process(
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"start_show failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"start_show failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
@@ -763,7 +766,7 @@ void create_process(
 	{
 		//assert(false);
 		LOGMESSAGE(L"Copy cmd failed\n");
-		MessageBox(0, L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	LOGMESSAGE(L"cmd_idx:%d\n path: %s\n cmd: %s\n", cmd_idx, path, commandLine);
@@ -773,17 +776,19 @@ void create_process(
 	// Launch child process - example is notepad.exe
 	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
 	{
+		js["configs"][cmd_idx]["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
+		js["configs"][cmd_idx]["pid"] = static_cast<int64_t>(pi.dwProcessId);
+		js["configs"][cmd_idx]["running"] = true;
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 			{
-				MessageBox(0, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+				js["configs"][cmd_idx]["en_job"] = false;
+				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 			else
 			{
-				js["configs"][cmd_idx]["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
-				js["configs"][cmd_idx]["pid"] = static_cast<int64_t>(pi.dwProcessId);
-				js["configs"][cmd_idx]["running"] = true;
+				js["configs"][cmd_idx]["en_job"] = true;
 			}
 		}
 		// Can we free handles now? Not sure about this.
@@ -826,7 +831,7 @@ void create_process(
 					{
 						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
 						// prompt when no privileged to run a executable file with UAC requirement manifest
-						MessageBox(0, L"Could not AssignProcessToObject, You need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
+						MessageBox(NULL, L"Could not AssignProcessToObject, You need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
 					}
 					else
 					{
@@ -845,7 +850,7 @@ void create_process(
 			}
 		}
 		js["configs"][cmd_idx]["enabled"] = false;
-		MessageBox(0, L"CreateProcess Failed.", L"Msg", MB_ICONERROR);
+		MessageBox(NULL, L"CreateProcess Failed.", L"Msg", MB_ICONERROR);
 	}
 }
 
@@ -1086,8 +1091,8 @@ BOOL DisableStartUp()
 
 BOOL EnableStartup()
 {
-	TCHAR szPathToExe[MAX_PATH];
-	GetModuleFileName(NULL, szPathToExe, MAX_PATH);
+	TCHAR szPathToExe[MAX_PATH * 10];
+	GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe));
 	return RegisterMyProgramForStartup(CommandTrayHost, szPathToExe, L"");
 }
 
@@ -1151,7 +1156,7 @@ void ElevateNow()
 	}
 	if (!bAlreadyRunningAsAdministrator)
 	{
-		wchar_t szPath[MAX_PATH];
+		wchar_t szPath[MAX_PATH * 10];
 		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
 		{
 			// Launch itself as admin
@@ -1167,7 +1172,7 @@ void ElevateNow()
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
-					::MessageBox(0, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
+					::MessageBox(NULL, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
 				}
 			}
 			else
@@ -1200,10 +1205,75 @@ void check_admin(nlohmann::json& js)
 	}
 	catch (...)
 	{
-		::MessageBox(0, L"check_admin failed!", L"Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"check_admin failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 	if (require_admin)
 	{
 		ElevateNow();
 	}
+}
+
+void makeSingleInstance()
+{
+	PCWSTR lock_filename = LOCK_FILE_NAME;
+	int txt_pid = -1;
+	if (TRUE == PathFileExists(lock_filename))
+	{
+		std::ifstream fi(lock_filename);
+
+
+		if (fi.good())
+		{
+			fi >> txt_pid;
+		}
+		fi.close();
+	}
+	LOGMESSAGE(L"txt_pid %d\n", txt_pid);
+	if (txt_pid > 0)
+	{
+		//https://stackoverflow.com/questions/4570174/how-to-get-the-process-name-in-c
+		//https://stackoverflow.com/questions/1933113/c-windows-how-to-get-process-path-from-its-pid
+		HANDLE Handle = OpenProcess(
+			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+			FALSE,
+			txt_pid /* This is the PID, you can find one from windows task manager */
+		);
+		if (Handle)
+		{
+			TCHAR Buffer[MAX_PATH * 10];
+			if (GetModuleFileNameEx(Handle, 0, Buffer, ARRAYSIZE(Buffer)))
+			{
+				// At this point, buffer contains the full path to the executable
+				TCHAR szPathToExe[MAX_PATH * 10];
+				if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe))
+					&& (0 == wcscmp(Buffer, szPathToExe)))
+				{
+					LOGMESSAGE(L"makeSingleInstance found!\n");
+					::MessageBox(NULL, L"CommandTrayHost is already running!", L"Error", MB_OK | MB_ICONERROR);
+					exit(-1);
+					return;
+				}
+				else
+				{
+					LOGMESSAGE(L"pid file path doesn't match! error code: \n", GetLastError());
+				}
+			}
+			else
+			{
+				// You better call GetLastError() here
+				LOGMESSAGE(L"GetModuleFileNameEx failed! error code: \n", GetLastError());
+			}
+			CloseHandle(Handle);
+		}
+	}
+	DWORD pid = GetCurrentProcessId();
+
+	std::ofstream fo(lock_filename);
+	if (fo.good())
+	{
+		fo << pid;
+		LOGMESSAGE(L"pid has wrote\n");
+	}
+	fo.close();
+
 }
