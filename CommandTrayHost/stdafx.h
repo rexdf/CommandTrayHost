@@ -46,6 +46,8 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/encodings.h>
+#include "rapidjson/filereadstream.h"   // FileReadStream
+#include "rapidjson/encodedstream.h"    // AutoUTFInputStream
 
 
 #ifdef _DEBUG

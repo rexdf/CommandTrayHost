@@ -29,9 +29,8 @@ build:
 after_build:
 - cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=XP-Release /p:Platform=x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+# - cmd: cd c:\projects\CommandTrayHost
 - cmd: >-
-    cd c:\projects\CommandTrayHost
-
     mkdir CommandTrayHost-x64
 
     mkdir CommandTrayHost-x86

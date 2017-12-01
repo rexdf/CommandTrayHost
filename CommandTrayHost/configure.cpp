@@ -116,21 +116,82 @@ bool initial_configure()
 	else { return false; }
 }
 
+
+int64_t FileSize(const wchar_t* name)
+{
+	HANDLE hFile = CreateFile(name, GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return -1; // error condition, could call GetLastError to find out more
+
+	LARGE_INTEGER size;
+	if (!GetFileSizeEx(hFile, &size))
+	{
+		CloseHandle(hFile);
+		return -1; // error condition, could call GetLastError to find out more
+	}
+
+	CloseHandle(hFile);
+	return size.QuadPart;
+}
+
+
 /*
  * return NULL: failed
  * return others: numbers of configs
  */
 int configure_reader(std::string& out)
 {
-	if (TRUE != PathFileExists(L"config.json"))
+	PCWSTR json_filename = L"config.json";
+	if (TRUE != PathFileExists(json_filename))
 	{
 		if (!initial_configure())
 		{
 			return NULL;
 		}
 	}
+
+	int64_t json_file_size = FileSize(json_filename);
+	if (-1 == json_file_size)
+	{
+		return NULL;
+	}
+	char* readBuffer = reinterpret_cast<char*>(malloc(json_file_size));
+	if (NULL == readBuffer)
+	{
+		return NULL;
+	}
+	FILE* fp;
+	errno_t err = _wfopen_s(&fp, json_filename, L"rb"); // 非 Windows 平台使用 "r"
+	if (0 != err)
+	{
+		::MessageBox(0, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		free(readBuffer);
+		return NULL;
+	}
+
+#define SAFE_RETURN_NULL_FREE_FCLOSE(buf_p,f_p,val) {free(buf_p);fclose(f_p); return val; }
+
 	using namespace rapidjson;
-	Document d;
+
+	FileReadStream bis(fp, readBuffer, sizeof(readBuffer));
+	AutoUTFInputStream<unsigned, FileReadStream> eis(bis);  // 用 eis 包装 bis
+#ifdef _DEBUG
+	const char* utf_type_name[] = {
+		"kUTF8 = 0,      //!< UTF-8.",
+		"kUTF16LE = 1,   //!< UTF-16 little endian.",
+		"kUTF16BE = 2,   //!< UTF-16 big endian.",
+		"kUTF32LE = 3,   //!< UTF-32 little endian.",
+		"kUTF32BE = 4    //!< UTF-32 big endian."
+	};
+	LOGMESSAGE(L"config.json encoding is: %S HasBom:%d\n", utf_type_name[eis.GetType()], eis.HasBOM());
+#endif
+	Document d;         // Document 为 GenericDocument<UTF8<> > 
+	//d.ParseStream<0, AutoUTF<unsigned> >(eis); // 把任何 UTF 编码的文件解析至内存中的 UTF-8
+
+
+	/*Document d;
 	std::ifstream i("config.json");
 	if (i.bad())
 	{
@@ -138,27 +199,38 @@ int configure_reader(std::string& out)
 	}
 	IStreamWrapper isw(i);
 	LOGMESSAGE(L"configure_reader\n");
-	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag>(isw).HasParseError())
+	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag>(isw).HasParseError())*/
+	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag,
+		AutoUTF<unsigned>>(eis).HasParseError())
 	{
 		LOGMESSAGE(L"\nError(offset %u): %S\n",
 			(unsigned)d.GetErrorOffset(),
 			GetParseError_En(d.GetParseError()));
 		// ...
-		return NULL;
+		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		/*free(readBuffer);
+		fclose(fp);
+		return NULL;*/
 	}
 
 	assert(d.IsObject());
 	assert(!d.ObjectEmpty());
 	if (!d.IsObject() || d.ObjectEmpty())
 	{
-		return NULL;
+		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		/*free(readBuffer);
+		fclose(fp);
+		return NULL;*/
 	}
 
 
 	assert(d.HasMember("configs"));
 	if (!d.HasMember("configs"))
 	{
-		return NULL;
+		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		/*free(readBuffer);
+		fclose(fp);
+		return NULL;*/
 	}
 
 	static const char* kTypeNames[] =
@@ -167,7 +239,10 @@ int configure_reader(std::string& out)
 	assert(d["configs"].IsArray());
 	if (!d["configs"].IsArray())
 	{
-		return NULL;
+		SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+		/*free(readBuffer);
+		fclose(fp);
+		return NULL;*/
 	}
 
 	int cnt = 0;
@@ -179,8 +254,9 @@ int configure_reader(std::string& out)
 		Writer<StringBuffer> writer(sb);
 		m.Accept(writer);
 		std::string ss = sb.GetString();
-		LOGMESSAGE(L"Type of member %S is %S\n",
-			ss.c_str(),
+		LOGMESSAGE(L"Type of member %s is %S\n",
+			//ss.c_str(),
+			utf8_to_wstring(ss).c_str(),
 			kTypeNames[m.GetType()]);
 		//LOGMESSAGE(L"Type of member %S is %S\n",
 		//m.GetString(), kTypeNames[m.GetType()]);
@@ -230,7 +306,10 @@ int configure_reader(std::string& out)
 		}
 		else
 		{
-			return NULL;
+			SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, NULL);
+			/*free(readBuffer);
+			fclose(fp);
+			return NULL;*/
 		}
 	}
 	StringBuffer sb;
@@ -239,7 +318,10 @@ int configure_reader(std::string& out)
 	out = sb.GetString();
 	//std::string ss = sb.GetString();
 	//out = ss;
-	return cnt;
+	SAFE_RETURN_NULL_FREE_FCLOSE(readBuffer, fp, cnt);
+	/*free(readBuffer);
+	fclose(fp);
+	return cnt;*/
 }
 
 
@@ -258,7 +340,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	std::string js_string;
 	int cmd_cnt = configure_reader(js_string);
 	assert(cmd_cnt > 0);
-	LOGMESSAGE(L"cmd_cnt:%d \n%S\n", cmd_cnt, js_string.c_str());
+	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
 	{
 		::MessageBox(0, L"Load configure failed!", L"Error", MB_OK);
@@ -741,7 +823,9 @@ void create_process(
 				{
 					if (0 == AssignProcessToJobObject(ghJob, shExInfo.hProcess))
 					{
-						MessageBox(0, L"Could not AssignProcessToObject", L"Error", MB_OK);
+						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
+						// prompt when no privileged to run a executable file with UAC requirement manifest
+						MessageBox(0, L"Could not AssignProcessToObject, You need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
 					}
 					else
 					{
