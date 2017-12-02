@@ -1275,7 +1275,7 @@ void ElevateNow(bool bAlreadyRunningAsAdministrator)
 				/*delete_lockfile();
 				kill_all(js);
 				DeleteTrayIcon();*/
-				CLEANUP_BEFORE_QUIT(global_stat);
+				CLEANUP_BEFORE_QUIT();
 				_exit(1);  // Quit itself
 			}
 		}

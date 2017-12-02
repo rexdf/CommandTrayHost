@@ -23,6 +23,6 @@ void delete_lockfile();
 
 BOOL DeleteTrayIcon();
 
-#define  CLEANUP_BEFORE_QUIT(g_stat) {delete_lockfile();kill_all(g_stat);DeleteTrayIcon();}
+#define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
 extern bool is_runas_admin;
 extern nlohmann::json global_stat;

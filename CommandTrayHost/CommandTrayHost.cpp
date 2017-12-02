@@ -813,7 +813,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			/*kill_all(global_stat);
 			DeleteTrayIcon();
 			delete_lockfile();*/
-			CLEANUP_BEFORE_QUIT(global_stat);
+			CLEANUP_BEFORE_QUIT();
 			PostMessage(hConsole, WM_CLOSE, 0, 0);
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + sizeof(
@@ -852,7 +852,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		/*delete_lockfile();
 		kill_all(global_stat);
 		DeleteTrayIcon();*/
-		CLEANUP_BEFORE_QUIT(global_stat);
+		CLEANUP_BEFORE_QUIT();
 		PostQuitMessage(0);
 		break;
 	case WM_DESTROY:
