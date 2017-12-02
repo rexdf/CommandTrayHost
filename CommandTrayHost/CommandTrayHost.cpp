@@ -299,7 +299,7 @@ BOOL ShowPopupMenuJson3()
 	HMENU hSubMenu = NULL;
 	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
 	//LPCTSTR lpCurrentProxy = GetWindowsProxy();
-	std::vector<HMENU> vctHmenu = get_command_submenu(global_stat);
+	std::vector<HMENU> vctHmenu = get_command_submenu();
 
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
@@ -778,7 +778,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
 		{
-			ElevateNow(global_stat, is_runas_admin);
+			ElevateNow(is_runas_admin);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_OPENURL)
 		{
@@ -794,19 +794,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{
-			hideshow_all(global_stat);
+			hideshow_all();
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_DISABLEALL)
 		{
-			kill_all(global_stat, false);
+			kill_all(false);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ENABLEALL)
 		{
-			start_all(global_stat, ghJob, true);
+			start_all(ghJob, true);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_SHOWALL)
 		{
-			hideshow_all(global_stat, false);
+			hideshow_all(false);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{
@@ -937,18 +937,18 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	makeSingleInstance();
 	SetEenvironment();
 	ParseProxyList();
-	if (NULL == init_global(global_stat, ghJob, szHIcon, icon_size))
+	if (NULL == init_global(ghJob, szHIcon, icon_size))
 	{
 		::MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
-	check_admin(global_stat, is_runas_admin);
+	check_admin(is_runas_admin);
 	MyRegisterClass(hInstance);
 	if (!InitInstance(hInstance, SW_HIDE))
 	{
 		return FALSE;
 	}
-	start_all(global_stat, ghJob);
+	start_all(ghJob);
 	CreateConsole();
 	ExecCmdline();
 	ShowTrayIcon(GetWindowsProxy(), NIM_ADD);

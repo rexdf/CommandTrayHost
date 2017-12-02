@@ -358,7 +358,7 @@ int configure_reader(std::string& out)
  * en_job bool
  * exe_seperator idx ".exe"
  */
-int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
+int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 {
 	std::string js_string;
 	int cmd_cnt = configure_reader(js_string);
@@ -371,14 +371,14 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	}
 	//using json = nlohmann::json;
 	//assert(js == nullptr);
-	if (js == nullptr)
+	if (global_stat == nullptr)
 	{
 		LOGMESSAGE(L"nlohmann::json& js not initialize\n");
 	}
 
 	// I don't know where is js now? data? bss? heap? stack?
-	js = nlohmann::json::parse(js_string);
-	for (auto& i : js["configs"])
+	global_stat = nlohmann::json::parse(js_string);
+	for (auto& i : global_stat["configs"])
 	{
 		i["running"] = false;
 		i["handle"] = 0;
@@ -430,7 +430,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 
 	try
 	{
-		std::string icon = js.at("icon");
+		std::string icon = global_stat.at("icon");
 		std::wstring wicon = utf8_to_wstring(icon);
 		LPCWSTR pLoad = wicon.c_str();
 		if (TRUE == PathFileExists(pLoad))
@@ -448,7 +448,7 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 				//LR_SHARED         // let the system release the handle when it's no longer used
 			));*/
 		}
-		int icon_size = js.at("icon_size");
+		int icon_size = global_stat.at("icon_size");
 		if (icon_size == 16 || icon_size == 32 || icon_size == 256)
 		{
 			out_icon_size = icon_size;
@@ -470,10 +470,10 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	return 1;
 }
 
-void start_all(nlohmann::json& js, HANDLE ghJob, bool force)
+void start_all(HANDLE ghJob, bool force)
 {
 	int cmd_idx = 0;
-	for (auto& i : js["configs"])
+	for (auto& i : global_stat["configs"])
 	{
 		if (force)
 		{
@@ -502,15 +502,15 @@ void start_all(nlohmann::json& js, HANDLE ghJob, bool force)
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
-			create_process(js["configs"][cmd_idx], ghJob);
+			create_process(global_stat["configs"][cmd_idx], ghJob);
 		}
 		cmd_idx++;
 	}
 }
 
-std::vector<HMENU> get_command_submenu(nlohmann::json& js)
+std::vector<HMENU> get_command_submenu()
 {
-	LOGMESSAGE(L"get_command_submenu json %S\n", js.dump().c_str());
+	LOGMESSAGE(L"get_command_submenu json %S\n", global_stat.dump().c_str());
 	//return {};
 
 	LPCTSTR MENUS_LEVEL2_CN[] = {
@@ -533,7 +533,7 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 	hSubMenu = CreatePopupMenu();
 	vctHmenu.push_back(hSubMenu);
 	int i = 0;
-	for (auto& itm : js["configs"])
+	for (auto& itm : global_stat["configs"])
 	{
 		hSubMenu = CreatePopupMenu();
 
@@ -964,9 +964,9 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 	return true;
 }
 
-void hideshow_all(nlohmann::json& js, bool is_hideall)
+void hideshow_all(bool is_hideall)
 {
-	for (auto& itm : js["configs"])
+	for (auto& itm : global_stat["configs"])
 	{
 		bool is_show = itm["show"];
 		if (is_show == is_hideall)
@@ -1034,9 +1034,9 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 }
 
-void kill_all(nlohmann::json& js, bool is_exit/* = true*/)
+void kill_all(bool is_exit/* = true*/)
 {
-	for (auto& itm : js["configs"])
+	for (auto& itm : global_stat["configs"])
 	{
 		bool is_running = itm["running"];
 		if (is_running)
@@ -1237,7 +1237,7 @@ void delete_lockfile()
 	}
 }
 
-void ElevateNow(nlohmann::json& js, bool bAlreadyRunningAsAdministrator)
+void ElevateNow(bool bAlreadyRunningAsAdministrator)
 {
 	if (!bAlreadyRunningAsAdministrator)
 	{
@@ -1275,7 +1275,7 @@ void ElevateNow(nlohmann::json& js, bool bAlreadyRunningAsAdministrator)
 				/*delete_lockfile();
 				kill_all(js);
 				DeleteTrayIcon();*/
-				CLEANUP_BEFORE_QUIT(js);
+				CLEANUP_BEFORE_QUIT(global_stat);
 				_exit(1);  // Quit itself
 			}
 		}
@@ -1302,12 +1302,12 @@ bool check_runas_admin()
 	return bAlreadyRunningAsAdministrator;
 }
 
-void check_admin(nlohmann::json& js, bool is_admin)
+void check_admin(bool is_admin)
 {
 	bool require_admin = false;
 	try
 	{
-		require_admin = js.at("require_admin");
+		require_admin = global_stat.at("require_admin");
 	}
 #ifdef _DEBUG
 	catch (std::out_of_range& e)
@@ -1324,7 +1324,7 @@ void check_admin(nlohmann::json& js, bool is_admin)
 	}
 	if (require_admin)
 	{
-		ElevateNow(js, is_admin);
+		ElevateNow(is_admin);
 	}
 }
 
