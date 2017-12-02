@@ -21,6 +21,7 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 
 #define WM_TASKBARNOTIFY_MENUITEM_STARTUP (WM_USER + 10)
 #define WM_TASKBARNOTIFY_MENUITEM_OPENURL (WM_USER + 11)
+#define WM_TASKBARNOTIFY_MENUITEM_ELEVATE (WM_USER + 12)
 #define WM_TASKBARNOTIFY_MENUITEM_HIDEALL (WM_USER + 13)
 #define WM_TASKBARNOTIFY_MENUITEM_DISABLEALL (WM_USER + 14)
 #define WM_TASKBARNOTIFY_MENUITEM_ENABLEALL (WM_USER + 15)
@@ -316,6 +317,7 @@ BOOL ShowPopupMenuJson3()
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
 	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : L"Start on Boot"));
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : L"Elevate"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOW, (isZHCN ? L"\x663e\x793a" : L"Show"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDE, (isZHCN ? L"\x9690\x85cf" : L"Hide"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RELOAD, (isZHCN ? L"\x91cd\x65b0\x8f7d\x5165" : L"Reload"));
@@ -777,6 +779,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				EnableStartup();
 			}
 		}
+		else if(nID== WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
+		{
+			ElevateNow();
+		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_OPENURL)
 		{
 			ShellExecute(NULL, L"open", L"https://github.com/rexdf/CommandTrayHost", NULL, NULL, SW_SHOWMAXIMIZED);
@@ -803,7 +809,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_SHOWALL)
 		{
-			hideshow_all(global_stat,false);
+			hideshow_all(global_stat, false);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{

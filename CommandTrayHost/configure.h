@@ -2,7 +2,7 @@
 
 std::vector<HMENU> get_command_submenu(nlohmann::json&);
 int init_global(nlohmann::json&, HANDLE&, PWSTR, int&);
-void create_process(nlohmann::json&, int, const HANDLE&);
+void create_process(nlohmann::json&, int, const HANDLE&);// , bool runas_admin = false);
 void show_hide_toggle(nlohmann::json&, int);
 void hideshow_all(nlohmann::json&, bool is_hideall = true);
 void disable_enable_menu(nlohmann::json&, int, HANDLE);
@@ -13,5 +13,6 @@ void check_admin(nlohmann::json&);
 BOOL IsMyProgramRegisteredForStartup(PCWSTR);
 BOOL DisableStartUp();
 BOOL EnableStartup();
+void ElevateNow();
 void makeSingleInstance();
 

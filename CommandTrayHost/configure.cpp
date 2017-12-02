@@ -1246,8 +1246,22 @@ void ElevateNow()
 			sei.hwnd = NULL;
 			sei.nShow = SW_NORMAL;
 
+			PCWSTR lock_filename = LOCK_FILE_NAME;
+			if (NULL == DeleteFile(lock_filename))
+			{
+				LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
+			}
 			if (!ShellExecuteEx(&sei))
 			{
+				DWORD pid = GetCurrentProcessId();
+
+				std::ofstream fo(lock_filename);
+				if (fo.good())
+				{
+					fo << pid;
+					LOGMESSAGE(L"pid has wrote\n");
+				}
+				fo.close();
 				DWORD dwError = GetLastError();
 				if (dwError == ERROR_CANCELLED)
 				{
@@ -1264,7 +1278,7 @@ void ElevateNow()
 	else
 	{
 		Sleep(200); // Child process wait for parents to quit.
-	}
+}
 }
 
 void check_admin(nlohmann::json& js)
