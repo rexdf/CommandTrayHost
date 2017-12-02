@@ -829,17 +829,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int menu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) / 0x10;
 			int submenu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) % 0x10;
 			LOGMESSAGE(L"%x Clicked. %d %d\n", nID, menu_idx, submenu_idx);
+			nlohmann::json& js = global_stat["configs"][menu_idx];
 			if (submenu_idx < 3)
 			{
-				show_hide_toggle(global_stat, menu_idx);
+				show_hide_toggle(js);
 			}
 			else if (submenu_idx == 3)
 			{
-				disable_enable_menu(global_stat, menu_idx, ghJob);
+				disable_enable_menu(js, ghJob);
 			}
 			else if (submenu_idx == 4)
 			{
-				create_process(global_stat, menu_idx, ghJob);
+				create_process(js, ghJob);
 			}
 		}
 		else

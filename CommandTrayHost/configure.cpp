@@ -502,7 +502,7 @@ void start_all(nlohmann::json& js, HANDLE ghJob, bool force)
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
-			create_process(js, cmd_idx, ghJob);
+			create_process(js["configs"][cmd_idx], ghJob);
 		}
 		cmd_idx++;
 	}
@@ -517,7 +517,7 @@ std::vector<HMENU> get_command_submenu(nlohmann::json& js)
 		L"显示",
 		L"隐藏" ,
 		L"启用",
-		L"禁用",
+		L"停用",
 		L"重启命令"
 	};
 	LPCTSTR MENUS_LEVEL2_EN[] = {
@@ -714,15 +714,16 @@ void check_and_kill(HANDLE hProcess, DWORD pid)
  * LPVOID env				Environment
  */
 void create_process(
-	nlohmann::json& js, // we may update js
-	int cmd_idx,
-	const HANDLE& ghJob
+	nlohmann::json& jsp, // we may update js
+	//int cmd_idx,
+	const HANDLE& ghJob,
+	bool runas_admin
 )
 {
 	//必须先用wstring接住，不然作用域会消失
-	std::wstring cmd_wstring = utf8_to_wstring(js["configs"][cmd_idx]["cmd"]);
-	std::wstring path_wstring = utf8_to_wstring(js["configs"][cmd_idx]["path"]);
-	std::wstring working_directory_wstring = utf8_to_wstring(js["configs"][cmd_idx]["working_directory"]);
+	std::wstring cmd_wstring = utf8_to_wstring(jsp["cmd"]);
+	std::wstring path_wstring = utf8_to_wstring(jsp["path"]);
+	std::wstring working_directory_wstring = utf8_to_wstring(jsp["working_directory"]);
 	LPCTSTR cmd = cmd_wstring.c_str();
 	LPCTSTR path = path_wstring.c_str();
 	LPCTSTR working_directory = working_directory_wstring.c_str();
@@ -731,16 +732,16 @@ void create_process(
 
 	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
 
-	bool is_running = js["configs"][cmd_idx]["running"];
+	bool is_running = jsp["running"];
 	if (is_running)
 	{
-		int64_t handle = js["configs"][cmd_idx]["handle"];
-		int64_t pid = js["configs"][cmd_idx]["pid"];
+		int64_t handle = jsp["handle"];
+		int64_t pid = jsp["pid"];
 
 		LOGMESSAGE(L"create_process process running, now kill it\n");
 
 #ifdef _DEBUG
-		std::string name = js["configs"][cmd_idx]["name"];
+		std::string name = jsp["name"];
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
@@ -752,7 +753,7 @@ void create_process(
 	bool require_admin = false, start_show = false;
 	try
 	{
-		require_admin = js["configs"][cmd_idx].at("require_admin");
+		require_admin = jsp.at("require_admin");
 	}
 #ifdef _DEBUG
 	catch (std::out_of_range& e)
@@ -769,7 +770,7 @@ void create_process(
 
 	try
 	{
-		start_show = js["configs"][cmd_idx].at("start_show");
+		start_show = jsp.at("start_show");
 	}
 #ifdef _DEBUG
 	catch (std::out_of_range& e)
@@ -786,12 +787,12 @@ void create_process(
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
 
-	js["configs"][cmd_idx]["handle"] = 0;
-	js["configs"][cmd_idx]["pid"] = -1;
-	js["configs"][cmd_idx]["running"] = false;
-	js["configs"][cmd_idx]["show"] = start_show;
+	jsp["handle"] = 0;
+	jsp["pid"] = -1;
+	jsp["running"] = false;
+	jsp["show"] = start_show;
 
-	std::wstring name = utf8_to_wstring(js["configs"][cmd_idx]["name"]);
+	std::wstring name = utf8_to_wstring(jsp["name"]);
 	TCHAR nameStr[256];
 	wcscpy_s(nameStr, name.c_str());
 
@@ -814,26 +815,33 @@ void create_process(
 		MessageBox(NULL, L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 	}
 
-	LOGMESSAGE(L"cmd_idx:%d\n path: %s\n cmd: %s\n", cmd_idx, path, commandLine);
+	LOGMESSAGE(L"cmd_idx:\n path: %s\n cmd: %s\n", path, commandLine);
 
+	if (runas_admin == true) //required by menu
+	{
+		if (is_runas_admin == false) //current is not administrator
+		{
+			require_admin = true;
+		}
+	}
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
 	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, working_directory, &si, &pi))
 	{
-		js["configs"][cmd_idx]["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
-		js["configs"][cmd_idx]["pid"] = static_cast<int64_t>(pi.dwProcessId);
-		js["configs"][cmd_idx]["running"] = true;
+		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
+		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
+		jsp["running"] = true;
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 			{
-				js["configs"][cmd_idx]["en_job"] = false;
+				jsp["en_job"] = false;
 				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 			else
 			{
-				js["configs"][cmd_idx]["en_job"] = true;
+				jsp["en_job"] = true;
 			}
 		}
 		// Can we free handles now? Not sure about this.
@@ -847,8 +855,8 @@ void create_process(
 		LOGMESSAGE(L"CreateProcess Failed. %d\n", error_code);
 		if (require_admin || ERROR_ELEVATION_REQUIRED == error_code)
 		{
-			js["configs"][cmd_idx]["require_admin"] = true;
-			int exe_seperator = js["configs"][cmd_idx]["exe_seperator"];
+			jsp["require_admin"] = true;
+			int exe_seperator = jsp["exe_seperator"];
 
 			std::wstring parameters_wstring = commandLine + exe_seperator + 4;
 			*(commandLine + exe_seperator + 4) = 0;
@@ -880,9 +888,9 @@ void create_process(
 					}
 					else
 					{
-						js["configs"][cmd_idx]["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
-						js["configs"][cmd_idx]["pid"] = static_cast<int64_t>(pid);
-						js["configs"][cmd_idx]["running"] = true;
+						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
+						jsp["pid"] = static_cast<int64_t>(pid);
+						jsp["running"] = true;
 					}
 				}
 				//WaitForSingleObject(shExInfo.hProcess, INFINITE);
@@ -894,40 +902,40 @@ void create_process(
 				LOGMESSAGE(L"User rejected UAC prompt.\n");
 			}
 		}
-		js["configs"][cmd_idx]["enabled"] = false;
+		jsp["enabled"] = false;
 		MessageBox(NULL, L"CreateProcess Failed.", L"Msg", MB_ICONERROR);
 	}
 }
 
-void disable_enable_menu(nlohmann::json& js, int cmd_idx, HANDLE ghJob)
+void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob)
 {
-	bool is_enabled = js["configs"][cmd_idx]["enabled"];
+	bool is_enabled = jsp["enabled"];
 	if (is_enabled) {
-		bool is_running = js["configs"][cmd_idx]["running"];
+		bool is_running = jsp["running"];
 		if (is_running)
 		{
-			int64_t handle = js["configs"][cmd_idx]["handle"];
-			int64_t pid = js["configs"][cmd_idx]["pid"];
+			int64_t handle = jsp["handle"];
+			int64_t pid = jsp["pid"];
 
 			LOGMESSAGE(L"disable_enable_menu disable_menu process running, now kill it\n");
 
 #ifdef _DEBUG
-			std::string name = js["configs"][cmd_idx]["name"];
+			std::string name = jsp["name"];
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
 #else
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
 		}
-		js["configs"][cmd_idx]["handle"] = 0;
-		js["configs"][cmd_idx]["pid"] = -1;
-		js["configs"][cmd_idx]["running"] = false;
-		js["configs"][cmd_idx]["show"] = false;
-		js["configs"][cmd_idx]["enabled"] = false;
+		jsp["handle"] = 0;
+		jsp["pid"] = -1;
+		jsp["running"] = false;
+		jsp["show"] = false;
+		jsp["enabled"] = false;
 	}
 	else
 	{
-		js["configs"][cmd_idx]["enabled"] = true;
-		create_process(js, cmd_idx, ghJob);
+		jsp["enabled"] = true;
+		create_process(jsp, ghJob);
 	}
 }
 
@@ -995,10 +1003,10 @@ void hideshow_all(nlohmann::json& js, bool is_hideall)
 
 }
 
-void show_hide_toggle(nlohmann::json& js, int cmd_idx)
+void show_hide_toggle(nlohmann::json& jsp)
 {
-	bool is_show = js["configs"][cmd_idx]["show"];
-	int64_t handle_int64 = js["configs"][cmd_idx]["handle"];
+	bool is_show = jsp["show"];
+	int64_t handle_int64 = jsp["handle"];
 	HANDLE hProcess = (HANDLE)handle_int64;
 	WaitForInputIdle(hProcess, INFINITE);
 
@@ -1014,13 +1022,13 @@ void show_hide_toggle(nlohmann::json& js, int cmd_idx)
 		if (is_show)
 		{
 			ShowWindow(Info.Windows[0], SW_HIDE);
-			js["configs"][cmd_idx]["show"] = false;
+			jsp["show"] = false;
 		}
 		else
 		{
 			ShowWindow(Info.Windows[0], SW_SHOW);
 			SetForegroundWindow(Info.Windows[0]);
-			js["configs"][cmd_idx]["show"] = true;
+			jsp["show"] = true;
 		}
 	}
 
