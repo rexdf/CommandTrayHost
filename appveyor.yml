@@ -22,7 +22,7 @@ before_build:
     - cmd: >-
         C:\Python36\Scripts\pip.exe install chardet
 
-        C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 0 9 0
+        C:\Python36\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 0 9 1
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal

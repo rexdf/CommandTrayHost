@@ -119,7 +119,7 @@ example configure
 
 **Tips3**: How to create ico format [Here](http://www.imagemagick.org/Usage/thumbnails/#favicon)
 
-**Note**: All path must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
+**Note**: All paths must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
 
 # How to Build
 

@@ -40,7 +40,7 @@ Windows命令行程序系统托盘管理工具
             // 下面的是可选参数
             "require_admin":false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
             "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
-            "ignore_all":false, //是否忽略全部启用禁用操作,当为true时，全部启用菜单
+            "ignore_all":false, //是否忽略全部启用禁用操作。当为true时，全部启用菜单
         },
         {
             "name":"kcptun 1081 8.8.8.1:12346",
