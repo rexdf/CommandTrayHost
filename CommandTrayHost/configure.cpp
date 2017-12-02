@@ -1264,7 +1264,10 @@ void ElevateNow(nlohmann::json& js, bool bAlreadyRunningAsAdministrator)
 			}
 			else
 			{
+				/*delete_lockfile();
 				kill_all(js);
+				DeleteTrayIcon();*/
+				CLEANUP_BEFORE_QUIT(js);
 				_exit(1);  // Quit itself
 			}
 		}
@@ -1275,22 +1278,24 @@ void ElevateNow(nlohmann::json& js, bool bAlreadyRunningAsAdministrator)
 	}
 }
 
-void check_admin(nlohmann::json& js, bool& is_admin)
+bool check_runas_admin()
 {
+	BOOL bAlreadyRunningAsAdministrator = FALSE;
+	try
 	{
-		BOOL bAlreadyRunningAsAdministrator = FALSE;
-		try
-		{
-			bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
-		}
-		catch (...)
-		{
-			LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
-			DWORD dwErrorCode = GetLastError();
-			LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
-		}
-		is_admin = bAlreadyRunningAsAdministrator;
+		bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
 	}
+	catch (...)
+	{
+		LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
+		DWORD dwErrorCode = GetLastError();
+		LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
+	}
+	return bAlreadyRunningAsAdministrator;
+}
+
+void check_admin(nlohmann::json& js, bool is_admin)
+{
 	bool require_admin = false;
 	try
 	{

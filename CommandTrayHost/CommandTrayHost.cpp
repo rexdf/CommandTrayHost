@@ -27,6 +27,7 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 #define WM_TASKBARNOTIFY_MENUITEM_ENABLEALL (WM_USER + 15)
 #define WM_TASKBARNOTIFY_MENUITEM_SHOWALL (WM_USER + 16)
 
+
 nlohmann::json global_stat;
 HANDLE ghJob;
 //HICON gHicon;
@@ -161,7 +162,6 @@ BOOL DeleteTrayIcon()
 	nid.hWnd = hWnd;
 	nid.uID = NID_UID;
 	Shell_NotifyIcon(NIM_DELETE, &nid);
-	kill_all(global_stat);
 	return TRUE;
 }
 
@@ -810,8 +810,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{
+			/*kill_all(global_stat);
 			DeleteTrayIcon();
-			delete_lockfile();
+			delete_lockfile();*/
+			CLEANUP_BEFORE_QUIT(global_stat);
 			PostMessage(hConsole, WM_CLOSE, 0, 0);
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + sizeof(
@@ -846,8 +848,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_CLOSE:
-		delete_lockfile();
-		DeleteTrayIcon();
+		/*delete_lockfile();
+		kill_all(global_stat);
+		DeleteTrayIcon();*/
+		CLEANUP_BEFORE_QUIT(global_stat);
 		PostQuitMessage(0);
 		break;
 	case WM_DESTROY:
@@ -923,6 +927,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 {
 	MSG msg;
 	hInst = hInstance;
+	is_runas_admin = check_runas_admin();
+	if (is_runas_admin)
+	{
+		Sleep(400); // Wait for self Elevate to cleanup.
+	}
 	CDCurrentDirectory();
 	makeSingleInstance();
 	SetEenvironment();
