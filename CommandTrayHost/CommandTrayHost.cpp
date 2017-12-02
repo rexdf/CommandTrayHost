@@ -32,6 +32,7 @@ HANDLE ghJob;
 //HICON gHicon;
 WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
+bool is_runas_admin;
 
 HINSTANCE hInst;
 HWND hWnd;
@@ -317,7 +318,7 @@ BOOL ShowPopupMenuJson3()
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
 	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : L"Start on Boot"));
-	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : L"Elevate"));
+	AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : L"Elevate"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOW, (isZHCN ? L"\x663e\x793a" : L"Show"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDE, (isZHCN ? L"\x9690\x85cf" : L"Hide"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RELOAD, (isZHCN ? L"\x91cd\x65b0\x8f7d\x5165" : L"Reload"));
@@ -779,9 +780,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				EnableStartup();
 			}
 		}
-		else if(nID== WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
 		{
-			ElevateNow();
+			ElevateNow(is_runas_admin);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_OPENURL)
 		{
@@ -933,7 +934,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		::MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
-	check_admin(global_stat);
+	check_admin(global_stat, is_runas_admin);
 	MyRegisterClass(hInstance);
 	if (!InitInstance(hInstance, SW_HIDE))
 	{

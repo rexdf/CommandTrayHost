@@ -1221,19 +1221,8 @@ Cleanup:
 	return fIsRunAsAdmin;
 }
 
-void ElevateNow()
+void ElevateNow(bool bAlreadyRunningAsAdministrator)
 {
-	BOOL bAlreadyRunningAsAdministrator = FALSE;
-	try
-	{
-		bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
-	}
-	catch (...)
-	{
-		LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
-		DWORD dwErrorCode = GetLastError();
-		LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
-	}
 	if (!bAlreadyRunningAsAdministrator)
 	{
 		wchar_t szPath[MAX_PATH * 10];
@@ -1278,11 +1267,25 @@ void ElevateNow()
 	else
 	{
 		Sleep(200); // Child process wait for parents to quit.
-}
+	}
 }
 
-void check_admin(nlohmann::json& js)
+void check_admin(nlohmann::json& js, bool& is_admin)
 {
+	{
+		BOOL bAlreadyRunningAsAdministrator = FALSE;
+		try
+		{
+			bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
+		}
+		catch (...)
+		{
+			LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
+			DWORD dwErrorCode = GetLastError();
+			LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
+		}
+		is_admin = bAlreadyRunningAsAdministrator;
+	}
 	bool require_admin = false;
 	try
 	{
@@ -1303,9 +1306,9 @@ void check_admin(nlohmann::json& js)
 	}
 	if (require_admin)
 	{
-		ElevateNow();
+		ElevateNow(is_admin);
 	}
-}
+	}
 
 void makeSingleInstance()
 {
