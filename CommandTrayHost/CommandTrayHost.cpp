@@ -162,10 +162,6 @@ BOOL DeleteTrayIcon()
 	nid.uID = NID_UID;
 	Shell_NotifyIcon(NIM_DELETE, &nid);
 	kill_all(global_stat);
-	if (NULL == DeleteFile(LOCK_FILE_NAME))
-	{
-		LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
-	}
 	return TRUE;
 }
 
@@ -782,7 +778,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
 		{
-			ElevateNow(is_runas_admin);
+			ElevateNow(global_stat, is_runas_admin);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_OPENURL)
 		{
@@ -815,6 +811,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{
 			DeleteTrayIcon();
+			delete_lockfile();
 			PostMessage(hConsole, WM_CLOSE, 0, 0);
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + sizeof(
@@ -849,6 +846,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_CLOSE:
+		delete_lockfile();
 		DeleteTrayIcon();
 		PostQuitMessage(0);
 		break;

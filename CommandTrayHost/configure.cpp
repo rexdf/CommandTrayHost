@@ -1221,7 +1221,15 @@ Cleanup:
 	return fIsRunAsAdmin;
 }
 
-void ElevateNow(bool bAlreadyRunningAsAdministrator)
+void delete_lockfile()
+{
+	if (NULL == DeleteFile(LOCK_FILE_NAME))
+	{
+		LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
+	}
+}
+
+void ElevateNow(nlohmann::json& js, bool bAlreadyRunningAsAdministrator)
 {
 	if (!bAlreadyRunningAsAdministrator)
 	{
@@ -1235,16 +1243,12 @@ void ElevateNow(bool bAlreadyRunningAsAdministrator)
 			sei.hwnd = NULL;
 			sei.nShow = SW_NORMAL;
 
-			PCWSTR lock_filename = LOCK_FILE_NAME;
-			if (NULL == DeleteFile(lock_filename))
-			{
-				LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
-			}
+			delete_lockfile();
 			if (!ShellExecuteEx(&sei))
 			{
 				DWORD pid = GetCurrentProcessId();
 
-				std::ofstream fo(lock_filename);
+				std::ofstream fo(LOCK_FILE_NAME);
 				if (fo.good())
 				{
 					fo << pid;
@@ -1260,6 +1264,7 @@ void ElevateNow(bool bAlreadyRunningAsAdministrator)
 			}
 			else
 			{
+				kill_all(js);
 				_exit(1);  // Quit itself
 			}
 		}
@@ -1306,9 +1311,9 @@ void check_admin(nlohmann::json& js, bool& is_admin)
 	}
 	if (require_admin)
 	{
-		ElevateNow(is_admin);
+		ElevateNow(js, is_admin);
 	}
-	}
+}
 
 void makeSingleInstance()
 {

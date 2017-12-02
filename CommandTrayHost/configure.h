@@ -13,6 +13,6 @@ void check_admin(nlohmann::json&, bool&);
 BOOL IsMyProgramRegisteredForStartup(PCWSTR);
 BOOL DisableStartUp();
 BOOL EnableStartup();
-void ElevateNow(bool);
+void ElevateNow(nlohmann::json&, bool);
 void makeSingleInstance();
-
+void delete_lockfile();
