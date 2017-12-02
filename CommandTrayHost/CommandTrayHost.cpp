@@ -22,6 +22,9 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 #define WM_TASKBARNOTIFY_MENUITEM_STARTUP (WM_USER + 10)
 #define WM_TASKBARNOTIFY_MENUITEM_OPENURL (WM_USER + 11)
 #define WM_TASKBARNOTIFY_MENUITEM_HIDEALL (WM_USER + 13)
+#define WM_TASKBARNOTIFY_MENUITEM_DISABLEALL (WM_USER + 14)
+#define WM_TASKBARNOTIFY_MENUITEM_ENABLEALL (WM_USER + 15)
+#define WM_TASKBARNOTIFY_MENUITEM_SHOWALL (WM_USER + 16)
 
 nlohmann::json global_stat;
 HANDLE ghJob;
@@ -300,14 +303,15 @@ BOOL ShowPopupMenuJson3()
 	//LPCTSTR lpCurrentProxy = GetWindowsProxy();
 	std::vector<HMENU> vctHmenu = get_command_submenu(global_stat);
 
-	hSubMenu = CreatePopupMenu();
-
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : L"Home"));
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : L"About"));
-
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : L"Hide All"));
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : L"Disable All"));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : L"Enable All"));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : L"Show All"));
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : L"All"));
+
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
@@ -316,7 +320,12 @@ BOOL ShowPopupMenuJson3()
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDE, (isZHCN ? L"\x9690\x85cf" : L"Hide"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RELOAD, (isZHCN ? L"\x91cd\x65b0\x8f7d\x5165" : L"Reload"));
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : L"Home"));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : L"About"));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : L"Help"));
+
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : L"Exit"));
 
@@ -782,7 +791,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{
-			hide_all(global_stat);
+			hideshow_all(global_stat);
+		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_DISABLEALL)
+		{
+			kill_all(global_stat, false);
+		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ENABLEALL)
+		{
+			start_all(global_stat, ghJob, true);
+		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_SHOWALL)
+		{
+			hideshow_all(global_stat,false);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{

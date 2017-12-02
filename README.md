@@ -38,6 +38,7 @@ example configure
             // Optional
             "require_admin":false, // to run as administrator, problems keywords: User Interface Privilege Isolation
             "start_show":false, // whether to show when start process 
+            "ignore_all":false, // whether to ignore operation to disable/enable all
         },
         {
             "name":"kcptun 1081 8.8.8.1:12346",

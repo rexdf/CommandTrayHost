@@ -64,6 +64,7 @@ bool initial_configure()
             // 当CommandTrayHost不是以管理员运行的情况下，由于UIPI，显示/隐藏会失效，其他功能正常。
             "require_admin":false, // 是否要用管理员运行
             "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
+            "ignore_all":false, // 是否忽略全部启用禁用操作
         },
         {
             "name":"cmd例子2",
@@ -93,7 +94,8 @@ bool initial_configure()
             "enabled":true,  // run when CommandTrayHost starts
             // Optional
             "require_admin":false, // to run as administrator, problems: User Interface Privilege Isolation
-            "start_show":false, // whether to show when start process 
+            "start_show":false, // whether to show when start process
+            "ignore_all":false, // whether to ignore operation to disable/enable all
         },
         {
             "name":"cmd example 2",
@@ -116,7 +118,7 @@ bool initial_configure()
 	else { return false; }
 }
 
-
+// https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
 int64_t FileSize(PCWSTR name)
 {
 	HANDLE hFile = CreateFile(name, GENERIC_READ,
@@ -238,12 +240,22 @@ int configure_reader(std::string& out)
 	{ "Null", "False", "True", "Object", "Array", "String", "Number" };
 
 	assert(d["configs"].IsArray());
-	if (!d["configs"].IsArray())
+	if (!(d["configs"].IsArray()))
 	{
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
 		fclose(fp);
 		return NULL;*/
+	}
+
+	// type check for global optional items
+	if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
+		d.HasMember("icon") && !(d["icon"].IsString()) ||
+		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
+		)
+	{
+		::MessageBox(NULL, L"One of require_admin(bool) icon(string) icon_size(number) has type error!", L"Type Error", MB_OK | MB_ICONERROR);
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 	}
 
 	int cnt = 0;
@@ -302,6 +314,15 @@ int configure_reader(std::string& out)
 			if (m["working_directory"] == "")
 			{
 				m["working_directory"] = StringRef(m["path"].GetString());
+			}
+			// type check for optional items
+			if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
+				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
+				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
+				)
+			{
+				::MessageBox(NULL, L"One of require_admin start_show ignore_all is not bool type!", L"Type Error", MB_OK | MB_ICONERROR);
+				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
 			cnt++;
 		}
@@ -449,11 +470,35 @@ int init_global(nlohmann::json& js, HANDLE& ghJob, PWSTR szIcon, int& out_icon_s
 	return 1;
 }
 
-void start_all(nlohmann::json& js, HANDLE ghJob)
+void start_all(nlohmann::json& js, HANDLE ghJob, bool force)
 {
 	int cmd_idx = 0;
 	for (auto& i : js["configs"])
 	{
+		if (force)
+		{
+			bool ignore_all = false;
+			try
+			{
+				ignore_all = i.at("ignore_all");
+			}
+#ifdef _DEBUG
+			catch (std::out_of_range& e)
+#else
+			catch (std::out_of_range&)
+#endif
+			{
+				LOGMESSAGE(L"start_all ignore_all out_of_range %S\n", e.what());
+			}
+			catch (...)
+			{
+				::MessageBox(NULL, L"ignore_all failed!", L"Error", MB_OK | MB_ICONERROR);
+			}
+			if (false == ignore_all)
+			{
+				i["enabled"] = true;
+			}
+		}
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
@@ -635,7 +680,7 @@ DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
 }
 
 #ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, PCSTR name)
+void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name)
 #else
 void check_and_kill(HANDLE hProcess, DWORD pid)
 #endif
@@ -645,7 +690,7 @@ void check_and_kill(HANDLE hProcess, DWORD pid)
 	{
 		if (TA_FAILED == TerminateApp(pid, 200))
 		{
-			LOGMESSAGE(L"TerminateApp %S pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+			LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
 				name, pid,
 				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
 			TerminateProcess(hProcess, 0);
@@ -696,7 +741,7 @@ void create_process(
 
 #ifdef _DEBUG
 		std::string name = js["configs"][cmd_idx]["name"];
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
@@ -868,7 +913,7 @@ void disable_enable_menu(nlohmann::json& js, int cmd_idx, HANDLE ghJob)
 
 #ifdef _DEBUG
 			std::string name = js["configs"][cmd_idx]["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
 #else
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
@@ -911,28 +956,39 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 	return true;
 }
 
-void hide_all(nlohmann::json& js)
+void hideshow_all(nlohmann::json& js, bool is_hideall)
 {
 	for (auto& itm : js["configs"])
 	{
 		bool is_show = itm["show"];
-		int64_t handle_int64 = itm["handle"];
-		HANDLE hProcess = (HANDLE)handle_int64;
-		WaitForInputIdle(hProcess, INFINITE);
-
-		ProcessWindowsInfo Info(GetProcessId(hProcess));
-
-		EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
-			reinterpret_cast<LPARAM>(&Info));
-
-		size_t num_of_windows = Info.Windows.size();
-		LOGMESSAGE(L"show_terminal size: %d\n", num_of_windows);
-		if (num_of_windows > 0)
+		if (is_show == is_hideall)
 		{
-			if (is_show)
+			int64_t handle_int64 = itm["handle"];
+			HANDLE hProcess = (HANDLE)handle_int64;
+			WaitForInputIdle(hProcess, INFINITE);
+
+			ProcessWindowsInfo Info(GetProcessId(hProcess));
+
+			EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
+				reinterpret_cast<LPARAM>(&Info));
+
+			size_t num_of_windows = Info.Windows.size();
+			LOGMESSAGE(L"show_terminal size: %d\n", num_of_windows);
+			if (num_of_windows > 0)
 			{
-				ShowWindow(Info.Windows[0], SW_HIDE);
-				itm["show"] = false;
+				/*if (is_hideall && is_show)
+				{
+					ShowWindow(Info.Windows[0], SW_HIDE);
+					itm["show"] = false;
+				}
+				else if (!is_hideall && !is_show)
+				{
+					ShowWindow(Info.Windows[0], SW_SHOW);
+					itm["show"] = true;
+				}*/
+				// 本来是上面的代码，经过外层的(is_show == is_hideall)优化后，这里也可以简化
+				ShowWindow(Info.Windows[0], is_show ? SW_HIDE : SW_SHOW);
+				itm["show"] = !is_show;
 			}
 		}
 	}
@@ -977,6 +1033,30 @@ void kill_all(nlohmann::json& js, bool is_exit/* = true*/)
 		bool is_running = itm["running"];
 		if (is_running)
 		{
+			if (is_exit == false)
+			{
+				bool ignore_all = false;
+				try
+				{
+					ignore_all = itm.at("ignore_all");
+				}
+#ifdef _DEBUG
+				catch (std::out_of_range& e)
+#else
+				catch (std::out_of_range&)
+#endif
+				{
+					LOGMESSAGE(L"start_all ignore_all out_of_range %S\n", e.what());
+				}
+				catch (...)
+				{
+					::MessageBox(NULL, L"ignore_all failed!", L"Error", MB_OK | MB_ICONERROR);
+				}
+				if (true == ignore_all) // is_exit == false and ignore_all == true, then not kill it now
+				{
+					continue;
+				}
+			}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -984,7 +1064,7 @@ void kill_all(nlohmann::json& js, bool is_exit/* = true*/)
 
 #ifdef _DEBUG
 			std::string name = itm["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), name.c_str());
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
 #else
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
