@@ -14,6 +14,7 @@ A Command Line program systray for Windows
 - multiple command line programs
 - when CommandTrayHost quits, all child processes will be killed.
 - Customize systray icon
+- i18n
 
 # Usage
 
