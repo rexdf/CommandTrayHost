@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-std::vector<HMENU> get_command_submenu();
+void get_command_submenu(std::vector<HMENU>&);
 int init_global(HANDLE&, PWSTR, int&);
 
 void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false);
 void show_hide_toggle(nlohmann::json& jsp);
-void disable_enable_menu(nlohmann::json& jsp, HANDLE);
+void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 
 void hideshow_all(bool is_hideall = true);
 void start_all(HANDLE, bool force = false);

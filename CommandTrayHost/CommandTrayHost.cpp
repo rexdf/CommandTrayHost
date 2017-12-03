@@ -299,8 +299,8 @@ BOOL ShowPopupMenuJson3()
 	HMENU hSubMenu = NULL;
 	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
 	//LPCTSTR lpCurrentProxy = GetWindowsProxy();
-	std::vector<HMENU> vctHmenu = get_command_submenu();
-
+	std::vector<HMENU> vctHmenu;
+	get_command_submenu(vctHmenu);
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : L"Hide All"));
@@ -841,6 +841,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			else if (submenu_idx == 4)
 			{
 				create_process(js, ghJob);
+			}
+			else if (submenu_idx == 5)
+			{
+				disable_enable_menu(js, ghJob,true);
 			}
 		}
 		else

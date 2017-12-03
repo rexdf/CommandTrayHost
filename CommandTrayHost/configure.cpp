@@ -537,30 +537,34 @@ void start_all(HANDLE ghJob, bool force)
 	}
 }
 
-std::vector<HMENU> get_command_submenu()
+void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 {
 	LOGMESSAGE(L"get_command_submenu json %s\n", utf8_to_wstring(global_stat.dump()).c_str());
 	//return {};
+
+#define RUNAS_ADMINISRATOR_INDEX 5
 
 	LPCTSTR MENUS_LEVEL2_CN[] = {
 		L"显示",
 		L"隐藏" ,
 		L"启用",
 		L"停用",
-		L"重启命令"
+		L"重启命令",
+		L"管理员运行"  //index is 5, magic number
 	};
 	LPCTSTR MENUS_LEVEL2_EN[] = {
 		L"Show",
 		L"Hide" ,
 		L"Enable" ,
 		L"Disable",
-		L"Restart Command"
+		L"Restart Command",
+		L"Run As Administrator" //index is 5, magic number
 	};
 	HMENU hSubMenu = NULL;
 	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
-	std::vector<HMENU> vctHmenu;
+	//std::vector<HMENU> vctHmenu;
 	hSubMenu = CreatePopupMenu();
-	vctHmenu.push_back(hSubMenu);
+	outVcHmenu.push_back(hSubMenu);
 	int i = 0;
 	for (auto& itm : global_stat["configs"])
 	{
@@ -630,12 +634,20 @@ std::vector<HMENU> get_command_submenu()
 					lpText);
 			}
 		}
+		if (!is_runas_admin)
+		{
+			LPCTSTR lpText = isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] : MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX];
+			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
+			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
+				lpText);
+		}
 		UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
-		AppendMenu(vctHmenu[0], uFlags, (UINT_PTR)hSubMenu, utf8_to_wstring(itm["name"]).c_str());
-		vctHmenu.push_back(hSubMenu);
+		AppendMenu(outVcHmenu[0], uFlags, (UINT_PTR)hSubMenu, utf8_to_wstring(itm["name"]).c_str());
+		outVcHmenu.push_back(hSubMenu);
 		i++;
 	}
-	return vctHmenu;
+	//return true;
+	//return vctHmenu;
 }
 
 #define TA_FAILED 0
@@ -859,7 +871,7 @@ void create_process(
 		LOGMESSAGE(L"CreateProcess Failed. %d\n", error_code);
 		if (require_admin || ERROR_ELEVATION_REQUIRED == error_code)
 		{
-			jsp["require_admin"] = true;
+			//jsp["require_admin"] = true;
 			int exe_seperator = jsp["exe_seperator"];
 
 			std::wstring parameters_wstring = commandLine + exe_seperator + 4;
@@ -911,7 +923,7 @@ void create_process(
 	}
 }
 
-void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob)
+void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
 	bool is_enabled = jsp["enabled"];
 	if (is_enabled) {
@@ -939,7 +951,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob)
 	else
 	{
 		jsp["enabled"] = true;
-		create_process(jsp, ghJob);
+		create_process(jsp, ghJob, runas_admin);
 	}
 }
 
