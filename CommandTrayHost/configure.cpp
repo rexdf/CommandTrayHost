@@ -539,7 +539,7 @@ void start_all(HANDLE ghJob, bool force)
 
 std::vector<HMENU> get_command_submenu()
 {
-	LOGMESSAGE(L"get_command_submenu json %S\n", global_stat.dump().c_str());
+	LOGMESSAGE(L"get_command_submenu json %s\n", utf8_to_wstring(global_stat.dump()).c_str());
 	//return {};
 
 	LPCTSTR MENUS_LEVEL2_CN[] = {
@@ -1248,6 +1248,8 @@ void ElevateNow()
 			delete_lockfile();
 			if (!ShellExecuteEx(&sei))
 			{
+				DWORD dwError = GetLastError();
+
 				DWORD pid = GetCurrentProcessId();
 
 				std::ofstream fo(LOCK_FILE_NAME);
@@ -1257,7 +1259,6 @@ void ElevateNow()
 					LOGMESSAGE(L"pid has wrote\n");
 				}
 				fo.close();
-				DWORD dwError = GetLastError();
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
