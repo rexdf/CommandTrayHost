@@ -29,86 +29,85 @@ Windows命令行程序系统托盘管理工具
     "configs": [
         {
             // 下面8个一个不能少
-            "name":"kcptun 1080 8.8.8.1:12345", // 系统托盘菜单名字
-            "path":"E:\\program\\kcptun-windows-amd64", // cmd的exe所在目录
-            "cmd":"client_windows_amd64.exe -c client.json", //cmd命令，必须含有.exe
-            "working_directory":"", // 命令行的工作目录，比如这里的client.json，为空时自动用path
-            "addition_env_path":"",   //dll搜索目录，暂时没用到
-            "use_builtin_console":false,  //是否用CREATE_NEW_CONSOLE，暂时没用到
-            "is_gui":false, // 是否是 GUI图形界面程序，暂时没用到
-            "enabled":true,  // 是否当CommandTrayHost启动时，自动开始运行
+            "name": "kcptun 1080 8.8.8.1:12345", // 系统托盘菜单名字
+            "path": "E:\\program\\kcptun-windows-amd64", // cmd的exe所在目录
+            "cmd": "client_windows_amd64.exe -c client.json", //cmd命令，必须含有.exe
+            "working_directory": "", // 命令行的工作目录，比如这里的client.json，为空时自动用path
+            "addition_env_path": "", //dll搜索目录，暂时没用到
+            "use_builtin_console": false, //是否用CREATE_NEW_CONSOLE，暂时没用到
+            "is_gui": false, // 是否是 GUI图形界面程序，暂时没用到
+            "enabled": true, // 是否当CommandTrayHost启动时，自动开始运行
             // 下面的是可选参数
-            "require_admin":false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
-            "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
-            "ignore_all":false, //是否忽略全部启用禁用操作。当为true时，全部启用菜单对本程序无效
+            "require_admin": false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
+            "start_show": false, // 是否以显示(而不是隐藏)的方式启动子程序
+            "ignore_all": false, //是否忽略全部启用禁用操作。当为true时，全部启用菜单对本程序无效
         },
         {
-            "name":"kcptun 1081 8.8.8.1:12346",
-            "path":"E:\\program\\kcptun-windows-amd64",
-            "cmd":"client_windows_amd64.exe -c client.json",
-            "working_directory":"E:\\program\\kcptun-windows-amd64\\config2",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
-        },
-
-        {
-            "name":"herokuapp",
-            "path":"C:\\Program Files\\nodejs",
-            "cmd":"node.exe local.js -s yousecret-id.herokuapp.com -l 1090 -m camellia-256-cfb -k ItsATopSecret -r 80",
-            "working_directory":"E:\\program\\shadowsocks-heroku.git", //我们用了一个不同的工作目录
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "kcptun 1081 8.8.8.1:12346",
+            "path": "E:\\program\\kcptun-windows-amd64",
+            "cmd": "client_windows_amd64.exe -c client.json",
+            "working_directory": "E:\\program\\kcptun-windows-amd64\\config2",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"shadowsocks",
-            "path":"E:\\program\\shadowsocks",
-            "cmd":"Shadowsocks.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":true,
-            "enabled":false
+            "name": "herokuapp",
+            "path": "C:\\Program Files\\nodejs",
+            "cmd": "node.exe local.js -s yousecret-id.herokuapp.com -l 1090 -m camellia-256-cfb -k ItsATopSecret -r 80",
+            "working_directory": "E:\\program\\shadowsocks-heroku.git", //我们用了一个不同的工作目录
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"cow",
-            "path":"E:\\program\\cow",
-            "cmd":"cow.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "shadowsocks",
+            "path": "E:\\program\\shadowsocks",
+            "cmd": "Shadowsocks.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": true,
+            "enabled": false
         },
         {
-            "name":"aria2",
-            "path":"E:\\program\\aria2-win-64bit",
-            "cmd":"aria2c.exe --conf=aria2.conf",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "cow",
+            "path": "E:\\program\\cow",
+            "cmd": "cow.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"JeliLicenseServer",
-            "path":"E:\\program\\JeliLicenseServer",
-            "cmd":"JeliLicenseServer_windows_amd64.exe -u admin -l 127.0.0.153",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "aria2",
+            "path": "E:\\program\\aria2-win-64bit",
+            "cmd": "aria2c.exe --conf=aria2.conf",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
+        },
+        {
+            "name": "JeliLicenseServer",
+            "path": "E:\\program\\JeliLicenseServer",
+            "cmd": "JeliLicenseServer_windows_amd64.exe -u admin -l 127.0.0.153",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
     ],
-    "global":true,
-    "require_admin":false, // 是否CommandTrayHost要对自身提权
+    "global": true,
+    "require_admin": false, // 是否CommandTrayHost要对自身提权
     //大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
-    "icon":"E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // 自定义托盘图标路径，空为默认内置 256x256
-    "icon_size":256, // 256 32 16
+    "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // 自定义托盘图标路径，空为默认内置 256x256
+    "icon_size": 256, // 256 32 16
 }
 ```
 

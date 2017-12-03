@@ -52,66 +52,66 @@ bool initial_configure()
     "configs": [
         {
             // 下面8个一个不能少
-            "name":"cmd例子", // 系统托盘菜单名字
-            "path":"C:\\Windows\\System32", // cmd的exe所在目录
-            "cmd":"cmd.exe", //cmd命令，必须含有.exe
-            "working_directory":"", // 命令行的工作目录，为空时自动用path
-            "addition_env_path":"",   //dll搜索目录，暂时没用到
-            "use_builtin_console":false,  //是否用CREATE_NEW_CONSOLE，暂时没用到
-            "is_gui":false, // 是否是 GUI图形界面程序
-            "enabled":true,  // 是否当CommandTrayHost启动时，自动开始运行
+            "name": "cmd例子", // 系统托盘菜单名字
+            "path": "C:\\Windows\\System32", // cmd的exe所在目录
+            "cmd": "cmd.exe", //cmd命令，必须含有.exe
+            "working_directory": "", // 命令行的工作目录，为空时自动用path
+            "addition_env_path": "", //dll搜索目录，暂时没用到
+            "use_builtin_console": false, //是否用CREATE_NEW_CONSOLE，暂时没用到
+            "is_gui": false, // 是否是 GUI图形界面程序
+            "enabled": true, // 是否当CommandTrayHost启动时，自动开始运行
             // 下面的是可选参数
             // 当CommandTrayHost不是以管理员运行的情况下，由于UIPI，显示/隐藏会失效，其他功能正常。
-            "require_admin":false, // 是否要用管理员运行
-            "start_show":false, // 是否以显示(而不是隐藏)的方式启动子程序
-            "ignore_all":false, // 是否忽略全部启用禁用操作
+            "require_admin": false, // 是否要用管理员运行
+            "start_show": false, // 是否以显示(而不是隐藏)的方式启动子程序
+            "ignore_all": false, // 是否忽略全部启用禁用操作
         },
         {
-            "name":"cmd例子2",
-            "path":"C:\\Windows\\System32",
-            "cmd":"cmd.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":false,
+            "name": "cmd例子2",
+            "path": "C:\\Windows\\System32",
+            "cmd": "cmd.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": false,
         },
     ],
-    "global":true,
-    "require_admin":false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
-    "icon":"", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
-    "icon_size":256, // 图标尺寸 可以用值有256 32 16
+    "global": true,
+    "require_admin": false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
+    "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
+    "icon_size": 256, // 图标尺寸 可以用值有256 32 16
 })json" : u8R"json({
     "configs": [
         {
-            "name":"cmd example", // Menu item name in systray
-            "path":"C:\\Windows\\System32", // path which includes cmd exe
-            "cmd":"cmd.exe",
-            "working_directory":"", // working directory. empty is same as path
-            "addition_env_path":"",   //dll search path
-            "use_builtin_console":false,  //CREATE_NEW_CONSOLE
-            "is_gui":false,
-            "enabled":true,  // run when CommandTrayHost starts
+            "name": "cmd example", // Menu item name in systray
+            "path": "C:\\Windows\\System32", // path which includes cmd exe
+            "cmd": "cmd.exe",
+            "working_directory": "", // working directory. empty is same as path
+            "addition_env_path": "", //dll search path
+            "use_builtin_console": false, //CREATE_NEW_CONSOLE
+            "is_gui": false,
+            "enabled": true, // run when CommandTrayHost starts
             // Optional
-            "require_admin":false, // to run as administrator, problems: User Interface Privilege Isolation
-            "start_show":false, // whether to show when start process
-            "ignore_all":false, // whether to ignore operation to disable/enable all
+            "require_admin": false, // to run as administrator, problems: User Interface Privilege Isolation
+            "start_show": false, // whether to show when start process
+            "ignore_all": false, // whether to ignore operation to disable/enable all
         },
         {
-            "name":"cmd example 2",
-            "path":"C:\\Windows\\System32",
-            "cmd":"cmd.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":false,
+            "name": "cmd example 2",
+            "path": "C:\\Windows\\System32",
+            "cmd": "cmd.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": false,
         },
     ],
-    "global":true,
-    "require_admin":false, // To Run CommandTrayHost runas privileged
-    "icon":"", // icon path, empty for default
-    "icon_size":256, // icon size, valid value: 256 32 16
+    "global": true,
+    "require_admin": false, // To Run CommandTrayHost runas privileged
+    "icon": "", // icon path, empty for default
+    "icon_size": 256, // icon size, valid value: 256 32 16
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }

@@ -27,87 +27,86 @@ example configure
 {
     "configs": [
         {
-            "name":"kcptun 1080 8.8.8.1:12345", // Menu item name in systray
-            "path":"E:\\program\\kcptun-windows-amd64", // path which includes cmd exe
-            "cmd":"client_windows_amd64.exe -c client.json",
-            "working_directory":"", // working directory, for client.json path. empty is same as path
-            "addition_env_path":"",   //dll search path
-            "use_builtin_console":false,  //CREATE_NEW_CONSOLE
-            "is_gui":false,
-            "enabled":true,  // run when CommandTrayHost starts
+            "name": "kcptun 1080 8.8.8.1:12345", // Menu item name in systray
+            "path": "E:\\program\\kcptun-windows-amd64", // path which includes cmd exe
+            "cmd": "client_windows_amd64.exe -c client.json",
+            "working_directory": "", // working directory, for client.json path. empty is same as path
+            "addition_env_path": "", //dll search path
+            "use_builtin_console": false, //CREATE_NEW_CONSOLE
+            "is_gui": false,
+            "enabled": true, // run when CommandTrayHost starts
             // Optional
-            "require_admin":false, // to run as administrator, problems keywords: User Interface Privilege Isolation
-            "start_show":false, // whether to show when start process 
-            "ignore_all":false, // whether to ignore operation to disable/enable all
+            "require_admin": false, // to run as administrator, problems keywords: User Interface Privilege Isolation
+            "start_show": false, // whether to show when start process 
+            "ignore_all": false, // whether to ignore operation to disable/enable all
         },
         {
-            "name":"kcptun 1081 8.8.8.1:12346",
-            "path":"E:\\program\\kcptun-windows-amd64",
-            "cmd":"client_windows_amd64.exe -c client.json",
-            "working_directory":"E:\\program\\kcptun-windows-amd64\\config2",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
-        },
-
-        {
-            "name":"herokuapp",
-            "path":"C:\\Program Files\\nodejs",
-            "cmd":"node.exe local.js -s yousecret-id.herokuapp.com -l 1090 -m camellia-256-cfb -k ItsATopSecret -r 80",
-            "working_directory":"E:\\program\\shadowsocks-heroku.git", // We use a different working directory
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "kcptun 1081 8.8.8.1:12346",
+            "path": "E:\\program\\kcptun-windows-amd64",
+            "cmd": "client_windows_amd64.exe -c client.json",
+            "working_directory": "E:\\program\\kcptun-windows-amd64\\config2",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"shadowsocks",
-            "path":"E:\\program\\shadowsocks",
-            "cmd":"Shadowsocks.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":true,
-            "enabled":false
+            "name": "herokuapp",
+            "path": "C:\\Program Files\\nodejs",
+            "cmd": "node.exe local.js -s yousecret-id.herokuapp.com -l 1090 -m camellia-256-cfb -k ItsATopSecret -r 80",
+            "working_directory": "E:\\program\\shadowsocks-heroku.git", // We use a different working directory
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"cow",
-            "path":"E:\\program\\cow",
-            "cmd":"cow.exe",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "shadowsocks",
+            "path": "E:\\program\\shadowsocks",
+            "cmd": "Shadowsocks.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": true,
+            "enabled": false
         },
         {
-            "name":"aria2",
-            "path":"E:\\program\\aria2-win-64bit",
-            "cmd":"aria2c.exe --conf=aria2.conf",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "cow",
+            "path": "E:\\program\\cow",
+            "cmd": "cow.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
         {
-            "name":"JeliLicenseServer",
-            "path":"E:\\program\\JeliLicenseServer",
-            "cmd":"JeliLicenseServer_windows_amd64.exe -u admin -l 127.0.0.251",
-            "working_directory":"",
-            "addition_env_path":"",
-            "use_builtin_console":false,
-            "is_gui":false,
-            "enabled":true
+            "name": "aria2",
+            "path": "E:\\program\\aria2-win-64bit",
+            "cmd": "aria2c.exe --conf=aria2.conf",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
+        },
+        {
+            "name": "JeliLicenseServer",
+            "path": "E:\\program\\JeliLicenseServer",
+            "cmd": "JeliLicenseServer_windows_amd64.exe -u admin -l 127.0.0.251",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": true
         },
     ],
-    "global":true,
-    "require_admin":false // To Run CommandTrayHost as Administrator
+    "global": true,
+    "require_admin": false // To Run CommandTrayHost as Administrator
     // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
-    "icon":"E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
+    "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
     // when empty, builtin default icon will be used. 256x256
-    "icon_size":256, // 256 32 16
+    "icon_size": 256, // 256 32 16
 }
 ```
 
