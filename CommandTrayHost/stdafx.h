@@ -29,6 +29,7 @@
 
 // TODO: reference additional headers your program requires here
 #include <Shlwapi.h>
+#include <Shlobj.h>
 
 #include <fstream>
 #include <iomanip>

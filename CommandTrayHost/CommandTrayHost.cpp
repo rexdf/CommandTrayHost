@@ -98,6 +98,49 @@ static BOOL MyEndTask(DWORD pid)
 	return _wsystem(szCmd) == 0;
 }
 
+// https://stackoverflow.com/questions/2798922/storage-location-of-yellow-blue-shield-icon
+BOOL GetStockIcon(HICON& outHicon)
+{
+	SHSTOCKICONINFO sii;
+	ZeroMemory(&sii, sizeof(sii));
+	sii.cbSize = sizeof(sii);
+	if (S_OK == SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICON | SHGSI_SMALLICON, &sii))
+	{
+		outHicon = sii.hIcon;
+		return TRUE;
+	}
+	return FALSE;
+
+	/*
+	SHSTOCKICONINFO sii;
+	sii.cbSize = sizeof(sii);
+	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
+	HICON hiconShield = ExtractIconEx(sii. ...);
+
+	SHSTOCKICONINFO sii;
+	ZeroMemory(&sii, sizeof(sii));
+	sii.cbSize = sizeof(sii);
+	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
+
+	HICON ico;
+	SHDefExtractIcon(sii.szPath, sii.iIcon, 0, &ico, NULL, IconSize); // IconSize=256
+
+	return hiconShield;
+	*/
+}
+
+// http://www.programmersheaven.com/discussion/74164/converting-icon-to-bitmap-hicon-hbitmap
+HBITMAP BitmapFromIcon(HICON hIcon)
+{
+	HDC hDC = CreateCompatibleDC(NULL);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hDC, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hDC, hBitmap);
+	DrawIcon(hDC, 0, 0, hIcon);
+	SelectObject(hDC, hOldBitmap);
+	DeleteDC(hDC);
+	return hBitmap;
+}
+
 BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 {
 	NOTIFYICONDATA nid;
@@ -123,6 +166,10 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		{
 			LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
 		}
+	}
+	if (hIcon == NULL && is_runas_admin)
+	{
+		GetStockIcon(hIcon);
 	}
 
 	nid.hIcon = (hIcon == NULL) ? LoadIcon(hInst, (LPCTSTR)IDI_SMALL) : hIcon;
@@ -314,7 +361,15 @@ BOOL ShowPopupMenuJson3()
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
 	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : L"Start on Boot"));
-	AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : L"Elevate"));
+	{
+		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : L"Elevate"));
+		/*HICON shieldIcon;
+		if (GetStockIcon(shieldIcon))
+		{
+			AppendMenu(vctHmenu[0], is_runas_admin ? (MF_BITMAP | MF_CHECKED) : MF_BITMAP, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, reinterpret_cast<LPCTSTR>(BitmapFromIcon(shieldIcon)));
+		}*/
+
+	}
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOW, (isZHCN ? L"\x663e\x793a" : L"Show"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDE, (isZHCN ? L"\x9690\x85cf" : L"Hide"));
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RELOAD, (isZHCN ? L"\x91cd\x65b0\x8f7d\x5165" : L"Reload"));
@@ -844,7 +899,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			else if (submenu_idx == 5)
 			{
-				disable_enable_menu(js, ghJob,true);
+				disable_enable_menu(js, ghJob, true);
 			}
 		}
 		else
