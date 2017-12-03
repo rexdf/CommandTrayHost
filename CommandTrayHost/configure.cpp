@@ -236,8 +236,10 @@ int configure_reader(std::string& out)
 		return NULL;*/
 	}
 
+#ifdef _DEBUG
 	static const char* kTypeNames[] =
 	{ "Null", "False", "True", "Object", "Array", "String", "Number" };
+#endif
 
 	assert(d["configs"].IsArray());
 	if (!(d["configs"].IsArray()))
