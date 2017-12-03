@@ -108,6 +108,7 @@ example configure
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
     // when empty, builtin default icon will be used. 256x256
     "icon_size": 256, // 256 32 16
+    "lang": "auto",  // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
 }
 ```
 

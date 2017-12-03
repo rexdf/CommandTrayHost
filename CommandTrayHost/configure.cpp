@@ -4,6 +4,8 @@
 
 extern bool is_runas_admin;
 extern nlohmann::json global_stat;
+//extern CHAR locale_name[];
+extern BOOL isZHCN;
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -48,8 +50,8 @@ std::string wstring_to_utf8(const std::wstring& str)
 
 bool initial_configure()
 {
-	const LCID cur_lcid = GetSystemDefaultLCID();
-	const BOOL isZHCN = cur_lcid == 2052;
+	//const LCID cur_lcid = GetSystemDefaultLCID();
+	//const BOOL isZHCN = cur_lcid == 2052;
 
 	std::string config = isZHCN ? u8R"json({
     "configs": [
@@ -256,6 +258,7 @@ int configure_reader(std::string& out)
 	// type check for global optional items
 	if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
 		d.HasMember("icon") && !(d["icon"].IsString()) ||
+		d.HasMember("lang") && !(d["lang"].IsString()) ||
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
 		)
 	{
@@ -564,8 +567,8 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		L"Run As Administrator" //index is 5, magic number
 	};
 	HMENU hSubMenu = NULL;
-	const LCID cur_lcid = GetSystemDefaultLCID();
-	const BOOL isZHCN = cur_lcid == 2052;
+	//const LCID cur_lcid = GetSystemDefaultLCID();
+	//const BOOL isZHCN = cur_lcid == 2052;
 	//std::vector<HMENU> vctHmenu;
 	hSubMenu = CreatePopupMenu();
 	outVcHmenu.push_back(hSubMenu);
@@ -642,14 +645,14 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 			{
 				AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
 					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
-					translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid).c_str()
+					translate_w2w(MENUS_LEVEL2_EN[menu_name_item]).c_str()
 				);
 			}
 			else
 			{
 				AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
 					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
-					translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid).c_str()
+					translate_w2w(MENUS_LEVEL2_EN[menu_name_item]).c_str()
 				);
 			}
 		}
@@ -668,7 +671,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
 			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
 				isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] :
-				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX], cur_lcid).c_str()
+				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX]).c_str()
 			);
 		}
 		UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
@@ -1120,8 +1123,8 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
+		}
 	}
-}
 
 }
 

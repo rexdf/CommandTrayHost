@@ -2,8 +2,13 @@
 // https://msdn.microsoft.com/en-us/library/cc233982.aspx
 
 // You must use strict format of json format
+const nlohmann::json language_alias = u8R"json({
+    "zh-Hans": "zh-CN",
+    "zh": "zh-CN",
+    "zh-SG": "zh-CN"
+})json"_json;
 const nlohmann::json language_data = u8R"json({
-	"0x0409": {
+    "en-US": {
         "Hide All": "Hide All",
         "Disable All": "Disable All",
         "Enable All": "Enable All",
@@ -31,7 +36,7 @@ const nlohmann::json language_data = u8R"json({
 /************************************************************************/
 /*  Example:
  *  
- *  ,"0x0804": {
+ *  ,"test-CN": {
 		"Hide All": "隐藏全部test",
 		"Disable All": "全部禁用test",
 		"Enable All": "全部启动test",

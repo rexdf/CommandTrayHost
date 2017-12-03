@@ -1,5 +1,9 @@
 ﻿#pragma once
 
-std::string translate(std::string, LCID);
+bool json_object_has_member(const nlohmann::json&, PCSTR);
 
-std::wstring translate_w2w(std::wstring, LCID);
+void initialize_local();
+
+std::string translate(std::string);
+
+std::wstring translate_w2w(std::wstring);

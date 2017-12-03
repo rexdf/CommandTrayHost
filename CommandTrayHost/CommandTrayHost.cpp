@@ -36,6 +36,9 @@ WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
 bool is_runas_admin;
 
+CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
+BOOL isZHCN;
+
 HINSTANCE hInst;
 HWND hWnd;
 HWND hConsole;
@@ -345,26 +348,26 @@ BOOL ShowPopupMenuJson3()
 {
 	POINT pt;
 	HMENU hSubMenu = NULL;
-	const LCID cur_lcid = GetSystemDefaultLCID();
-	const BOOL isZHCN = cur_lcid == 2052;
+	//const LCID cur_lcid = GetSystemDefaultLCID();
+	//const BOOL isZHCN = cur_lcid == 2052;
 	//LPCTSTR lpCurrentProxy = GetWindowsProxy();
 	std::vector<HMENU> vctHmenu;
 	get_command_submenu(vctHmenu);
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
-	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : translate_w2w(L"Hide All", cur_lcid).c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : translate_w2w(L"Hide All").c_str()));
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All", cur_lcid).c_str()));
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All", cur_lcid).c_str()));
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All", cur_lcid).c_str()));
-	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All", cur_lcid).c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All").c_str()));
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
-	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot", cur_lcid).c_str()));
+	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot").c_str()));
 	{
-		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate", cur_lcid).c_str()));
+		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate").c_str()));
 		/*HICON shieldIcon;
 		if (GetStockIcon(shieldIcon))
 		{
@@ -378,12 +381,12 @@ BOOL ShowPopupMenuJson3()
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home", cur_lcid).c_str()));
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : translate_w2w(L"About", cur_lcid).c_str()));
-	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help", cur_lcid).c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : translate_w2w(L"About").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help").c_str()));
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
-	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit", cur_lcid).c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
 
 	GetCursorPos(&pt);
 	TrackPopupMenu(vctHmenu[0], TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
@@ -985,6 +988,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	return ret;
 }
 
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
@@ -1004,6 +1008,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return -1;
 	}
 	check_admin(is_runas_admin);
+	initialize_local();
 	MyRegisterClass(hInstance);
 	if (!InitInstance(hInstance, SW_HIDE))
 	{
