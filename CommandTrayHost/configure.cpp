@@ -1,8 +1,9 @@
 ﻿#include "stdafx.h"
 #include "configure.h"
+#include "language.h"
 
-//extern nlohmann::json* global_stat;
-//extern HANDLE ghJob;
+extern bool is_runas_admin;
+extern nlohmann::json global_stat;
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -47,7 +48,9 @@ std::string wstring_to_utf8(const std::wstring& str)
 
 bool initial_configure()
 {
-	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
+	const LCID cur_lcid = GetSystemDefaultLCID();
+	const BOOL isZHCN = cur_lcid == 2052;
+
 	std::string config = isZHCN ? u8R"json({
     "configs": [
         {
@@ -561,11 +564,13 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		L"Run As Administrator" //index is 5, magic number
 	};
 	HMENU hSubMenu = NULL;
-	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
+	const LCID cur_lcid = GetSystemDefaultLCID();
+	const BOOL isZHCN = cur_lcid == 2052;
 	//std::vector<HMENU> vctHmenu;
 	hSubMenu = CreatePopupMenu();
 	outVcHmenu.push_back(hSubMenu);
 	int i = 0;
+	//std::wstring local_wstring;
 	for (auto& itm : global_stat["configs"])
 	{
 		hSubMenu = CreatePopupMenu();
@@ -622,24 +627,49 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 			{
 				menu_name_item = 4;
 			}
-			LPCTSTR lpText = isZHCN ? MENUS_LEVEL2_CN[menu_name_item] : MENUS_LEVEL2_EN[menu_name_item];
+			/*LPCTSTR lpText;
+
+			if (isZHCN)
+			{
+				lpText = MENUS_LEVEL2_CN[menu_name_item];
+			}
+			else
+			{
+				local_wstring = translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid);
+				lpText = local_wstring.c_str();
+			}*/
 			if (j != 1)
 			{
 				AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
-					lpText);
+					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
+					translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid).c_str()
+				);
 			}
 			else
 			{
 				AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
-					lpText);
+					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
+					translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid).c_str()
+				);
 			}
 		}
 		if (!is_runas_admin)
 		{
-			LPCTSTR lpText = isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] : MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX];
+			/*LPCTSTR lpText;// = isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] : MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX];
+			if (isZHCN)
+			{
+				lpText = MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX];
+			}
+			else
+			{
+				local_wstring = translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX], cur_lcid);
+				lpText = local_wstring.c_str();
+			}*/
 			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
 			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
-				lpText);
+				isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] :
+				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX], cur_lcid).c_str()
+			);
 		}
 		UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
 		AppendMenu(outVcHmenu[0], uFlags, (UINT_PTR)hSubMenu, utf8_to_wstring(itm["name"]).c_str());
@@ -1090,8 +1120,8 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
-		}
 	}
+}
 
 }
 

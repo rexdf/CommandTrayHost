@@ -137,6 +137,10 @@ In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in enc
     required
 ```
 
+# Help to locale this program
+
+See this file : [CommandTrayHost/CommandTrayHost/configure.h](CommandTrayHost/CommandTrayHost/configure.h)
+
 # Help wanted
 
 - When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)

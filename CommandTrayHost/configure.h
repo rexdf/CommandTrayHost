@@ -1,5 +1,16 @@
 ﻿#pragma once
 
+std::wstring utf8_to_wstring(const std::string& str);
+std::string wstring_to_utf8(const std::wstring& str);
+
+template<typename Type>
+#ifdef _DEBUG
+bool try_read_optional_json(const nlohmann::json&, Type&, PCSTR, PCWSTR);
+#else
+bool try_read_optional_json(const nlohmann::json&, Type&, PCSTR);
+#endif
+
+
 void get_command_submenu(std::vector<HMENU>&);
 int init_global(HANDLE&, PWSTR, int&);
 
@@ -24,5 +35,3 @@ void delete_lockfile();
 BOOL DeleteTrayIcon();
 
 #define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
-extern bool is_runas_admin;
-extern nlohmann::json global_stat;
