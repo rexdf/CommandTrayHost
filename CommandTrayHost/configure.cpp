@@ -346,6 +346,41 @@ int configure_reader(std::string& out)
 	return cnt;*/
 }
 
+/*
+ * Make sure out is initialize with default value before call try_read_optional_json
+ */
+template<typename Type>
+#ifdef _DEBUG
+bool try_read_optional_json(nlohmann::json& root, Type& out, PCSTR query_string, PCWSTR caller_fuc_name)
+#else
+bool try_read_optional_json(nlohmann::json& root, Type& out, PCSTR query_string)
+#endif
+{
+	//Type ignore_all = false; // Do it before call try_read_optional_json
+	try
+	{
+		out = root.at(query_string);
+	}
+#ifdef _DEBUG
+	catch (std::out_of_range& e)
+#else
+	catch (std::out_of_range&)
+#endif
+	{
+		LOGMESSAGE(L"%s %S out_of_range %S\n", caller_fuc_name, query_string, e.what());
+		return false;
+	}
+	catch (...)
+	{
+		::MessageBox(NULL,
+			(utf8_to_wstring(query_string) + std::wstring(L" type check failed!")).c_str(),
+			L"Type Error",
+			MB_OK | MB_ICONERROR
+		);
+		return false;
+	}
+	return true;
+}
 
 /*
  * return NULL : failed
@@ -370,7 +405,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		return NULL;
 	}
 	//using json = nlohmann::json;
-	//assert(js == nullptr);
+	//assert(global_stat == nullptr);
 	if (global_stat == nullptr)
 	{
 		LOGMESSAGE(L"nlohmann::json& js not initialize\n");
@@ -428,9 +463,18 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		}
 	}
 
-	try
+	bool try_success;
+	std::string icon;// = global_stat.at("icon");
+
+	assert(icon.empty());
+
+#ifdef _DEBUG
+	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon", L"init_global");
+#else
+	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon");
+#endif
+	if (try_success)
 	{
-		std::string icon = global_stat.at("icon");
 		std::wstring wicon = utf8_to_wstring(icon);
 		LPCWSTR pLoad = wicon.c_str();
 		if (TRUE == PathFileExists(pLoad))
@@ -438,62 +482,45 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
 			wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
 			/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
-				NULL,             // hInstance must be NULL when loading from a file
-				wicon.c_str(),   // the icon file name
-				IMAGE_ICON,       // specifies that the file is an icon
-				16,                // width of the image (we'll specify default later on)
-				16,                // height of the image
-				LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
-				//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
-				//LR_SHARED         // let the system release the handle when it's no longer used
+			NULL,             // hInstance must be NULL when loading from a file
+			wicon.c_str(),   // the icon file name
+			IMAGE_ICON,       // specifies that the file is an icon
+			16,                // width of the image (we'll specify default later on)
+			16,                // height of the image
+			LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
+			//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
+			//LR_SHARED         // let the system release the handle when it's no longer used
 			));*/
 		}
-		int icon_size = global_stat.at("icon_size");
-		if (icon_size == 16 || icon_size == 32 || icon_size == 256)
+
+		int icon_size = -1;
+#ifdef _DEBUG
+		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", L"init_global");
+#else
+		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size");
+#endif
+		if (try_success && (icon_size == 16 || icon_size == 32 || icon_size == 256))
 		{
 			out_icon_size = icon_size;
 		}
 	}
-#ifdef _DEBUG
-	catch (std::out_of_range& e)
-#else
-	catch (std::out_of_range&)
-#endif
-	{
-		LOGMESSAGE(L"init_global icon out_of_range %S\n", e.what());
-	}
-	catch (...)
-	{
-		::MessageBox(NULL, L"icon or icon_size failed!", L"Error", MB_OK | MB_ICONERROR);
-		LOGMESSAGE(L"init_global icon error\n");
-	}
+
 	return 1;
 }
 
 void start_all(HANDLE ghJob, bool force)
 {
-	int cmd_idx = 0;
+	//int cmd_idx = 0;
 	for (auto& i : global_stat["configs"])
 	{
 		if (force)
 		{
 			bool ignore_all = false;
-			try
-			{
-				ignore_all = i.at("ignore_all");
-			}
 #ifdef _DEBUG
-			catch (std::out_of_range& e)
+			try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all", L"start_all");
 #else
-			catch (std::out_of_range&)
+			try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all");
 #endif
-			{
-				LOGMESSAGE(L"start_all ignore_all out_of_range %S\n", e.what());
-			}
-			catch (...)
-			{
-				::MessageBox(NULL, L"ignore_all failed!", L"Error", MB_OK | MB_ICONERROR);
-			}
 			if (false == ignore_all)
 			{
 				i["enabled"] = true;
@@ -502,9 +529,9 @@ void start_all(HANDLE ghJob, bool force)
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
-			create_process(global_stat["configs"][cmd_idx], ghJob);
+			create_process(i, ghJob);
 		}
-		cmd_idx++;
+		//cmd_idx++;
 	}
 }
 
@@ -751,39 +778,14 @@ void create_process(
 	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
 
 	bool require_admin = false, start_show = false;
-	try
-	{
-		require_admin = jsp.at("require_admin");
-	}
 #ifdef _DEBUG
-	catch (std::out_of_range& e)
+	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", L"create_process");
+	try_read_optional_json<bool>(global_stat, start_show, "start_show", L"create_process");
 #else
-	catch (std::out_of_range&)
+	try_read_optional_json<bool>(global_stat, require_admin, "require_admin");
+	try_read_optional_json<bool>(global_stat, start_show, "start_show");
 #endif
-	{
-		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
-	}
-	catch (...)
-	{
-		::MessageBox(NULL, L"require_admin failed!", L"Error", MB_OK | MB_ICONERROR);
-	}
 
-	try
-	{
-		start_show = jsp.at("start_show");
-	}
-#ifdef _DEBUG
-	catch (std::out_of_range& e)
-#else
-	catch (std::out_of_range&)
-#endif
-	{
-		LOGMESSAGE(L"create_process out_of_range %S\n", e.what());
-	}
-	catch (...)
-	{
-		::MessageBox(NULL, L"start_show failed!", L"Error", MB_OK | MB_ICONERROR);
-	}
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
 
@@ -1044,22 +1046,12 @@ void kill_all(bool is_exit/* = true*/)
 			if (is_exit == false)
 			{
 				bool ignore_all = false;
-				try
-				{
-					ignore_all = itm.at("ignore_all");
-				}
 #ifdef _DEBUG
-				catch (std::out_of_range& e)
+				try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all", L"kill_all");
 #else
-				catch (std::out_of_range&)
+				try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all");
 #endif
-				{
-					LOGMESSAGE(L"start_all ignore_all out_of_range %S\n", e.what());
-				}
-				catch (...)
-				{
-					::MessageBox(NULL, L"ignore_all failed!", L"Error", MB_OK | MB_ICONERROR);
-				}
+
 				if (true == ignore_all) // is_exit == false and ignore_all == true, then not kill it now
 				{
 					continue;
@@ -1237,9 +1229,9 @@ void delete_lockfile()
 	}
 }
 
-void ElevateNow(bool bAlreadyRunningAsAdministrator)
+void ElevateNow()
 {
-	if (!bAlreadyRunningAsAdministrator)
+	if (!is_runas_admin)
 	{
 		wchar_t szPath[MAX_PATH * 10];
 		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
@@ -1305,26 +1297,15 @@ bool check_runas_admin()
 void check_admin(bool is_admin)
 {
 	bool require_admin = false;
-	try
-	{
-		require_admin = global_stat.at("require_admin");
-	}
 #ifdef _DEBUG
-	catch (std::out_of_range& e)
+	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", L"check_admin");
 #else
-	catch (std::out_of_range&)
+	try_read_optional_json<bool>(global_stat, require_admin, "require_admin");
 #endif
-	{
-		LOGMESSAGE(L"check_admin out_of_range %S\n", e.what());
-		return;
-	}
-	catch (...)
-	{
-		::MessageBox(NULL, L"check_admin failed!", L"Error", MB_OK | MB_ICONERROR);
-	}
+
 	if (require_admin)
 	{
-		ElevateNow(is_admin);
+		ElevateNow();
 	}
 }
 

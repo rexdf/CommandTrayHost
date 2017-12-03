@@ -778,7 +778,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ELEVATE)
 		{
-			ElevateNow(is_runas_admin);
+			ElevateNow();
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_OPENURL)
 		{

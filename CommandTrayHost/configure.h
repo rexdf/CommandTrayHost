@@ -17,7 +17,7 @@ bool check_runas_admin();
 BOOL IsMyProgramRegisteredForStartup(PCWSTR);
 BOOL DisableStartUp();
 BOOL EnableStartup();
-void ElevateNow(bool);
+void ElevateNow();
 void makeSingleInstance();
 void delete_lockfile();
 
