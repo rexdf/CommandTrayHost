@@ -353,9 +353,9 @@ int configure_reader(std::string& out)
  */
 template<typename Type>
 #ifdef _DEBUG
-bool try_read_optional_json(nlohmann::json& root, Type& out, PCSTR query_string, PCWSTR caller_fuc_name)
+bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string, PCWSTR caller_fuc_name)
 #else
-bool try_read_optional_json(nlohmann::json& root, Type& out, PCSTR query_string)
+bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string)
 #endif
 {
 	//Type ignore_all = false; // Do it before call try_read_optional_json
@@ -519,9 +519,9 @@ void start_all(HANDLE ghJob, bool force)
 		{
 			bool ignore_all = false;
 #ifdef _DEBUG
-			try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all", L"start_all");
+			try_read_optional_json<bool>(i, ignore_all, "ignore_all", L"start_all");
 #else
-			try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all");
+			try_read_optional_json<bool>(i, ignore_all, "ignore_all");
 #endif
 			if (false == ignore_all)
 			{
@@ -781,11 +781,11 @@ void create_process(
 
 	bool require_admin = false, start_show = false;
 #ifdef _DEBUG
-	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", L"create_process");
-	try_read_optional_json<bool>(global_stat, start_show, "start_show", L"create_process");
+	try_read_optional_json<bool>(jsp, require_admin, "require_admin", L"create_process");
+	try_read_optional_json<bool>(jsp, start_show, "start_show", L"create_process");
 #else
-	try_read_optional_json<bool>(global_stat, require_admin, "require_admin");
-	try_read_optional_json<bool>(global_stat, start_show, "start_show");
+	try_read_optional_json<bool>(jsp, require_admin, "require_admin");
+	try_read_optional_json<bool>(jsp, start_show, "start_show");
 #endif
 
 
@@ -1049,9 +1049,9 @@ void kill_all(bool is_exit/* = true*/)
 			{
 				bool ignore_all = false;
 #ifdef _DEBUG
-				try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all", L"kill_all");
+				try_read_optional_json<bool>(itm, ignore_all, "ignore_all", L"kill_all");
 #else
-				try_read_optional_json<bool>(global_stat, ignore_all, "ignore_all");
+				try_read_optional_json<bool>(itm, ignore_all, "ignore_all");
 #endif
 
 				if (true == ignore_all) // is_exit == false and ignore_all == true, then not kill it now
