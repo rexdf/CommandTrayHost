@@ -6,6 +6,7 @@ extern bool is_runas_admin;
 extern nlohmann::json global_stat;
 //extern CHAR locale_name[];
 extern BOOL isZHCN;
+extern bool enable_groups_menu;
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -81,12 +82,43 @@ bool initial_configure()
             "is_gui": false,
             "enabled": false,
         },
+        {
+            "name": "cmd例子3",
+            "path": "C:\\Windows\\System32",
+            "cmd": "cmd.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": false,
+        },
     ],
     "global": true,
     "require_admin": false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
     "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size": 256, // 图标尺寸 可以用值有256 32 16
-    "lang": "auto",  // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "lang": "auto", // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "groups": [ // groups的值是一个数组，可以有两种类型，一种为数值，一种为object。object代表下级菜单。object必须有name字段
+        {
+            "name": "cmd例子分组1", // 分级菜单的名字
+            "groups": [
+                0, // 编号，是configs的编号。数组下标，从0开始
+                1,
+            ],
+        },
+        {
+            "name": "cmd例子分组2",
+            "groups": [
+                2,
+                1,
+            ],
+        },
+        2,
+        {
+            "name": "empty test", // 可以没有groups，但是不能没有name
+        },
+    ],
+    "enable_groups": true, // 启用分组菜单
 })json" : u8R"json({
     "configs": [
         {
@@ -113,12 +145,43 @@ bool initial_configure()
             "is_gui": false,
             "enabled": false,
         },
+        {
+            "name": "cmd example 3",
+            "path": "C:\\Windows\\System32",
+            "cmd": "cmd.exe",
+            "working_directory": "",
+            "addition_env_path": "",
+            "use_builtin_console": false,
+            "is_gui": false,
+            "enabled": false,
+        },
     ],
     "global": true,
     "require_admin": false, // To Run CommandTrayHost runas privileged
     "icon": "", // icon path, empty for default
     "icon_size": 256, // icon size, valid value: 256 32 16
-    "lang": "auto",  // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "lang": "auto", // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "groups": [ // groups is an array. Allow element is object and number.
+        {
+            "name": "Test Group 1", // object must include a name
+            "groups": [
+                0, // index of configs
+                1,
+            ],
+        },
+        {
+            "name": "Test Group 2",
+            "groups": [
+                2,
+                1,
+            ],
+        },
+        1,
+        {
+            "name": "empty test", // groups is optional, but name not.
+        },
+    ],
+    "enable_groups": true,
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
@@ -145,6 +208,55 @@ int64_t FileSize(PCWSTR name)
 	return size.QuadPart;
 }
 
+/*
+ * true no type error
+ * false error
+ */
+bool type_check_groups(const nlohmann::json& root, int deep)
+{
+	if (deep > MAX_MENU_LEVEL_LIMIT)
+	{
+		::MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+	if (!root.is_array())
+	{
+		LOGMESSAGE(L"type_check_groups !root.is_array()\n");
+		return false;
+	}
+	for (auto& m : root)
+	{
+		if (m.is_number())
+		{
+			continue;
+		}
+		else if (m.is_object())
+		{
+			bool has_name = json_object_has_member(m, "name");
+			if (!has_name ||  //have no name field
+				(has_name && !(m["name"].is_string())) // name field is not a string
+				)
+			{
+				LOGMESSAGE(L"type_check_groups name error! %d %S\n", has_name, m.dump().c_str());
+				return false;
+			}
+			// have groups field but field failed
+			if (json_object_has_member(m, "groups") &&
+				false == type_check_groups(m["groups"], deep + 1)
+				)
+			{
+				LOGMESSAGE(L"type_check_groups groups error!\n");
+				return false;
+			}
+		}
+		else
+		{
+			LOGMESSAGE(L"type_check_groups neither number nor group\n");
+			return false;
+		}
+	}
+	return true;
+}
 
 /*
  * return NULL: failed
@@ -259,14 +371,32 @@ int configure_reader(std::string& out)
 
 	// type check for global optional items
 	if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
+		d.HasMember("enable_groups") && !(d["enable_groups"].IsBool()) ||
 		d.HasMember("icon") && !(d["icon"].IsString()) ||
 		d.HasMember("lang") && !(d["lang"].IsString()) ||
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
 		)
 	{
-		::MessageBox(NULL, L"One of require_admin(bool) icon(string) icon_size(number) has type error!", L"Type Error", MB_OK | MB_ICONERROR);
+		::MessageBox(NULL, L"One of require_admin(bool) icon(string) lang(string)"
+			L" icon_size(number) has type error!",
+			L"Type Error",
+			MB_OK | MB_ICONERROR
+		);
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 	}
+
+	if (d.HasMember("enable_groups") &&
+		(true == d["enable_groups"].GetBool()) &&
+		d.HasMember("groups")
+		)
+	{
+		enable_groups_menu = true;
+	}
+	else
+	{
+		enable_groups_menu = false;
+	}
+	LOGMESSAGE(L"configure_reader enable_groups_menu:%d\n", enable_groups_menu);
 
 	int cnt = 0;
 
@@ -447,7 +577,12 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			}
 			i["exe_seperator"] = static_cast<int>(pIdx - commandLine);
 		}
+}
+	if (enable_groups_menu)
+	{
+		enable_groups_menu = type_check_groups(global_stat["groups"], 0);
 	}
+	LOGMESSAGE(L"init_global enable_groups_menu:%d\n", enable_groups_menu);
 
 	if (ghJob != NULL)
 	{
@@ -470,7 +605,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		{
 			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
-		}
+	}
 	}
 
 	bool try_success;
@@ -545,9 +680,44 @@ void start_all(HANDLE ghJob, bool force)
 	}
 }
 
+void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu, std::vector<HMENU>& outVcHmenu)
+{
+	const nlohmann::json& configs = global_stat["configs"];
+
+	for (auto& m : root_groups)
+	{
+		if (m.is_number())
+		{
+			int idx = m;
+			const nlohmann::json& itm = configs[idx];
+			bool is_enabled = static_cast<bool>(itm["enabled"]);
+			UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
+			AppendMenu(root_hmenu,
+				uFlags,
+				reinterpret_cast<UINT_PTR>(outVcHmenu[idx]),
+				utf8_to_wstring(itm["name"]).c_str()
+			);
+		}
+		else if (m.is_object())
+		{
+			HMENU hSubMenu = CreatePopupMenu();
+			if (json_object_has_member(m, "groups"))
+			{
+				create_group_level_menu(m["groups"], hSubMenu, outVcHmenu);
+			}
+			AppendMenu(root_hmenu,
+				MF_STRING | MF_POPUP,
+				reinterpret_cast<UINT_PTR>(hSubMenu),
+				(L"⭆ " + utf8_to_wstring(m["name"])).c_str()
+			);
+			outVcHmenu.push_back(hSubMenu);
+		}
+	}
+}
+
 void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 {
-	LOGMESSAGE(L"get_command_submenu json %s\n", utf8_to_wstring(global_stat.dump()).c_str());
+	LOGMESSAGE(L"get_command_submenu enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
 	//return {};
 
 #define RUNAS_ADMINISRATOR_INDEX 5
@@ -572,8 +742,11 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 	//const LCID cur_lcid = GetSystemDefaultLCID();
 	//const BOOL isZHCN = cur_lcid == 2052;
 	//std::vector<HMENU> vctHmenu;
-	hSubMenu = CreatePopupMenu();
-	outVcHmenu.push_back(hSubMenu);
+	if (!enable_groups_menu)
+	{
+		hSubMenu = CreatePopupMenu();
+		outVcHmenu.push_back(hSubMenu);
+	}
 	int i = 0;
 	//std::wstring local_wstring;
 	for (auto& itm : global_stat["configs"])
@@ -676,10 +849,19 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX]).c_str()
 			);
 		}
-		UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
-		AppendMenu(outVcHmenu[0], uFlags, (UINT_PTR)hSubMenu, utf8_to_wstring(itm["name"]).c_str());
+		if (!enable_groups_menu)
+		{
+			UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
+			AppendMenu(outVcHmenu[0], uFlags, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(itm["name"]).c_str());
+		}
 		outVcHmenu.push_back(hSubMenu);
 		i++;
+	}
+	if (enable_groups_menu)
+	{
+		hSubMenu = CreatePopupMenu();
+		create_group_level_menu(global_stat["groups"], hSubMenu, outVcHmenu);
+		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
 	}
 	//return true;
 	//return vctHmenu;
@@ -1385,7 +1567,7 @@ void makeSingleInstance()
 		if (Handle)
 		{
 			TCHAR Buffer[MAX_PATH * 10];
-			if (GetModuleFileNameEx(Handle, 0, Buffer, ARRAYSIZE(Buffer)))
+			if (GetModuleFileNameEx(Handle, NULL, Buffer, ARRAYSIZE(Buffer)))
 			{
 				// At this point, buffer contains the full path to the executable
 				TCHAR szPathToExe[MAX_PATH * 10];
@@ -1399,13 +1581,13 @@ void makeSingleInstance()
 				}
 				else
 				{
-					LOGMESSAGE(L"pid file path doesn't match! error code: \n", GetLastError());
+					LOGMESSAGE(L"pid file path doesn't match! error code:0x%x \n", GetLastError());
 				}
 			}
 			else
 			{
 				// You better call GetLastError() here
-				LOGMESSAGE(L"GetModuleFileNameEx failed! error code: \n", GetLastError());
+				LOGMESSAGE(L"GetModuleFileNameEx failed! error code:0x%x \n", GetLastError());
 			}
 			CloseHandle(Handle);
 		}

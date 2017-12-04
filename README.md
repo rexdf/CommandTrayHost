@@ -15,6 +15,7 @@ A Command Line program systray for Windows
 - when CommandTrayHost quits, all child processes will be killed.
 - Customize systray icon
 - i18n
+- Menu level limit is 40
 
 # Usage
 
@@ -103,12 +104,35 @@ example configure
         },
     ],
     "global": true,
-    "require_admin": false // To Run CommandTrayHost as Administrator
+    "require_admin": false, // To Run CommandTrayHost as Administrator
     // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
     // when empty, builtin default icon will be used. 256x256
     "icon_size": 256, // 256 32 16
-    "lang": "auto",  // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "lang": "auto", // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
+    "groups": [ // groups is an array. Allow element is object and number.
+        {
+            "name": "kcptun", // object must include a name
+            "groups": [
+                0, // index of configs
+                1,
+            ],
+        },
+        {
+            "name": "shadowsocks",
+            "groups": [
+                3,
+                2,
+                4,
+            ],
+        },
+        5,
+        6,
+        {
+            "name": "empty test", // groups is optional, but name not.
+        },
+    ],
+    "enable_groups": true,
 }
 ```
 

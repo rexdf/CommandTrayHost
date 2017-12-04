@@ -35,6 +35,7 @@ HANDLE ghJob;
 WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
 bool is_runas_admin;
+bool enable_groups_menu;
 
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 BOOL isZHCN, isENUS;

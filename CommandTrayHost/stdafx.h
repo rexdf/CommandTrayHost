@@ -33,7 +33,7 @@
 
 #include <fstream>
 #include <iomanip>
-#include <vector>
+#include <deque>
 #include <codecvt>
 
 
@@ -74,3 +74,4 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 
 #define VERSION_NUMS L"0.9.0"
 
+#define MAX_MENU_LEVEL_LIMIT	30
