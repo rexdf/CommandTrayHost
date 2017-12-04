@@ -565,6 +565,10 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
 		{
 			PTSTR pIdx = StrStr(commandLine, L".exe");
+			if(pIdx==NULL)
+			{
+				::MessageBox(NULL, L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
+			}
 			if (pIdx)
 			{
 				*(pIdx + 4) = 0;
