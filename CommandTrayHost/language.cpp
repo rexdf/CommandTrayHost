@@ -70,7 +70,7 @@ std::wstring translate_w2w(std::wstring en)
 	return  utf8_to_wstring(translate(wstring_to_utf8(en)));
 }
 
-void update_isZHCN()
+void update_isZHCN(bool check_system_acp)
 {
 	if (0 == strcmp(locale_name, "zh-CN") ||
 		0 == strcmp(locale_name, "zh-Hans") ||
@@ -81,6 +81,10 @@ void update_isZHCN()
 		isZHCN = TRUE;
 	}
 	else
+	{
+		isZHCN = FALSE;
+	}
+	if (FALSE == isZHCN && true == check_system_acp)
 	{
 		// GetSystemDefaultLCID https://msdn.microsoft.com/en-us/library/windows/desktop/dd318693(v=vs.85).aspx
 		// GetACP https://msdn.microsoft.com/en-us/library/windows/desktop/dd317756(v=vs.85).aspx
@@ -96,11 +100,11 @@ void update_locale_name_by_system()
 	{
 		LOGMESSAGE(L"initialize_local GetUserDefaultLocaleName %s\n", wlocale_name);
 		strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str());
-		update_isZHCN();
+		//update_isZHCN();
 	}
 	else
 	{
-		isZHCN = GetSystemDefaultLCID() == 2052;
+		//isZHCN = GetSystemDefaultLCID() == 2052;
 		LOGMESSAGE(L"initialize_local failed!\n");
 	}
 }
@@ -120,13 +124,18 @@ void initialize_local()
 		if (0 == strcmp(locale_name, "auto"))
 		{
 			update_locale_name_by_system();
+			update_isZHCN(true); //use system acp check
+		}
+		else
+		{
+			update_isZHCN(false); //use user defined
 		}
 		LOGMESSAGE(L"initialize_local json_object_has_member %S\n", locale_name);
-		update_isZHCN();
 	}
-	else
+	else // no lang items
 	{
 		update_locale_name_by_system();
+		update_isZHCN(true); //use system acp check
 	}
 	update_locale_name_by_alias();
 	if (isZHCN == FALSE && (0 == strcmp(locale_name, "en-US") ||

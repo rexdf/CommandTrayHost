@@ -36,7 +36,7 @@ Windows命令行程序系统托盘管理工具
             "cmd": "client_windows_amd64.exe -c client.json", // cmd命令，必须含有.exe
             "working_directory": "", // 命令行的工作目录，比如这里的client.json，为空时自动用path
             "addition_env_path": "", // dll搜索目录，暂时没用到
-            "use_builtin_console": false, //是否用CREATE_NEW_CONSOLE，暂时没用到
+            "use_builtin_console": false, // 是否用CREATE_NEW_CONSOLE，暂时没用到
             "is_gui": false, // 是否是 GUI图形界面程序，暂时没用到
             "enabled": true, // 是否当CommandTrayHost启动时，自动开始运行
             // 下面的是可选参数
@@ -58,7 +58,7 @@ Windows命令行程序系统托盘管理工具
             "name": "herokuapp",
             "path": "C:\\Program Files\\nodejs",
             "cmd": "node.exe local.js -s yousecret-id.herokuapp.com -l 1090 -m camellia-256-cfb -k ItsATopSecret -r 80",
-            "working_directory": "E:\\program\\shadowsocks-heroku.git", //我们用了一个不同的工作目录
+            "working_directory": "E:\\program\\shadowsocks-heroku.git", // 用了一个不同的工作目录
             "addition_env_path": "",
             "use_builtin_console": false,
             "is_gui": false,
@@ -134,6 +134,7 @@ Windows命令行程序系统托盘管理工具
         },
     ],
     "enable_groups": true, // 启用分组菜单
+    "groups_menu_symbol": "+", // 分组菜单标志
 }
 ```
 

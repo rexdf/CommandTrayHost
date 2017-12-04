@@ -133,6 +133,7 @@ example configure
         },
     ],
     "enable_groups": true,
+    "groups_menu_symbol": "+",
 }
 ```
 

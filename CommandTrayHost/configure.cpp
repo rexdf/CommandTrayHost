@@ -61,10 +61,10 @@ bool initial_configure()
             // 下面8个一个不能少
             "name": "cmd例子", // 系统托盘菜单名字
             "path": "C:\\Windows\\System32", // cmd的exe所在目录
-            "cmd": "cmd.exe", //cmd命令，必须含有.exe
+            "cmd": "cmd.exe", // cmd命令，必须含有.exe
             "working_directory": "", // 命令行的工作目录，为空时自动用path
-            "addition_env_path": "", //dll搜索目录，暂时没用到
-            "use_builtin_console": false, //是否用CREATE_NEW_CONSOLE，暂时没用到
+            "addition_env_path": "", // dll搜索目录，暂时没用到
+            "use_builtin_console": false, // 是否用CREATE_NEW_CONSOLE，暂时没用到
             "is_gui": false, // 是否是 GUI图形界面程序
             "enabled": true, // 是否当CommandTrayHost启动时，自动开始运行
             // 下面的是可选参数
@@ -120,6 +120,7 @@ bool initial_configure()
         },
     ],
     "enable_groups": true, // 启用分组菜单
+    "groups_menu_symbol": "+", // 分组菜单标志
 })json" : u8R"json({
     "configs": [
         {
@@ -183,6 +184,7 @@ bool initial_configure()
         },
     ],
     "enable_groups": true,
+    "groups_menu_symbol": "+",
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
@@ -383,6 +385,7 @@ int configure_reader(std::string& out)
 	// type check for global optional items
 	if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
 		d.HasMember("enable_groups") && !(d["enable_groups"].IsBool()) ||
+		d.HasMember("groups_menu_symbol") && !(d["groups_menu_symbol"].IsString()) ||
 		d.HasMember("icon") && !(d["icon"].IsString()) ||
 		d.HasMember("lang") && !(d["lang"].IsString()) ||
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
@@ -597,6 +600,10 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 	if (enable_groups_menu)
 	{
 		enable_groups_menu = type_check_groups(global_stat["groups"], 0);
+		if (enable_groups_menu && false == json_object_has_member(global_stat, "groups_menu_symbol"))
+		{
+			global_stat["groups_menu_symbol"] = "+";
+		}
 	}
 	LOGMESSAGE(L"init_global enable_groups_menu:%d\n", enable_groups_menu);
 
@@ -622,7 +629,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
-		}
+	}
 
 	bool try_success;
 	std::string icon;// = global_stat.at("icon");
@@ -667,7 +674,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 	}
 
 	return 1;
-	}
+}
 
 void start_all(HANDLE ghJob, bool force)
 {
@@ -696,7 +703,13 @@ void start_all(HANDLE ghJob, bool force)
 	}
 }
 
-void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu, std::vector<HMENU>& outVcHmenu)
+wchar_t const* level_menu_symbol_p;
+std::vector<HMENU>* vector_hemnu_p;
+
+// Why to use global variable
+// vector_hemnu_p never changed during recursion
+// reduce parameters to minimize recursion stack usage
+void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu) //, std::vector<HMENU>& outVcHmenu)
 {
 	const nlohmann::json& configs = global_stat["configs"];
 
@@ -710,7 +723,7 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 			UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
 			AppendMenu(root_hmenu,
 				uFlags,
-				reinterpret_cast<UINT_PTR>(outVcHmenu[idx]),
+				reinterpret_cast<UINT_PTR>((*vector_hemnu_p)[idx]),
 				utf8_to_wstring(itm["name"]).c_str()
 			);
 		}
@@ -719,14 +732,14 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 			HMENU hSubMenu = CreatePopupMenu();
 			if (json_object_has_member(m, "groups"))
 			{
-				create_group_level_menu(m["groups"], hSubMenu, outVcHmenu);
+				create_group_level_menu(m["groups"], hSubMenu);
 			}
 			AppendMenu(root_hmenu,
 				MF_STRING | MF_POPUP,
 				reinterpret_cast<UINT_PTR>(hSubMenu),
-				(L"⭆ " + utf8_to_wstring(m["name"])).c_str()
+				(level_menu_symbol_p + utf8_to_wstring(m["name"])).c_str()
 			);
-			outVcHmenu.push_back(hSubMenu);
+			(*vector_hemnu_p).push_back(hSubMenu);
 		}
 	}
 }
@@ -875,8 +888,11 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 	}
 	if (enable_groups_menu)
 	{
+		std::wstring menu_symbol_wstring = utf8_to_wstring(global_stat["groups_menu_symbol"]) + L" ";
 		hSubMenu = CreatePopupMenu();
-		create_group_level_menu(global_stat["groups"], hSubMenu, outVcHmenu);
+		vector_hemnu_p = &outVcHmenu;
+		level_menu_symbol_p = menu_symbol_wstring.c_str();
+		create_group_level_menu(global_stat["groups"], hSubMenu);
 		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
 	}
 	//return true;
@@ -1303,7 +1319,7 @@ void kill_all(bool is_exit/* = true*/)
 				{
 					continue;
 				}
-				}
+			}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -1323,10 +1339,10 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
-			}
 		}
-
 	}
+
+}
 
 // https://stackoverflow.com/questions/15913202/add-application-to-startup-registry
 BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
