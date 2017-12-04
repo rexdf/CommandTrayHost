@@ -95,6 +95,7 @@ bool initial_configure()
         },
     ],
     "global": true,
+    // 可选参数
     "require_admin": false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
     "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size": 256, // 图标尺寸 可以用值有256 32 16
@@ -159,6 +160,7 @@ bool initial_configure()
         },
     ],
     "global": true,
+    // Optional
     "require_admin": false, // To Run CommandTrayHost runas privileged
     "icon": "", // icon path, empty for default
     "icon_size": 256, // icon size, valid value: 256 32 16

@@ -106,6 +106,7 @@ Windows命令行程序系统托盘管理工具
         },
     ],
     "global": true,
+    // 可选参数
     "require_admin": false, // 是否CommandTrayHost要对自身提权
     // 大决部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // 自定义托盘图标路径，空为默认内置 256x256

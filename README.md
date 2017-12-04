@@ -104,6 +104,7 @@ example configure
         },
     ],
     "global": true,
+    // Optional
     "require_admin": false, // To Run CommandTrayHost as Administrator
     // If you set it to true, maybe you will need https://stefansundin.github.io/elevatedstartup/ to add startup support
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path

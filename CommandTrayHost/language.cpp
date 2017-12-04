@@ -35,15 +35,6 @@ extern nlohmann::json global_stat;
 extern CHAR locale_name[];
 extern BOOL isZHCN, isENUS;
 
-void update_locale_name_by_alias()
-{
-	if (json_object_has_member(language_alias, locale_name))
-	{
-		std::string locale_alias = language_alias[locale_name];
-		strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
-	}
-}
-
 std::string translate(std::string en)
 {
 	if (language_data == nullptr)return en;
@@ -93,6 +84,20 @@ void update_isZHCN(bool check_system_acp)
 	}
 }
 
+void update_locale_name_by_alias()
+{
+	if (json_object_has_member(language_alias, locale_name))
+	{
+		std::string locale_alias = language_alias[locale_name];
+		strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
+		LOGMESSAGE(L"update_locale_name_by_alias %S\n", locale_alias);
+	}
+	else
+	{
+		LOGMESSAGE(L"update_locale_name_by_alias not found!\n");
+	}
+}
+
 void update_locale_name_by_system()
 {
 	WCHAR wlocale_name[LOCALE_NAME_MAX_LENGTH];
@@ -116,7 +121,26 @@ void initialize_local()
 		GetSystemDefaultUILanguage(),
 		GetACP()
 	);
-	if (json_object_has_member(global_stat, "lang"))
+	if (false == json_object_has_member(global_stat, "lang") || global_stat["lang"] == "auto")
+	{
+		update_locale_name_by_system();
+		update_locale_name_by_alias();
+		update_isZHCN(true); //use system acp check
+	}
+	else
+	{
+		assert(json_object_has_member(global_stat, "lang"));
+		//if (json_object_has_member(global_stat, "lang"))  // it must be sure
+		{
+			std::string local = global_stat["lang"];
+			strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
+		}
+		update_locale_name_by_alias();
+		update_isZHCN(false); //use user defined
+	}
+	LOGMESSAGE(L"initialize_local final locale_name %S\n", locale_name);
+
+	/*if (json_object_has_member(global_stat, "lang"))
 	{
 		std::string local = global_stat["lang"];
 		//wcscpy(local_name, utf8_to_wstring(local).c_str());
@@ -124,10 +148,12 @@ void initialize_local()
 		if (0 == strcmp(locale_name, "auto"))
 		{
 			update_locale_name_by_system();
+			update_locale_name_by_alias();
 			update_isZHCN(true); //use system acp check
 		}
 		else
 		{
+			update_locale_name_by_alias();
 			update_isZHCN(false); //use user defined
 		}
 		LOGMESSAGE(L"initialize_local json_object_has_member %S\n", locale_name);
@@ -135,9 +161,10 @@ void initialize_local()
 	else // no lang items
 	{
 		update_locale_name_by_system();
+		update_locale_name_by_alias();
 		update_isZHCN(true); //use system acp check
-	}
-	update_locale_name_by_alias();
+	}*/
+
 	if (isZHCN == FALSE && (0 == strcmp(locale_name, "en-US") ||
 		false == json_object_has_member(language_data, locale_name))
 		)
@@ -148,5 +175,5 @@ void initialize_local()
 	{
 		isENUS = FALSE;
 	}
-	LOGMESSAGE(L"initialize_local %S isZHCN: %d\n", locale_name, isZHCN);
+	LOGMESSAGE(L"initialize_local locale_name: %S isZHCN: %d isENUS: %d\n", locale_name, isZHCN, isENUS);
 }
