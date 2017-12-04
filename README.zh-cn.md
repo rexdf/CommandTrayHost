@@ -32,7 +32,7 @@ Windows命令行程序系统托盘管理工具
         {
             // 下面8个一个不能少
             "name": "kcptun 1080 8.8.8.1:12345", // 系统托盘菜单名字
-            "path": "E:\\program\\kcptun-windows-amd64", // cmd的exe所在目录
+            "path": "E:\\program\\kcptun-windows-amd64", // cmd的exe所在目录,相对路径是可以的，参考目录是CommandTrayHost.exe所在目录
             "cmd": "client_windows_amd64.exe -c client.json", // cmd命令，必须含有.exe
             "working_directory": "", // 命令行的工作目录，比如这里的client.json，为空时自动用path
             "addition_env_path": "", // dll搜索目录，暂时没用到

@@ -30,7 +30,7 @@ example configure
     "configs": [
         {
             "name": "kcptun 1080 8.8.8.1:12345", // Menu item name in systray
-            "path": "E:\\program\\kcptun-windows-amd64", // path which includes cmd exe
+            "path": "E:\\program\\kcptun-windows-amd64", // path which includes cmd exe, relative path is ok.
             "cmd": "client_windows_amd64.exe -c client.json", // must contain .exe
             "working_directory": "", // working directory, for client.json path. empty is same as path
             "addition_env_path": "", //dll search path

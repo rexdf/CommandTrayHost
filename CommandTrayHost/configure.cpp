@@ -65,7 +65,7 @@ bool initial_configure()
         {
             // 下面8个一个不能少
             "name": "cmd例子", // 系统托盘菜单名字
-            "path": "C:\\Windows\\System32", // cmd的exe所在目录
+            "path": "C:\\Windows\\System32", // cmd的exe所在目录,相对路径是可以的,参考目录是CommandTrayHost.exe所在目录
             "cmd": "cmd.exe", // cmd命令，必须含有.exe
             "working_directory": "", // 命令行的工作目录，为空时自动用path
             "addition_env_path": "", // dll搜索目录，暂时没用到
@@ -131,8 +131,8 @@ bool initial_configure()
     "configs": [
         {
             "name": "cmd example", // Menu item name in systray
-            "path": "C:\\Windows\\System32", // path which includes cmd exe
-            "cmd": "cmd.exe",
+            "path": "C:\\Windows\\System32", // path which includes cmd exe, relative path is ok.
+            "cmd": "cmd.exe",  // must contain .exe
             "working_directory": "", // working directory. empty is same as path
             "addition_env_path": "", //dll search path
             "use_builtin_console": false, //CREATE_NEW_CONSOLE
