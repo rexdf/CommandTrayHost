@@ -1,6 +1,7 @@
 ﻿
 // https://msdn.microsoft.com/en-us/library/cc233982.aspx
 
+// language_tag is from above link.
 // You must use strict format of json format
 const nlohmann::json language_alias = u8R"json({
     "zh-Hans": "zh-CN",

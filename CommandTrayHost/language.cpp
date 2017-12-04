@@ -33,7 +33,7 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 
 extern nlohmann::json global_stat;
 extern CHAR locale_name[];
-extern BOOL isZHCN;
+extern BOOL isZHCN, isENUS;
 
 void update_locale_name_by_alias()
 {
@@ -66,6 +66,7 @@ std::string translate(std::string en)
 
 std::wstring translate_w2w(std::wstring en)
 {
+	if (isENUS)return en;
 	return  utf8_to_wstring(translate(wstring_to_utf8(en)));
 }
 
@@ -128,5 +129,15 @@ void initialize_local()
 		update_locale_name_by_system();
 	}
 	update_locale_name_by_alias();
+	if (isZHCN == FALSE && (0 == strcmp(locale_name, "en-US") ||
+		false == json_object_has_member(language_data, locale_name))
+		)
+	{
+		isENUS = TRUE;
+	}
+	else
+	{
+		isENUS = FALSE;
+	}
 	LOGMESSAGE(L"initialize_local %S isZHCN: %d\n", locale_name, isZHCN);
 }

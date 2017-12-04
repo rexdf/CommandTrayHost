@@ -37,7 +37,7 @@ int icon_size;
 bool is_runas_admin;
 
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
-BOOL isZHCN;
+BOOL isZHCN, isENUS;
 
 HINSTANCE hInst;
 HWND hWnd;
