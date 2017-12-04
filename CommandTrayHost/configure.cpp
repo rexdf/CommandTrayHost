@@ -55,6 +55,11 @@ bool initial_configure()
 	//const LCID cur_lcid = GetSystemDefaultLCID();
 	//const BOOL isZHCN = cur_lcid == 2052;
 
+	// the first time to run CommandTrayHost
+	update_locale_name_by_system();
+	update_locale_name_by_alias();
+	update_isZHCN(true);
+
 	std::string config = isZHCN ? u8R"json({
     "configs": [
         {
@@ -516,7 +521,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	try
 	{
 		out = root.at(query_string);
-	}
+}
 #ifdef _DEBUG
 	catch (std::out_of_range& e)
 #else
@@ -673,10 +678,10 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		{
 			out_icon_size = icon_size;
 		}
-	}
+		}
 
 	return 1;
-}
+	}
 
 void start_all(HANDLE ghJob, bool force)
 {
@@ -695,14 +700,14 @@ void start_all(HANDLE ghJob, bool force)
 			{
 				i["enabled"] = true;
 			}
-		}
+	}
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
 			create_process(i, ghJob);
 		}
 		//cmd_idx++;
-	}
+}
 }
 
 wchar_t const* level_menu_symbol_p;
@@ -1321,7 +1326,7 @@ void kill_all(bool is_exit/* = true*/)
 				{
 					continue;
 				}
-			}
+		}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -1341,8 +1346,8 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
-		}
 	}
+}
 
 }
 
