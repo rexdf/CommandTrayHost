@@ -361,7 +361,7 @@ BOOL ShowPopupMenuJson3()
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All").c_str()));
-
+	vctHmenu.push_back(hSubMenu);
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
@@ -384,6 +384,7 @@ BOOL ShowPopupMenuJson3()
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : translate_w2w(L"About").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help").c_str()));
+	vctHmenu.push_back(hSubMenu);
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
@@ -846,7 +847,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ABOUT)
 		{
-			std::wstring msg = (GetSystemDefaultLCID() == 2052) ?
+			std::wstring msg = (isZHCN) ?
 				(L"CommandTrayHost\n" L"版本: " VERSION_NUMS L"\n作者: rexdf") :
 				(L"CommandTrayHost\n" L"Version: " VERSION_NUMS L"\nAuthor: rexdf");
 

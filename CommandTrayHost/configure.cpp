@@ -86,6 +86,7 @@ bool initial_configure()
     "require_admin": false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
     "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size": 256, // 图标尺寸 可以用值有256 32 16
+    "lang": "auto",  // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
 })json" : u8R"json({
     "configs": [
         {
@@ -117,6 +118,7 @@ bool initial_configure()
     "require_admin": false, // To Run CommandTrayHost runas privileged
     "icon": "", // icon path, empty for default
     "icon_size": 256, // icon size, valid value: 256 32 16
+    "lang": "auto",  // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
