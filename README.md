@@ -141,7 +141,7 @@ In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in enc
 
 # Help to locale this program
 
-See this file : [CommandTrayHost/CommandTrayHost/configure.h](CommandTrayHost/CommandTrayHost/configure.h)
+See this file : [CommandTrayHost/CommandTrayHost/language_data.h](CommandTrayHost/CommandTrayHost/language_data.h)
 
 # Help wanted
 
