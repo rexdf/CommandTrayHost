@@ -143,7 +143,7 @@ Windows命令行程序系统托盘管理工具
 
 # 如何本地化
 
-看这个文件 [CommandTrayHost/CommandTrayHost/language_data.h](CommandTrayHost/CommandTrayHost/language_data.h)
+看这个文件 [CommandTrayHost/CommandTrayHost/language_data.h](https://github.com/rexdf/CommandTrayHost/blob/master/CommandTrayHost/language_data.h)
 
 # TODO
 

@@ -81,7 +81,7 @@ void update_isZHCN()
 	}
 	else
 	{
-		isZHCN = FALSE;
+		isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
 	}
 }
 
@@ -103,6 +103,11 @@ void update_locale_name_by_system()
 
 void initialize_local()
 {
+	LOGMESSAGE(L"GetUserDefaultUILanguage: %d GetSystemDefaultUILanguage: %d GetACP: %d\n",
+		GetUserDefaultUILanguage(),
+		GetSystemDefaultUILanguage(),
+		GetACP()
+	);
 	if (json_object_has_member(global_stat, "lang"))
 	{
 		std::string local = global_stat["lang"];
