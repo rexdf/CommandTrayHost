@@ -139,7 +139,7 @@ In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in enc
     required
 ```
 
-# Help to locale this program
+# Localization
 
 See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github.com/rexdf/CommandTrayHost/blob/master/CommandTrayHost/language_data.h)
 
