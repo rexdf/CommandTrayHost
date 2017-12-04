@@ -7,6 +7,7 @@ extern nlohmann::json global_stat;
 //extern CHAR locale_name[];
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
+extern int number_of_configs;
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -228,6 +229,12 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 	{
 		if (m.is_number())
 		{
+			int val = m;
+			if(val>=number_of_configs)
+			{
+				::MessageBox(NULL, L"groups index must start from 0, and not exceed number of configs!", L"Error", MB_OK | MB_ICONERROR);
+				return false;
+			}
 			continue;
 		}
 		else if (m.is_object())
@@ -544,6 +551,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		::MessageBox(NULL, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
+	number_of_configs = cmd_cnt;
 	//using json = nlohmann::json;
 	//assert(global_stat == nullptr);
 	if (global_stat == nullptr)
@@ -565,7 +573,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
 		{
 			PTSTR pIdx = StrStr(commandLine, L".exe");
-			if(pIdx==NULL)
+			if (pIdx == NULL)
 			{
 				::MessageBox(NULL, L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
 			}
@@ -581,7 +589,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			}
 			i["exe_seperator"] = static_cast<int>(pIdx - commandLine);
 		}
-}
+	}
 	if (enable_groups_menu)
 	{
 		enable_groups_menu = type_check_groups(global_stat["groups"], 0);
@@ -609,7 +617,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		{
 			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
-	}
+		}
 	}
 
 	bool try_success;

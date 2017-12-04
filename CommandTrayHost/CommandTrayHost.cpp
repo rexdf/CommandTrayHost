@@ -36,6 +36,7 @@ WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
 bool is_runas_admin;
 bool enable_groups_menu;
+int number_of_configs;
 
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 BOOL isZHCN, isENUS;

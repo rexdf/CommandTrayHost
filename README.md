@@ -31,7 +31,7 @@ example configure
         {
             "name": "kcptun 1080 8.8.8.1:12345", // Menu item name in systray
             "path": "E:\\program\\kcptun-windows-amd64", // path which includes cmd exe
-            "cmd": "client_windows_amd64.exe -c client.json",
+            "cmd": "client_windows_amd64.exe -c client.json", // must contain .exe
             "working_directory": "", // working directory, for client.json path. empty is same as path
             "addition_env_path": "", //dll search path
             "use_builtin_console": false, //CREATE_NEW_CONSOLE
@@ -110,9 +110,9 @@ example configure
     // when empty, builtin default icon will be used. 256x256
     "icon_size": 256, // 256 32 16
     "lang": "auto", // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
-    "groups": [ // groups is an array. Allow element is object and number.
+    "groups": [ // groups is an array. Allowed element types are object and number.
         {
-            "name": "kcptun", // object must include a name
+            "name": "kcptun", // object must have a name
             "groups": [
                 0, // index of configs
                 1,
@@ -129,7 +129,7 @@ example configure
         5,
         6,
         {
-            "name": "empty test", // groups is optional, but name not.
+            "name": "empty test", // groups is optional for object, but name not.
         },
     ],
     "enable_groups": true,
