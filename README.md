@@ -136,7 +136,7 @@ example configure
 }
 ```
 
-**Tips1**: `"cmd"` have to include `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
+**Tips1**: `"cmd"` must contain `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
 
 **Tips2**: If you don't need privileged child, you can remove all `"require_admin"`.
 - CommandTrayHost run as an unprivileged user: you can run a privileged child process and restart it, but you cannot hide/show it. Because of User Interface Privilege Isolation.

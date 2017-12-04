@@ -1,4 +1,4 @@
-version: 0.9-b{build}
+version: 1.0-b{build}
 # version: 0.6-latest
 skip_tags: true
 image: Visual Studio 2017
