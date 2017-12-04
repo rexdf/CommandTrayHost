@@ -230,9 +230,13 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 		if (m.is_number())
 		{
 			int val = m;
-			if(val>=number_of_configs)
+			if (val >= number_of_configs)
 			{
-				::MessageBox(NULL, L"groups index must start from 0, and not exceed number of configs!", L"Error", MB_OK | MB_ICONERROR);
+				::MessageBox(NULL,
+					L"groups index must start from 0, and not exceed number of configs!",
+					L"Error",
+					MB_OK | MB_ICONERROR
+				);
 				return false;
 			}
 			continue;
@@ -618,7 +622,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
-	}
+		}
 
 	bool try_success;
 	std::string icon;// = global_stat.at("icon");
@@ -663,7 +667,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 	}
 
 	return 1;
-}
+	}
 
 void start_all(HANDLE ghJob, bool force)
 {
@@ -1299,7 +1303,7 @@ void kill_all(bool is_exit/* = true*/)
 				{
 					continue;
 				}
-			}
+				}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -1319,10 +1323,10 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
+			}
 		}
-	}
 
-}
+	}
 
 // https://stackoverflow.com/questions/15913202/add-application-to-startup-registry
 BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
