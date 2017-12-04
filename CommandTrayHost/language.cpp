@@ -103,7 +103,7 @@ void update_locale_name_by_system()
 
 void initialize_local()
 {
-	LOGMESSAGE(L"GetUserDefaultUILanguage: %d GetSystemDefaultUILanguage: %d GetACP: %d\n",
+	LOGMESSAGE(L"GetUserDefaultUILanguage: 0x%x GetSystemDefaultUILanguage: 0x%0x GetACP: %d\n",
 		GetUserDefaultUILanguage(),
 		GetSystemDefaultUILanguage(),
 		GetACP()
