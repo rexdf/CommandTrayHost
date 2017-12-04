@@ -81,6 +81,9 @@ void update_isZHCN()
 	}
 	else
 	{
+		// GetSystemDefaultLCID https://msdn.microsoft.com/en-us/library/windows/desktop/dd318693(v=vs.85).aspx
+		// GetACP https://msdn.microsoft.com/en-us/library/windows/desktop/dd317756(v=vs.85).aspx
+		// I think that GetACP is better than GetUserDefaultLocaleName
 		isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
 	}
 }
