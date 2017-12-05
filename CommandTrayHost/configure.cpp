@@ -299,7 +299,7 @@ int configure_reader(std::string& out)
 		return NULL;
 	}
 	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
-	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 5)));
+	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 10)));
 	if (NULL == readBuffer)
 	{
 		return NULL;
@@ -318,7 +318,7 @@ int configure_reader(std::string& out)
 	using namespace rapidjson;
 
 	// FileReadStream bis(fp, readBuffer, sizeof(readBuffer)); //WARNING logical Error
-	FileReadStream bis(fp, readBuffer, json_file_size);
+	FileReadStream bis(fp, readBuffer, json_file_size + 5);
 	AutoUTFInputStream<unsigned, FileReadStream> eis(bis);  // 用 eis 包装 bis
 #ifdef _DEBUG
 	const char* utf_type_name[] = {

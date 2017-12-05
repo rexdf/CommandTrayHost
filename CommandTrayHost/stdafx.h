@@ -72,6 +72,6 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define CommandTrayHost (L"Command_Tray_Host")
 #define LOCK_FILE_NAME L"commandtrayhost_lock_pid.txt"
 
-#define VERSION_NUMS L"1.0.0"
+#define VERSION_NUMS L"1.1.0"
 
 #define MAX_MENU_LEVEL_LIMIT	30
