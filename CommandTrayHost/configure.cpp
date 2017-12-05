@@ -254,7 +254,8 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 		{
 			bool has_name = json_object_has_member(m, "name");
 			if (!has_name ||  //have no name field
-				(has_name && !(m["name"].is_string())) // name field is not a string
+				//(has_name && !(m["name"].is_string())) // name field is not a string
+				!(m["name"].is_string()) // name field is not a string, has_name must be true
 				)
 			{
 				LOGMESSAGE(L"type_check_groups name error! %d %S\n", has_name, m.dump().c_str());
@@ -318,7 +319,7 @@ int configure_reader(std::string& out)
 	using namespace rapidjson;
 
 	// FileReadStream bis(fp, readBuffer, sizeof(readBuffer)); //WARNING logical Error
-	FileReadStream bis(fp, readBuffer, json_file_size + 5);
+	FileReadStream bis(fp, readBuffer, static_cast<size_t>(json_file_size + 5));
 	AutoUTFInputStream<unsigned, FileReadStream> eis(bis);  // 用 eis 包装 bis
 #ifdef _DEBUG
 	const char* utf_type_name[] = {
