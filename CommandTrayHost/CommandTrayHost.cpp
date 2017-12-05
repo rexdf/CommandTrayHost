@@ -59,6 +59,8 @@ volatile DWORD dwChildrenPid;
 //  DWORD WINAPI GetProcessId(
 //    _In_ HANDLE Process
 //  );
+
+#ifdef _DEBUG
 static DWORD MyGetProcessId(HANDLE hProcess)
 {
 	// https://gist.github.com/kusma/268888
@@ -95,14 +97,16 @@ static DWORD MyGetProcessId(HANDLE hProcess)
 	}
 	return 0;
 }
+#endif
 
 
 static BOOL MyEndTask(DWORD pid)
 {
-	WCHAR szCmd[1024] = { 0 };
-	StringCchPrintf(szCmd, sizeof(szCmd), L"taskkill /f /pid %d", pid);
+	return _wsystem((L"taskkill /f /pid " + std::to_wstring(pid)).c_str());
+	/*WCHAR szCmd[1024] = { 0 };
+	StringCchPrintf(szCmd, ARRAYSIZE(szCmd), L"taskkill /f /pid %d", pid);
 	//wsprintf(szCmd, L"taskkill /f /pid %d", pid);
-	return _wsystem(szCmd) == 0;
+	return _wsystem(szCmd) == 0;*/
 }
 
 // https://stackoverflow.com/questions/2798922/storage-location-of-yellow-blue-shield-icon
@@ -184,23 +188,25 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 	nid.uTimeout = 3 * 1000 | NOTIFYICON_VERSION;
 	//lstrcpy(nid.szInfoTitle, szTitle);
 	assert(sizeof(nid.szInfoTitle) == 64 * sizeof(WCHAR));
-	StringCchCopy(nid.szInfoTitle, sizeof(nid.szInfoTitle), szTitle);
+	//assert(1 == 2);
+	assert(sizeof(nid.szInfoTitle) / sizeof(nid.szInfoTitle[0]) == ARRAYSIZE(nid.szInfoTitle));
+	StringCchCopy(nid.szInfoTitle, ARRAYSIZE(nid.szInfoTitle), szTitle);
 	if (lpszProxy)
 	{
 		nid.uFlags |= NIF_INFO | NIF_TIP;
 		if (lstrlen(lpszProxy) > 0)
 		{
 			//lstrcpy(nid.szTip, lpszProxy);
-			StringCchCopy(nid.szTip, sizeof(nid.szTip), lpszProxy);
+			StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), lpszProxy);
 			//lstrcpy(nid.szInfo, lpszProxy);
-			StringCchCopy(nid.szInfo, sizeof(nid.szInfo), lpszProxy);
+			StringCchCopy(nid.szInfo, ARRAYSIZE(nid.szInfo), lpszProxy);
 		}
 		else
 		{
 			//lstrcpy(nid.szInfo, szBalloon);
-			StringCchCopy(nid.szInfo, sizeof(nid.szInfo), szBalloon);
+			StringCchCopy(nid.szInfo, ARRAYSIZE(nid.szInfo), szBalloon);
 			//lstrcpy(nid.szTip, szTooltip);
-			StringCchCopy(nid.szTip, sizeof(nid.szTip), szTooltip);
+			StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), szTooltip);
 		}
 	}
 	Shell_NotifyIcon(dwMessage ? dwMessage : NIM_ADD, &nid);
@@ -319,6 +325,7 @@ BOOL SetWindowsProxy(WCHAR* szProxy, const WCHAR* szProxyInterface)
 	return bReturn;
 }
 
+#pragma warning( push )
 #pragma warning( disable : 4996)
 BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 {
@@ -352,6 +359,7 @@ BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 	}
 	return TRUE;
 }
+#pragma warning( pop )
 
 BOOL ShowPopupMenuJson3()
 {
@@ -584,6 +592,8 @@ BOOL ShowPopupMenu()
 
 */
 
+#pragma warning( push )
+#pragma warning( disable : 4996)
 BOOL ParseProxyList()
 {
 	WCHAR* tmpProxyString = _wcsdup(szProxyString);
@@ -610,6 +620,7 @@ BOOL ParseProxyList()
 	}
 	return TRUE;
 }
+#pragma warning( pop )
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -638,12 +649,19 @@ BOOL CDCurrentDirectory()
 	return TRUE;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4996)
 BOOL SetEenvironment()
 {
-	LoadString(hInst, IDS_CMDLINE, szCommandLine, sizeof(szCommandLine) / sizeof(szCommandLine[0]) - 1);
-	LoadString(hInst, IDS_ENVIRONMENT, szEnvironment, sizeof(szEnvironment) / sizeof(szEnvironment[0]) - 1);
-	LoadString(hInst, IDS_PROXYLIST, szProxyString, sizeof(szProxyString) / sizeof(szEnvironment[0]) - 1);
-	LoadStringA(hInst, IDS_RASPBK, szRasPbk, sizeof(szRasPbk) / sizeof(szRasPbk[0]) - 1);
+	//LoadString(hInst, IDS_CMDLINE, szCommandLine, sizeof(szCommandLine) / sizeof(szCommandLine[0]) - 1);
+	//LoadString(hInst, IDS_ENVIRONMENT, szEnvironment, sizeof(szEnvironment) / sizeof(szEnvironment[0]) - 1);
+	//LoadString(hInst, IDS_PROXYLIST, szProxyString, sizeof(szProxyString) / sizeof(szEnvironment[0]) - 1);
+	//LoadStringA(hInst, IDS_RASPBK, szRasPbk, sizeof(szRasPbk) / sizeof(szRasPbk[0]) - 1);
+
+	LoadString(hInst, IDS_CMDLINE, szCommandLine, ARRAYSIZE(szCommandLine) - 1);
+	LoadString(hInst, IDS_ENVIRONMENT, szEnvironment, ARRAYSIZE(szEnvironment) - 1);
+	LoadString(hInst, IDS_PROXYLIST, szProxyString, ARRAYSIZE(szProxyString) - 1);
+	LoadStringA(hInst, IDS_RASPBK, szRasPbk, ARRAYSIZE(szRasPbk) - 1);
 
 	const wchar_t* sep = L"\n";
 	wchar_t* pos = NULL;
@@ -665,12 +683,17 @@ BOOL SetEenvironment()
 	}
 	LOGMESSAGE(L"Get out of loop!\n");
 
-	GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, sizeof(szTitle) / sizeof(szTitle[0]) - 1);
-	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
-	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
+	//GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, sizeof(szTitle) / sizeof(szTitle[0]) - 1);
+	//GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
+	//GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
+
+	GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, ARRAYSIZE(szTitle) - 1);
+	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, ARRAYSIZE(szTooltip) - 1);
+	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, ARRAYSIZE(szBalloon) - 1);
 
 	return TRUE;
 }
+#pragma warning( pop )
 
 BOOL WINAPI ConsoleHandler(DWORD CEvent)
 {
@@ -685,6 +708,8 @@ BOOL WINAPI ConsoleHandler(DWORD CEvent)
 	return TRUE;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4996)
 BOOL CreateConsole()
 {
 	WCHAR szVisible[BUFSIZ] = L"";
@@ -706,7 +731,9 @@ BOOL CreateConsole()
 
 	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE) == FALSE)
 	{
+#ifdef _DEBUG
 		printf("Unable to install handler!\n");
+#endif
 		return FALSE;
 	}
 
@@ -719,13 +746,16 @@ BOOL CreateConsole()
 			size.Y = 2048;
 			if (!SetConsoleScreenBufferSize(GetStdHandle(STD_ERROR_HANDLE), size))
 			{
+#ifdef _DEBUG
 				printf("Unable to set console screen buffer size!\n");
+#endif
 			}
 		}
 	}
 
 	return TRUE;
 }
+#pragma warning( pop )
 
 BOOL ExecCmdline()
 {
@@ -737,14 +767,20 @@ BOOL ExecCmdline()
 	BOOL bRet = CreateProcess(NULL, szCommandLine, NULL, NULL, FALSE, NULL, NULL, NULL, &si, &pi);
 	if (bRet)
 	{
+#ifdef _DEBUG
 		dwChildrenPid = MyGetProcessId(pi.hProcess);
 		assert(dwChildrenPid == pi.dwProcessId);
 		assert(dwChildrenPid == GetProcessId(pi.hProcess));
+#else
+		dwChildrenPid = GetProcessId(pi.hProcess);
+#endif
 		LOGMESSAGE(L"ExecCmdline pid %d\n", dwChildrenPid);
 	}
 	else
 	{
+#ifdef _DEBUG
 		wprintf(L"ExecCmdline \"%s\" failed!\n", szCommandLine);
+#endif
 		MessageBox(NULL, szCommandLine, L"Error: Cannot execute!", MB_OK | MB_ICONERROR);
 		ExitProcess(0);
 	}
@@ -788,9 +824,13 @@ BOOL ReloadCmdline()
 	//}
 	ShowWindow(hConsole, SW_SHOW);
 	SetForegroundWindow(hConsole);
+#ifdef _DEBUG
 	wprintf(L"\n\n");
+#endif
 	MyEndTask(dwChildrenPid);
+#ifdef _DEBUG
 	wprintf(L"\n\n");
+#endif
 	Sleep(200);
 	ExecCmdline();
 	return TRUE;
@@ -885,8 +925,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CLEANUP_BEFORE_QUIT();
 			PostMessage(hConsole, WM_CLOSE, 0, 0);
 		}
-		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + sizeof(
-			lpProxyList) / sizeof(lpProxyList[0]))
+		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + ARRAYSIZE(
+			lpProxyList))
 		{
 			WCHAR* szProxy = lpProxyList[nID - WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE];
 			SetWindowsProxy(szProxy, NULL);

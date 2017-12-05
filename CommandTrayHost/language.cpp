@@ -194,12 +194,12 @@ void initialize_local()
 	{
 		ZeroMemory(szBalloon, sizeof(szBalloon));
 		if (FAILED(StringCchCopy(szBalloon,
-			sizeof(szBalloon),
+			ARRAYSIZE(szBalloon),
 			translate_w2w(L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.").c_str()))
 			)
 		{
 			LOGMESSAGE(L"init_global StringCchCopy failed\n");
 		}
-		// wcscpy_s(szBalloon, L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.");
+		// wcscpy_s(szBalloon, translate_w2w(L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.").c_str());
 	}
 }
