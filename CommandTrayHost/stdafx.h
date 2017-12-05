@@ -30,6 +30,7 @@
 // TODO: reference additional headers your program requires here
 #include <Shlwapi.h>
 #include <Shlobj.h>
+#include <strsafe.h>
 
 #include <fstream>
 #include <iomanip>
@@ -39,7 +40,7 @@
 
 #include <nlohmann/json.hpp>
 
-#pragma warning( disable : 4003)
+//#pragma warning( disable : 4003)
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/istreamwrapper.h>

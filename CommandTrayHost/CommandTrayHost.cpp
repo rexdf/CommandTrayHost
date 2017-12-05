@@ -640,7 +640,9 @@ BOOL SetEenvironment()
 
 	const WCHAR* sep = L"\n";
 	WCHAR* pos = NULL;
-	WCHAR* token = wcstok(szEnvironment, sep);
+	WCHAR* token = NULL;
+	// WCHAR *token = wcstok(szEnvironment, sep);
+	wcstok_s(szEnvironment, sep, &token);
 	while (token != NULL)
 	{
 		if ((pos = wcschr(token, L'=')) != NULL)
@@ -649,19 +651,13 @@ BOOL SetEenvironment()
 			SetEnvironmentVariableW(token, pos + 1);
 			//wprintf(L"[%s] = [%s]\n", token, pos+1);
 		}
-		token = wcstok(NULL, sep);
+		//token = wcstok(NULL, sep);
+		wcstok_s(NULL, sep, &token);
 	}
 
 	GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, sizeof(szTitle) / sizeof(szTitle[0]) - 1);
 	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
 	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
-
-	BOOL isZHCN = GetSystemDefaultLCID() == 2052;
-	if (not isZHCN)
-	{
-		ZeroMemory(szBalloon, sizeof(szBalloon));
-		wcscpy_s(szBalloon, L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.");
-	}
 
 	return TRUE;
 }

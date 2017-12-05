@@ -272,7 +272,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 		}
 		else
 		{
-			LOGMESSAGE(L"type_check_groups neither number nor group\n");
+			LOGMESSAGE(L"type_check_groups neither number nor object\n");
 			return false;
 		}
 	}
@@ -510,7 +510,7 @@ int configure_reader(std::string& out)
 }
 
 /*
- * Make sure out is initialize with default value before call try_read_optional_json
+ * Make sure out is initialized with default value before call try_read_optional_json
  */
 template<typename Type>
 #ifdef _DEBUG
@@ -536,7 +536,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	catch (...)
 	{
 		::MessageBox(NULL,
-			(utf8_to_wstring(query_string) + std::wstring(L" type check failed!")).c_str(),
+			(utf8_to_wstring(query_string) + L" type check failed!").c_str(),
 			L"Type Error",
 			MB_OK | MB_ICONERROR
 		);
@@ -657,7 +657,11 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		if (TRUE == PathFileExists(pLoad))
 		{
 			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
-			wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
+			// wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
+			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2, pLoad)))
+			{
+				LOGMESSAGE(L"init_global StringCchCopy failed\n");
+			}
 			/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
 			NULL,             // hInstance must be NULL when loading from a file
 			wicon.c_str(),   // the icon file name
@@ -1068,7 +1072,12 @@ void create_process(
 
 	std::wstring name = utf8_to_wstring(jsp["name"]);
 	TCHAR nameStr[256];
-	wcscpy_s(nameStr, name.c_str());
+	// wcscpy_s(nameStr, name.c_str());
+	if (name.length() > 255 || FAILED(StringCchCopy(nameStr, 256, name.c_str())))
+	{
+		LOGMESSAGE(L"create_process StringCchCopy failed\n");
+		MessageBox(NULL, L"name is too long to exceed 256 characters", L"Error", MB_OK | MB_ICONERROR);
+	}
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(si));
@@ -1397,16 +1406,29 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 	const size_t count = MAX_PATH * 2;
 	TCHAR szValue[count] = {};
 
+	if (FAILED(StringCchCopy(szValue, count, L"\"")) ||
+		FAILED(StringCchCat(szValue, count, pathToExe)) ||
+		FAILED(StringCchCat(szValue, count, L"\" "))
+		)
+	{
+		LOGMESSAGE(L"RegisterMyProgramForStartup StringCchCopy failed\n");
+		MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
+	}
 
-	wcscpy_s(szValue, count, L"\"");
+	/*wcscpy_s(szValue, count, L"\"");
 	wcscat_s(szValue, count, pathToExe);
-	wcscat_s(szValue, count, L"\" ");
+	wcscat_s(szValue, count, L"\" ");*/
 
 	if (args != NULL)
 	{
 		// caller should make sure "args" is quoted if any single argument has a space
 		// e.g. (L"-name \"Mark Voidale\"");
-		wcscat_s(szValue, count, args);
+		// wcscat_s(szValue, count, args);
+		if (FAILED(StringCchCat(szValue, count, args)))
+		{
+			LOGMESSAGE(L"RegisterMyProgramForStartup StringCchCat failed\n");
+			MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
+		}
 	}
 
 	lResult = RegCreateKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, NULL, 0, (KEY_WRITE | KEY_READ), NULL, &hKey, NULL);

@@ -89,7 +89,11 @@ void update_locale_name_by_alias()
 	if (json_object_has_member(language_alias, locale_name))
 	{
 		std::string locale_alias = language_alias[locale_name];
-		strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
+		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
+		if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str())))
+		{
+			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
+		}
 		LOGMESSAGE(L"update_locale_name_by_alias %S\n", locale_alias);
 	}
 	else
@@ -104,7 +108,11 @@ void update_locale_name_by_system()
 	if (GetUserDefaultLocaleName(wlocale_name, LOCALE_NAME_MAX_LENGTH))
 	{
 		LOGMESSAGE(L"initialize_local GetUserDefaultLocaleName %s\n", wlocale_name);
-		strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str());
+		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str());
+		if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str())))
+		{
+			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
+		}
 		//update_isZHCN();
 	}
 	else
@@ -133,7 +141,11 @@ void initialize_local()
 		//if (json_object_has_member(global_stat, "lang"))  // it must be sure
 		{
 			std::string local = global_stat["lang"];
-			strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
+			// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
+			if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str())))
+			{
+				LOGMESSAGE(L"initialize_local StringCchCopyA Failed\n");
+			}
 		}
 		update_locale_name_by_alias();
 		update_isZHCN(false); //use user defined
@@ -176,4 +188,18 @@ void initialize_local()
 		isENUS = FALSE;
 	}
 	LOGMESSAGE(L"initialize_local locale_name: %S isZHCN: %d isENUS: %d\n", locale_name, isZHCN, isENUS);
+	// BOOL isZHCN = GetSystemDefaultLCID() == 2052;
+	extern WCHAR szBalloon[512];
+	if (not isZHCN)
+	{
+		ZeroMemory(szBalloon, sizeof(szBalloon));
+		if (FAILED(StringCchCopy(szBalloon,
+			sizeof(szBalloon),
+			translate_w2w(L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.").c_str()))
+			)
+		{
+			LOGMESSAGE(L"init_global StringCchCopy failed\n");
+		}
+		// wcscpy_s(szBalloon, L"CommandTrayHost Started，Click Tray icon to Hide/Show Console.");
+	}
 }
