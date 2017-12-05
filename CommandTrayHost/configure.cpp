@@ -317,7 +317,8 @@ int configure_reader(std::string& out)
 
 	using namespace rapidjson;
 
-	FileReadStream bis(fp, readBuffer, sizeof(readBuffer));
+	// FileReadStream bis(fp, readBuffer, sizeof(readBuffer)); //WARNING logical Error
+	FileReadStream bis(fp, readBuffer, json_file_size);
 	AutoUTFInputStream<unsigned, FileReadStream> eis(bis);  // 用 eis 包装 bis
 #ifdef _DEBUG
 	const char* utf_type_name[] = {
