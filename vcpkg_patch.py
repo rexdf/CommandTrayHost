@@ -10,7 +10,7 @@ import itertools
 
 
 def type_name_yeild():
-    for itm in itertools.product(('uint', 'int'), (64, 32, 16, 8)):
+    for itm in itertools.product(('uint', 'int'), ('64', '32', '16', '8')):
         yield ''.join(itm) + '_t'
     for itm in ('float', 'double', 'size_t'):
         yield itm
