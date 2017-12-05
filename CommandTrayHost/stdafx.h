@@ -16,21 +16,21 @@
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
-
 #include <wchar.h>
+
 #include <wininet.h>
 #include <shellapi.h>
 #include <stdio.h>
-#include <wininet.h>
 #include <io.h>
 #include <ras.h>
 #include <raserror.h>
+
 #include <psapi.h>
 
 // TODO: reference additional headers your program requires here
 #include <Shlwapi.h>
-#include <Shlobj.h>
-#include <strsafe.h>
+//#include <Shlobj.h>
+
 
 #include <fstream>
 #include <iomanip>
@@ -43,25 +43,30 @@
 //#pragma warning( disable : 4003)
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
-#include <rapidjson/istreamwrapper.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
+//#include <rapidjson/istreamwrapper.h>
+//#include <rapidjson/ostreamwrapper.h>
+//#include <rapidjson/writer.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/encodings.h>
 #include <rapidjson/filereadstream.h>   // FileReadStream
 #include <rapidjson/encodedstream.h>    // AutoUTFInputStream
 
 
+#include <ntverp.h>
+#if VER_PRODUCTBUILD == 7600
+#include <Psapi.h>
+#endif
+
+//#if VER_PRODUCTBUILD == 7600
+//#pragma warning(disable : 4995)
+//#endif
+#include <strsafe.h>
+
 #ifdef _DEBUG
 //#define LOGMESSAGE( str ) OutputDebugString( str );
 void LOGMESSAGE(wchar_t* pszFormat, ...);
 #else
 #define LOGMESSAGE( str, ... )
-#endif
-
-#include <ntverp.h>
-#if VER_PRODUCTBUILD == 7600
-#include <Psapi.h>
 #endif
 
 

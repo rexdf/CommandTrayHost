@@ -100,7 +100,8 @@ static DWORD MyGetProcessId(HANDLE hProcess)
 static BOOL MyEndTask(DWORD pid)
 {
 	WCHAR szCmd[1024] = { 0 };
-	wsprintf(szCmd, L"taskkill /f /pid %d", pid);
+	StringCchPrintf(szCmd, sizeof(szCmd), L"taskkill /f /pid %d", pid);
+	//wsprintf(szCmd, L"taskkill /f /pid %d", pid);
 	return _wsystem(szCmd) == 0;
 }
 
@@ -181,19 +182,24 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 	nid.hIcon = (hIcon == NULL) ? LoadIcon(hInst, (LPCTSTR)IDI_SMALL) : hIcon;
 
 	nid.uTimeout = 3 * 1000 | NOTIFYICON_VERSION;
-	lstrcpy(nid.szInfoTitle, szTitle);
+	//lstrcpy(nid.szInfoTitle, szTitle);
+	StringCchCopy(nid.szInfoTitle, sizeof(nid.szInfoTitle), szTitle);
 	if (lpszProxy)
 	{
 		nid.uFlags |= NIF_INFO | NIF_TIP;
 		if (lstrlen(lpszProxy) > 0)
 		{
-			lstrcpy(nid.szTip, lpszProxy);
-			lstrcpy(nid.szInfo, lpszProxy);
+			//lstrcpy(nid.szTip, lpszProxy);
+			StringCchCopy(nid.szTip, sizeof(nid.szTip), lpszProxy);
+			//lstrcpy(nid.szInfo, lpszProxy);
+			StringCchCopy(nid.szInfo, sizeof(nid.szInfo), lpszProxy);
 		}
 		else
 		{
-			lstrcpy(nid.szInfo, szBalloon);
-			lstrcpy(nid.szTip, szTooltip);
+			//lstrcpy(nid.szInfo, szBalloon);
+			StringCchCopy(nid.szInfo, sizeof(nid.szInfo), szBalloon);
+			//lstrcpy(nid.szTip, szTooltip);
+			StringCchCopy(nid.szTip, sizeof(nid.szTip), szTooltip);
 		}
 	}
 	Shell_NotifyIcon(dwMessage ? dwMessage : NIM_ADD, &nid);
