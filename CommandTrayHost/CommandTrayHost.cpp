@@ -183,6 +183,7 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 
 	nid.uTimeout = 3 * 1000 | NOTIFYICON_VERSION;
 	//lstrcpy(nid.szInfoTitle, szTitle);
+	assert(sizeof(nid.szInfoTitle) == 64 * sizeof(WCHAR));
 	StringCchCopy(nid.szInfoTitle, sizeof(nid.szInfoTitle), szTitle);
 	if (lpszProxy)
 	{
@@ -644,11 +645,12 @@ BOOL SetEenvironment()
 	LoadString(hInst, IDS_PROXYLIST, szProxyString, sizeof(szProxyString) / sizeof(szEnvironment[0]) - 1);
 	LoadStringA(hInst, IDS_RASPBK, szRasPbk, sizeof(szRasPbk) / sizeof(szRasPbk[0]) - 1);
 
-	const WCHAR* sep = L"\n";
-	WCHAR* pos = NULL;
-	WCHAR* token = NULL;
-	// WCHAR *token = wcstok(szEnvironment, sep);
-	wcstok_s(szEnvironment, sep, &token);
+	const wchar_t* sep = L"\n";
+	wchar_t* pos = NULL;
+	WCHAR *token = wcstok(szEnvironment, sep);
+	/*wchar_t* next_token = NULL;
+	wchar_t* token = NULL;
+	token = wcstok_s(szEnvironment, sep, &next_token);*/
 	while (token != NULL)
 	{
 		if ((pos = wcschr(token, L'=')) != NULL)
@@ -657,9 +659,11 @@ BOOL SetEenvironment()
 			SetEnvironmentVariableW(token, pos + 1);
 			//wprintf(L"[%s] = [%s]\n", token, pos+1);
 		}
-		//token = wcstok(NULL, sep);
-		wcstok_s(NULL, sep, &token);
+		token = wcstok(NULL, sep);
+		//token = wcstok_s(NULL, sep, &token);
+		LOGMESSAGE(L"SetEenvironment loop token:%s\n", token);
 	}
+	LOGMESSAGE(L"Get out of loop!\n");
 
 	GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, sizeof(szTitle) / sizeof(szTitle[0]) - 1);
 	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
