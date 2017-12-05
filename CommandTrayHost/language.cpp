@@ -32,7 +32,7 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 }
 
 extern nlohmann::json global_stat;
-extern CHAR locale_name[];
+extern CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 extern BOOL isZHCN, isENUS;
 
 std::string translate(std::string en)
@@ -90,7 +90,7 @@ void update_locale_name_by_alias()
 	{
 		std::string locale_alias = language_alias[locale_name];
 		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
-		if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str())))
+		if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), locale_alias.c_str())))
 		{
 			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
 		}
@@ -109,7 +109,7 @@ void update_locale_name_by_system()
 	{
 		LOGMESSAGE(L"initialize_local GetUserDefaultLocaleName %s\n", wlocale_name);
 		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str());
-		if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str())))
+		if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), wstring_to_utf8(wlocale_name).c_str())))
 		{
 			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
 		}
@@ -142,7 +142,7 @@ void initialize_local()
 		{
 			std::string local = global_stat["lang"];
 			// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
-			if (FAILED(StringCchCopyA(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str())))
+			if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), local.c_str())))
 			{
 				LOGMESSAGE(L"initialize_local StringCchCopyA Failed\n");
 			}

@@ -658,7 +658,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 		{
 			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
 			// wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
-			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2, pLoad)))
+			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2 / sizeof(WCHAR), pLoad)))
 			{
 				LOGMESSAGE(L"init_global StringCchCopy failed\n");
 			}
