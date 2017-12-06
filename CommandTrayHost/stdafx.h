@@ -80,4 +80,4 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 
 #define VERSION_NUMS L"1.2.0"
 
-#define MAX_MENU_LEVEL_LIMIT	30
+#define MAX_MENU_LEVEL_LIMIT	40
