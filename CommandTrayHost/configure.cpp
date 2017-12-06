@@ -1545,6 +1545,7 @@ void ElevateNow()
 			sei.nShow = SW_NORMAL;
 
 			//delete_lockfile();
+			ReleaseMutex(ghMutex);
 			if (!ShellExecuteEx(&sei))
 			{
 				DWORD dwError = GetLastError();
@@ -1559,6 +1560,7 @@ void ElevateNow()
 				}
 				fo.close();
 				*/
+				makeSingleInstance2();
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
@@ -1615,7 +1617,7 @@ void check_admin(bool is_admin)
 //https://stackoverflow.com/questions/4191465/how-to-run-only-one-instance-of-application
 void makeSingleInstance2()
 {
-	TCHAR szPathToExe[MAX_PATH * 10];
+	TCHAR szPathToExe[MAX_PATH * 2];
 	if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
 	{
 		//size_t length = 0;
@@ -1628,6 +1630,7 @@ void makeSingleInstance2()
 			}
 			else if (L'\x0' == szPathToExe[i])
 			{
+				LOGMESSAGE(L"GetModuleFileName changed to :%s, length:%d\n", szPathToExe, i);
 				break;
 			}
 		}
@@ -1640,7 +1643,7 @@ void makeSingleInstance2()
 			// the first instance so create
 			// the mutex.
 			ghMutex = CreateMutex(0, 0, szPathToExe);
-			if(ghMutex==NULL)
+			if (ghMutex == NULL)
 			{
 				::MessageBox(NULL, L"CommandTrayHost cannot CreateMutex, please report to Author!",
 					L"Error",
