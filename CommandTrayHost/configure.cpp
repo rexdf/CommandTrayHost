@@ -1546,6 +1546,7 @@ void ElevateNow()
 			sei.nShow = SW_NORMAL;
 
 			//delete_lockfile();
+			//CLEAN_MUTEX();
 			if (!ShellExecuteEx(&sei))
 			{
 				DWORD dwError = GetLastError();
@@ -1565,6 +1566,8 @@ void ElevateNow()
 				{
 					// The user refused to allow privileges elevation.
 					::MessageBox(NULL, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
+					//bool is_another_instance_running();
+					//is_another_instance_running();
 				}
 			}
 			else
@@ -1572,7 +1575,7 @@ void ElevateNow()
 				/*delete_lockfile();
 				kill_all(js);
 				DeleteTrayIcon();*/
-				CLEANUP_BEFORE_QUIT();
+				CLEANUP_BEFORE_QUIT(1);
 				_exit(1);  // Quit itself
 			}
 		}
@@ -1724,6 +1727,7 @@ void makeSingleInstance3()
 		LOGMESSAGE(L"makeSingleInstance3 is_another_instance_running!\n");
 		bool to_exit_now = false;
 		// check by filepath
+		if (false == is_runas_admin)
 		{
 			TCHAR szPathToExe[MAX_PATH * 2];
 			if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))

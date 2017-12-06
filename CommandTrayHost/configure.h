@@ -36,12 +36,17 @@ void makeSingleInstance3();
 
 BOOL DeleteTrayIcon();
 
-//#define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
-#define  CLEANUP_BEFORE_QUIT() {\
-	kill_all(); \
-	ReleaseMutex(ghMutex); \
-	DeleteTrayIcon(); \
-	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x\n",ghMutex); \
-	CloseHandle(ghMutex); \
+#define CLEAN_MUTEX() { \
+	LOGMESSAGE(L"CLEAN_MUTEX ghMutex:0x%x\n",ghMutex); \
+	if(ghMutex)ReleaseMutex(ghMutex); \
+	if(ghMutex)CloseHandle(ghMutex); \
 	ghMutex = NULL; \
+}
+
+//#define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
+#define  CLEANUP_BEFORE_QUIT(where) {\
+	kill_all(); \
+	CLEAN_MUTEX(); \
+	DeleteTrayIcon(); \
+	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x where:%d\n",ghMutex,where); \
 }
