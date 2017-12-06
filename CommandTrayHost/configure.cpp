@@ -732,7 +732,7 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 
 	for (auto& m : root_groups)
 	{
-		if (m.is_number())
+		if (m.is_number_unsigned())
 		{
 			int idx = m;
 			const nlohmann::json& itm = configs[idx];

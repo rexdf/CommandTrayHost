@@ -246,7 +246,8 @@ LPCTSTR GetWindowsProxy()
 		&hKey))
 	{
 		szProxy[0] = 0;
-		dwSize = sizeof(szProxy) / sizeof(szProxy[0]);
+		//dwSize = sizeof(szProxy) / sizeof(szProxy[0]);
+		dwSize = ARRAYSIZE(szProxy);
 		RegQueryValueExW(hKey, L"AutoConfigURL", NULL, 0, (LPBYTE)&szProxy, &dwSize);
 		if (wcslen(szProxy))
 		{
@@ -261,7 +262,8 @@ LPCTSTR GetWindowsProxy()
 			return L"";
 		}
 		szProxy[0] = 0;
-		dwSize = sizeof(szProxy) / sizeof(szProxy[0]);
+		//dwSize = sizeof(szProxy) / sizeof(szProxy[0]);
+		dwSize = ARRAYSIZE(szProxy);
 		RegQueryValueExW(hKey, L"ProxyServer", NULL, 0, (LPBYTE)&szProxy, &dwSize);
 		if (wcslen(szProxy))
 		{
@@ -325,30 +327,35 @@ BOOL SetWindowsProxy(WCHAR* szProxy, const WCHAR* szProxyInterface)
 	return bReturn;
 }
 
-#pragma warning( push )
-#pragma warning( disable : 4996)
+//#pragma warning( push )
+//#pragma warning( disable : 4996)
 BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 {
 	for (LPCSTR lpRasPbk = szRasPbk; *lpRasPbk; lpRasPbk += strlen(lpRasPbk) + 1)
 	{
 		char szPath[2048] = "";
-		if (ExpandEnvironmentStringsA(lpRasPbk, szPath, sizeof(szPath) / sizeof(szPath[0])))
+		//if (ExpandEnvironmentStringsA(lpRasPbk, szPath, sizeof(szPath) / sizeof(szPath[0])))
+		if (ExpandEnvironmentStringsA(lpRasPbk, szPath, ARRAYSIZE(szPath)))
 		{
 			char line[2048] = "";
 			size_t length = 0;
-			FILE* fp = fopen(szPath, "r");
-			if (fp != NULL)
+			//FILE* fp = fopen(szPath, "r");
+			//if (fp != NULL)
+			FILE* fp = NULL;
+			if (0 == fopen_s(&fp, szPath, "r"))
 			{
 				while (!feof(fp))
 				{
-					if (fgets(line, sizeof(line) / sizeof(line[0]) - 1, fp))
+					//if (fgets(line, sizeof(line) / sizeof(line[0]) - 1, fp))
+					if (fgets(line, ARRAYSIZE(line) - 1, fp))
 					{
 						length = strlen(line);
 						if (length > 3 && line[0] == '[' && line[length - 2] == ']')
 						{
 							line[length - 2] = 0;
 							WCHAR szSection[64] = L"";
-							MultiByteToWideChar(CP_UTF8, 0, line + 1, -1, szSection, sizeof(szSection) / sizeof(szSection[0]));
+							//MultiByteToWideChar(CP_UTF8, 0, line + 1, -1, szSection, sizeof(szSection) / sizeof(szSection[0]));
+							MultiByteToWideChar(CP_UTF8, 0, line + 1, -1, szSection, ARRAYSIZE(szSection));
 							SetWindowsProxy(szProxy, szSection);
 						}
 					}
@@ -359,7 +366,7 @@ BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 	}
 	return TRUE;
 }
-#pragma warning( pop )
+//#pragma warning( pop )
 
 BOOL ShowPopupMenuJson3()
 {
@@ -592,24 +599,29 @@ BOOL ShowPopupMenu()
 
 */
 
-#pragma warning( push )
-#pragma warning( disable : 4996)
+//#pragma warning( push )
+//#pragma warning( disable : 4996)
 BOOL ParseProxyList()
 {
 	WCHAR* tmpProxyString = _wcsdup(szProxyString);
-	ExpandEnvironmentStrings(tmpProxyString, szProxyString, sizeof(szProxyString) / sizeof(szProxyString[0]));
+	//ExpandEnvironmentStrings(tmpProxyString, szProxyString, sizeof(szProxyString) / sizeof(szProxyString[0]));
+	ExpandEnvironmentStrings(tmpProxyString, szProxyString, ARRAYSIZE(szProxyString));
 	free(tmpProxyString);
 	const WCHAR* sep = L"\n";
-	WCHAR* pos = _wcstok(szProxyString, sep);
+	//WCHAR* pos = _wcstok(szProxyString, sep);
+	WCHAR* next_token = NULL;
+	WCHAR* pos = wcstok_s(szProxyString, sep, &next_token);
 	UINT i = 0;
-	lpProxyList[i++] = (LPWSTR)L"";
-	while (pos && i < sizeof(lpProxyList) / sizeof(lpProxyList[0]))
+	//lpProxyList[i++] = (LPWSTR)L"";
+	lpProxyList[i++] = L"";
+	//while (pos && i < sizeof(lpProxyList) / sizeof(lpProxyList[0]))
+	while (pos && i < ARRAYSIZE(lpProxyList))
 	{
 		lpProxyList[i++] = pos;
-		pos = _wcstok(NULL, sep);
+		//pos = _wcstok(NULL, sep);
+		pos = wcstok_s(nullptr, sep, &next_token);
 	}
 	lpProxyList[i] = 0;
-
 
 	for (LPSTR ptr = szRasPbk; *ptr; ptr++)
 	{
@@ -620,7 +632,7 @@ BOOL ParseProxyList()
 	}
 	return TRUE;
 }
-#pragma warning( pop )
+//#pragma warning( pop )
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -649,8 +661,8 @@ BOOL CDCurrentDirectory()
 	return TRUE;
 }
 
-#pragma warning( push )
-#pragma warning( disable : 4996)
+//#pragma warning( push )
+//#pragma warning( disable : 4996)
 BOOL SetEenvironment()
 {
 	//LoadString(hInst, IDS_CMDLINE, szCommandLine, sizeof(szCommandLine) / sizeof(szCommandLine[0]) - 1);
@@ -665,10 +677,9 @@ BOOL SetEenvironment()
 
 	const wchar_t* sep = L"\n";
 	wchar_t* pos = NULL;
-	WCHAR *token = wcstok(szEnvironment, sep);
-	/*wchar_t* next_token = NULL;
-	wchar_t* token = NULL;
-	token = wcstok_s(szEnvironment, sep, &next_token);*/
+	//WCHAR *token = wcstok(szEnvironment, sep);
+	wchar_t* next_token = NULL;
+	wchar_t* token = wcstok_s(szEnvironment, sep, &next_token);
 	while (token != NULL)
 	{
 		if ((pos = wcschr(token, L'=')) != NULL)
@@ -676,9 +687,10 @@ BOOL SetEenvironment()
 			*pos = 0;
 			SetEnvironmentVariableW(token, pos + 1);
 			//wprintf(L"[%s] = [%s]\n", token, pos+1);
+			LOGMESSAGE(L"[%s] = [%s]\n", token, pos + 1);
 		}
-		token = wcstok(NULL, sep);
-		//token = wcstok_s(NULL, sep, &token);
+		//token = wcstok(NULL, sep);
+		token = wcstok_s(nullptr, sep, &next_token);
 		LOGMESSAGE(L"SetEenvironment loop token:%s\n", token);
 	}
 	LOGMESSAGE(L"Get out of loop!\n");
@@ -693,7 +705,7 @@ BOOL SetEenvironment()
 
 	return TRUE;
 }
-#pragma warning( pop )
+//#pragma warning( pop )
 
 BOOL WINAPI ConsoleHandler(DWORD CEvent)
 {
@@ -708,15 +720,18 @@ BOOL WINAPI ConsoleHandler(DWORD CEvent)
 	return TRUE;
 }
 
-#pragma warning( push )
-#pragma warning( disable : 4996)
+//#pragma warning( push )
+//#pragma warning( disable : 4996)
 BOOL CreateConsole()
 {
 	WCHAR szVisible[BUFSIZ] = L"";
 
 	AllocConsole();
-	_wfreopen(L"CONIN$", L"r+t", stdin);
-	_wfreopen(L"CONOUT$", L"w+t", stdout);
+	//_wfreopen(L"CONIN$", L"r+t", stdin);
+	//_wfreopen(L"CONOUT$", L"w+t", stdout);
+	FILE* fp;
+	_wfreopen_s(&fp, L"CONIN$", L"r+t", stdin);
+	_wfreopen_s(&fp, L"CONOUT$", L"w+t", stdout);
 
 	hConsole = GetConsoleWindow();
 
@@ -731,9 +746,7 @@ BOOL CreateConsole()
 
 	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE) == FALSE)
 	{
-#ifdef _DEBUG
-		printf("Unable to install handler!\n");
-#endif
+		LOGMESSAGE(L"Unable to install handler!\n");
 		return FALSE;
 	}
 
@@ -746,16 +759,14 @@ BOOL CreateConsole()
 			size.Y = 2048;
 			if (!SetConsoleScreenBufferSize(GetStdHandle(STD_ERROR_HANDLE), size))
 			{
-#ifdef _DEBUG
-				printf("Unable to set console screen buffer size!\n");
-#endif
+				LOGMESSAGE(L"Unable to set console screen buffer size!\n");
 			}
 		}
 	}
 
 	return TRUE;
 }
-#pragma warning( pop )
+//#pragma warning( pop )
 
 BOOL ExecCmdline()
 {
