@@ -236,7 +236,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 	}
 	for (auto& m : root)
 	{
-		if (m.is_number())
+		if (m.is_number_unsigned())
 		{
 			int val = m;
 			if (val >= number_of_configs)
@@ -300,6 +300,10 @@ int configure_reader(std::string& out)
 		return NULL;
 	}
 	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
+	if (json_file_size > 1024 * 1024 * 100)
+	{
+		::MessageBox(NULL, L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
+	}
 	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 10)));
 	if (NULL == readBuffer)
 	{
