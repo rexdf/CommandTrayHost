@@ -31,6 +31,7 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 
 nlohmann::json global_stat;
 HANDLE ghJob;
+HANDLE ghMutex;
 //HICON gHicon;
 WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
@@ -1059,7 +1060,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		Sleep(400); // Wait for self Elevate to cleanup.
 	}
 	CDCurrentDirectory();
-	makeSingleInstance();
+	makeSingleInstance2();
 	SetEenvironment();
 	ParseProxyList();
 	if (NULL == init_global(ghJob, szHIcon, icon_size))

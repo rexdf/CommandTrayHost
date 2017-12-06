@@ -8,6 +8,7 @@ extern nlohmann::json global_stat;
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
 extern int number_of_configs;
+extern HANDLE ghMutex;
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -1519,6 +1520,7 @@ Cleanup:
 	return fIsRunAsAdmin;
 }
 
+/*
 void delete_lockfile()
 {
 	if (NULL == DeleteFile(LOCK_FILE_NAME))
@@ -1526,6 +1528,7 @@ void delete_lockfile()
 		LOGMESSAGE(L"Delete " LOCK_FILE_NAME " Failed! error code: %d\n", GetLastError());
 	}
 }
+*/
 
 void ElevateNow()
 {
@@ -1541,12 +1544,12 @@ void ElevateNow()
 			sei.hwnd = NULL;
 			sei.nShow = SW_NORMAL;
 
-			delete_lockfile();
+			//delete_lockfile();
 			if (!ShellExecuteEx(&sei))
 			{
 				DWORD dwError = GetLastError();
 
-				DWORD pid = GetCurrentProcessId();
+				/*DWORD pid = GetCurrentProcessId();
 
 				std::ofstream fo(LOCK_FILE_NAME);
 				if (fo.good())
@@ -1555,6 +1558,7 @@ void ElevateNow()
 					LOGMESSAGE(L"pid has wrote\n");
 				}
 				fo.close();
+				*/
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
@@ -1608,6 +1612,64 @@ void check_admin(bool is_admin)
 	}
 }
 
+//https://stackoverflow.com/questions/4191465/how-to-run-only-one-instance-of-application
+void makeSingleInstance2()
+{
+	TCHAR szPathToExe[MAX_PATH * 10];
+	if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+	{
+		//size_t length = 0;
+		//StringCchLength(szPathToExe, ARRAYSIZE(szPathToExe), &length);
+		for (int i = 0; i < ARRAYSIZE(szPathToExe); i++)
+		{
+			if (L'\\' == szPathToExe[i] || L':' == szPathToExe[i])
+			{
+				szPathToExe[i] = L'_';
+			}
+			else if (L'\x0' == szPathToExe[i])
+			{
+				break;
+			}
+		}
+		LOGMESSAGE(L"makeSingleInstance2 %s\n", szPathToExe);
+		// Try to open the mutex.
+		ghMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, szPathToExe);
+		if (!ghMutex)
+		{
+			// Mutex doesn't exist. This is
+			// the first instance so create
+			// the mutex.
+			ghMutex = CreateMutex(0, 0, szPathToExe);
+			if(ghMutex==NULL)
+			{
+				::MessageBox(NULL, L"CommandTrayHost cannot CreateMutex, please report to Author!",
+					L"Error",
+					MB_OK | MB_ICONERROR);
+			}
+			LOGMESSAGE(L"makeSingleInstance2 CreateMutex 0x%x 0x%0x\n", ghMutex, GetLastError());
+		}
+		else
+		{
+			// The mutex exists so this is the
+			// the second instance so return.
+			LOGMESSAGE(L"makeSingleInstance2 found!\n");
+			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
+				L"If you are sure not, you can reboot your computer \n"
+				L"or move CommandTrayHost.exe to other folder \n"
+				L"or rename CommandTrayHost.exe",
+				L"Error",
+				MB_OK | MB_ICONERROR);
+			exit(-1);
+			return;
+		}
+
+		// The app is closing so release
+		// the mutex.
+		//ReleaseMutex(ghMutex);
+	}
+}
+
+/*
 void makeSingleInstance()
 {
 	PCWSTR lock_filename = LOCK_FILE_NAME;
@@ -1629,7 +1691,7 @@ void makeSingleInstance()
 		HANDLE Handle = OpenProcess(
 			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
 			FALSE,
-			txt_pid /* This is the PID, you can find one from windows task manager */
+			txt_pid // This is the PID, you can find one from windows task manager
 		);
 		if (Handle)
 		{
@@ -1669,3 +1731,4 @@ void makeSingleInstance()
 	}
 	fo.close();
 }
+*/
