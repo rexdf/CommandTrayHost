@@ -1530,6 +1530,7 @@ void delete_lockfile()
 }
 */
 
+
 void ElevateNow()
 {
 	if (!is_runas_admin)
@@ -1545,7 +1546,6 @@ void ElevateNow()
 			sei.nShow = SW_NORMAL;
 
 			//delete_lockfile();
-			ReleaseMutex(ghMutex);
 			if (!ShellExecuteEx(&sei))
 			{
 				DWORD dwError = GetLastError();
@@ -1560,7 +1560,7 @@ void ElevateNow()
 				}
 				fo.close();
 				*/
-				makeSingleInstance2();
+
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
@@ -1579,7 +1579,7 @@ void ElevateNow()
 	}
 	else
 	{
-		Sleep(200); // Child process wait for parents to quit.
+		//Sleep(200); // Child process wait for parents to quit.
 	}
 }
 
@@ -1614,6 +1614,79 @@ void check_admin(bool is_admin)
 	}
 }
 
+//https://support.microsoft.com/en-us/help/243953/how-to-limit-32-bit-applications-to-one-instance-in-visual-c
+bool is_another_instance_running()
+{
+	bool ret = false;
+	TCHAR szPathToExe[MAX_PATH * 2];
+	if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+	{
+		//size_t length = 0;
+		//StringCchLength(szPathToExe, ARRAYSIZE(szPathToExe), &length);
+		for (int i = 0; i < ARRAYSIZE(szPathToExe); i++)
+		{
+			if (L'\\' == szPathToExe[i] || L':' == szPathToExe[i])
+			{
+				szPathToExe[i] = L'_';
+			}
+			else if (L'\x0' == szPathToExe[i])
+			{
+				LOGMESSAGE(L"GetModuleFileName changed to :%s, length:%d\n", szPathToExe, i);
+				break;
+			}
+		}
+		//SECURITY_ATTRIBUTES sa;
+		//ZeroMemory(&sa, sizeof(sa));
+		//sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		HANDLE m_hMutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, szPathToExe);
+		if (NULL == m_hMutex)
+		{
+			if (ERROR_FILE_NOT_FOUND != GetLastError())
+			{
+				::MessageBox(NULL, L"OpenMutex Failed with unknown error!",
+					L"Error",
+					MB_OK | MB_ICONERROR);
+			}
+			m_hMutex = CreateMutex(NULL, TRUE, szPathToExe); //do early
+			//DWORD m_dwLastError = GetLastError(); //save for use later...
+			ret = ERROR_ALREADY_EXISTS == GetLastError();
+			if (ret == true)
+			{
+				CloseHandle(ghMutex);
+			}
+		}
+		else
+		{
+			ret = true;
+		}
+
+		ghMutex = m_hMutex;
+		LOGMESSAGE(L"is_another_instance_running %d ghMutex: 0x%x\n", ret, ghMutex);
+	}
+	return ret;
+}
+
+void makeSingleInstance3()
+{
+	if (is_another_instance_running())
+	{
+		LOGMESSAGE(L"makeSingleInstance3 is_another_instance_running!\n");
+		DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 3);
+		LOGMESSAGE(L"makeSingleInstance3 WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
+		if (WAIT_TIMEOUT == dwWaitResult)
+		{
+			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
+				L"If you are sure not, you can reboot your computer \n"
+				L"or move CommandTrayHost.exe to other folder \n"
+				L"or rename CommandTrayHost.exe",
+				L"Error",
+				MB_OK | MB_ICONERROR);
+			exit(-1);
+		}
+	}
+}
+
+/*
 //https://stackoverflow.com/questions/4191465/how-to-run-only-one-instance-of-application
 void makeSingleInstance2()
 {
@@ -1669,8 +1742,10 @@ void makeSingleInstance2()
 		// The app is closing so release
 		// the mutex.
 		//ReleaseMutex(ghMutex);
+
 	}
 }
+*/
 
 /*
 void makeSingleInstance()

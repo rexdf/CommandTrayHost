@@ -32,9 +32,9 @@ BOOL EnableStartup();
 void ElevateNow();
 //void makeSingleInstance();
 //void delete_lockfile();
-void makeSingleInstance2();
+void makeSingleInstance3();
 
 BOOL DeleteTrayIcon();
 
 //#define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
-#define  CLEANUP_BEFORE_QUIT() {ReleaseMutex(ghMutex);kill_all();DeleteTrayIcon();}
+#define  CLEANUP_BEFORE_QUIT() {kill_all();ReleaseMutex(ghMutex);DeleteTrayIcon();CloseHandle(ghMutex);}

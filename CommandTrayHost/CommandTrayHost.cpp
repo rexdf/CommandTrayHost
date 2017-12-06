@@ -1057,10 +1057,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	is_runas_admin = check_runas_admin();
 	if (is_runas_admin)
 	{
-		Sleep(400); // Wait for self Elevate to cleanup.
+		Sleep(100); // Wait for self Elevate to cleanup.
 	}
 	CDCurrentDirectory();
-	makeSingleInstance2();
+	makeSingleInstance3();
 	SetEenvironment();
 	ParseProxyList();
 	if (NULL == init_global(ghJob, szHIcon, icon_size))
