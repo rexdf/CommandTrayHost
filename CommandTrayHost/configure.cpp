@@ -1653,6 +1653,7 @@ bool is_another_instance_running()
 			if (ret == true)
 			{
 				CloseHandle(ghMutex);
+				ghMutex = NULL;
 			}
 		}
 		else
@@ -1666,14 +1667,77 @@ bool is_another_instance_running()
 	return ret;
 }
 
+//https://stackoverflow.com/questions/23814979/c-windows-how-to-get-process-pid-from-its-path
+BOOL GetProcessName(LPTSTR szFilename, DWORD dwSize, DWORD dwProcID)
+{
+	BOOLEAN retVal = FALSE;
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcID);
+	DWORD dwPathSize = dwSize;
+	if (hProcess == 0)
+		return retVal; // You should check for error code, if you are concerned about this
+	retVal = QueryFullProcessImageName(hProcess, 0, szFilename, &dwPathSize);
+
+	CloseHandle(hProcess);
+
+	return retVal;
+}
+
+DWORD GetNamedProcessID(LPCTSTR process_name)
+{
+	DWORD* pProcs = NULL;
+	DWORD retVal = 0;
+	DWORD dwSize = 0;
+	DWORD dwRealSize = 0;
+	TCHAR szCompareName[MAX_PATH + 1];
+	int nCount = 0;
+	int nResult = 0;
+
+	dwSize = 1024;
+	pProcs = new DWORD[dwSize];
+	EnumProcesses(pProcs, dwSize * sizeof(DWORD), &dwRealSize);
+	dwSize = dwRealSize / sizeof(DWORD);
+
+	for (DWORD nCount = 0; nCount < dwSize; nCount++)
+	{
+		ZeroMemory(szCompareName, MAX_PATH + 1 * (sizeof(TCHAR)));
+		if (GetProcessName(szCompareName, MAX_PATH, pProcs[nCount]))
+		{
+			if (wcscmp(process_name, szCompareName) == 0)
+			{
+				retVal = pProcs[nCount];
+				delete[] pProcs;
+				return retVal;
+			}
+		}
+	}
+	delete[] pProcs;
+	return 0;
+}
+
 void makeSingleInstance3()
 {
 	if (is_another_instance_running())
 	{
 		LOGMESSAGE(L"makeSingleInstance3 is_another_instance_running!\n");
-		DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 3);
-		LOGMESSAGE(L"makeSingleInstance3 WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
-		if (WAIT_TIMEOUT == dwWaitResult)
+		bool to_exit_now = false;
+		TCHAR szPathToExe[MAX_PATH * 2];
+		if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+		{
+			if (0 != GetNamedProcessID(szPathToExe))
+			{
+				to_exit_now = true;
+			}
+		}
+		if (false == to_exit_now)
+		{
+			DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 3);
+			LOGMESSAGE(L"makeSingleInstance3 WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
+			if (WAIT_TIMEOUT == dwWaitResult)
+			{
+				to_exit_now = true;
+			}
+		}
+		if (true == to_exit_now)
 		{
 			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
 				L"If you are sure not, you can reboot your computer \n"
