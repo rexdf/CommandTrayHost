@@ -1684,33 +1684,36 @@ BOOL GetProcessName(LPTSTR szFilename, DWORD dwSize, DWORD dwProcID)
 
 DWORD GetNamedProcessID(LPCTSTR process_name)
 {
-	DWORD* pProcs = NULL;
-	DWORD retVal = 0;
-	DWORD dwSize = 0;
+	const int MAX_PROCESS_NUMBERS = 1024;
+	DWORD pProcs[MAX_PROCESS_NUMBERS];
+
+	//DWORD* pProcs = NULL;
+	//DWORD retVal = 0;
+	DWORD dwSize = MAX_PROCESS_NUMBERS;
 	DWORD dwRealSize = 0;
 	TCHAR szCompareName[MAX_PATH + 1];
-	int nCount = 0;
-	int nResult = 0;
 
-	dwSize = 1024;
-	pProcs = new DWORD[dwSize];
+	//dwSize = 1024;
+	//pProcs = new DWORD[dwSize];
 	EnumProcesses(pProcs, dwSize * sizeof(DWORD), &dwRealSize);
 	dwSize = dwRealSize / sizeof(DWORD);
-
+	LOGMESSAGE(L"There are %d processes running", dwSize);
 	for (DWORD nCount = 0; nCount < dwSize; nCount++)
 	{
-		ZeroMemory(szCompareName, MAX_PATH + 1 * (sizeof(TCHAR)));
+		//ZeroMemory(szCompareName, MAX_PATH + 1 * (sizeof(TCHAR)));
+		ZeroMemory(szCompareName, sizeof(szCompareName));
 		if (GetProcessName(szCompareName, MAX_PATH, pProcs[nCount]))
 		{
 			if (wcscmp(process_name, szCompareName) == 0)
 			{
-				retVal = pProcs[nCount];
-				delete[] pProcs;
-				return retVal;
+				return pProcs[nCount];
+				//retVal = pProcs[nCount];
+				//delete[] pProcs;
+				//return retVal;
 			}
 		}
 	}
-	delete[] pProcs;
+	//delete[] pProcs;
 	return 0;
 }
 
@@ -1720,23 +1723,30 @@ void makeSingleInstance3()
 	{
 		LOGMESSAGE(L"makeSingleInstance3 is_another_instance_running!\n");
 		bool to_exit_now = false;
-		TCHAR szPathToExe[MAX_PATH * 2];
-		if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+		// check by filepath
 		{
-			if (0 != GetNamedProcessID(szPathToExe))
+			TCHAR szPathToExe[MAX_PATH * 2];
+			if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
 			{
-				to_exit_now = true;
+				DWORD pid = GetNamedProcessID(szPathToExe);
+				if (0 != pid)
+				{
+					LOGMESSAGE(L"found running CommandTrayHost pid: %d\n", pid);
+					to_exit_now = true;
+				}
 			}
 		}
+		// check by mutex
 		if (false == to_exit_now)
 		{
-			DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 3);
+			DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 5);
 			LOGMESSAGE(L"makeSingleInstance3 WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
 			if (WAIT_TIMEOUT == dwWaitResult)
 			{
 				to_exit_now = true;
 			}
 		}
+
 		if (true == to_exit_now)
 		{
 			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
