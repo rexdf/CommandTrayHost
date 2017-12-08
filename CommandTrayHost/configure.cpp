@@ -1379,12 +1379,16 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 
 	lResult = RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_READ, &hKey);
 
-	fSuccess = (lResult == 0);
+	fSuccess = (lResult == ERROR_SUCCESS);
 
 	if (fSuccess)
 	{
+#if VER_PRODUCTBUILD == 7600
+		lResult = RegQueryValueEx(hKey, pszAppName, NULL, &dwRegType, (LPBYTE)&szPathToExe, &dwSize);
+#else
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe, &dwSize);
-		fSuccess = (lResult == 0);
+#endif
+		fSuccess = (lResult == ERROR_SUCCESS);
 	}
 
 	if (fSuccess)
@@ -1458,12 +1462,38 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 
 BOOL DisableStartUp()
 {
+#if VER_PRODUCTBUILD == 7600
+	HKEY hKey = NULL;
+	if ((ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER,
+		L"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+		0,
+		KEY_ALL_ACCESS,
+		&hKey)) &&
+		(ERROR_SUCCESS == RegDeleteValue(hKey, CommandTrayHost))
+		)
+	{
+		if (hKey != NULL)
+		{
+			RegCloseKey(hKey);
+			hKey = NULL;
+		}
+		return TRUE;
+	}
+#else
 	if (ERROR_SUCCESS == RegDeleteKeyValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", CommandTrayHost))
 	{
 		return TRUE;
 	}
+#endif
 	else
 	{
+#if VER_PRODUCTBUILD == 7600
+		if (hKey != NULL)
+		{
+			RegCloseKey(hKey);
+			hKey = NULL;
+		}
+#endif
 		return FALSE;
 	}
 }
@@ -1678,7 +1708,11 @@ BOOL GetProcessName(LPTSTR szFilename, DWORD dwSize, DWORD dwProcID)
 	DWORD dwPathSize = dwSize;
 	if (hProcess == 0)
 		return retVal; // You should check for error code, if you are concerned about this
+#if VER_PRODUCTBUILD == 7600
+	retVal = NULL != GetProcessImageFileName(hProcess, szFilename, dwSize);
+#else
 	retVal = QueryFullProcessImageName(hProcess, 0, szFilename, &dwPathSize);
+#endif
 
 	CloseHandle(hProcess);
 

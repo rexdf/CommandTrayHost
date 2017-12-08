@@ -113,6 +113,8 @@ static BOOL MyEndTask(DWORD pid)
 // https://stackoverflow.com/questions/2798922/storage-location-of-yellow-blue-shield-icon
 BOOL GetStockIcon(HICON& outHicon)
 {
+#if VER_PRODUCTBUILD == 7600
+#else
 	SHSTOCKICONINFO sii;
 	ZeroMemory(&sii, sizeof(sii));
 	sii.cbSize = sizeof(sii);
@@ -121,6 +123,7 @@ BOOL GetStockIcon(HICON& outHicon)
 		outHicon = sii.hIcon;
 		return TRUE;
 	}
+#endif
 	return FALSE;
 
 	/*
@@ -981,6 +984,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		break;
 	case WM_DESTROY:
+		CLEANUP_BEFORE_QUIT(4);
 		PostQuitMessage(0);
 		break;
 	default:

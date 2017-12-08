@@ -104,6 +104,21 @@ void update_locale_name_by_alias()
 
 void update_locale_name_by_system()
 {
+#if VER_PRODUCTBUILD == 7600
+	PCSTR locale_pointer = NULL;
+	if (GetSystemDefaultLCID() == 2052 || GetACP() == 936)
+	{
+		locale_pointer = "zh-CN";
+	}
+	else
+	{
+		locale_pointer = "en-US";
+	}
+	if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), locale_pointer)))
+	{
+		LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
+	}
+#else
 	WCHAR wlocale_name[LOCALE_NAME_MAX_LENGTH];
 	if (GetUserDefaultLocaleName(wlocale_name, LOCALE_NAME_MAX_LENGTH))
 	{
@@ -114,12 +129,13 @@ void update_locale_name_by_system()
 			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
 		}
 		//update_isZHCN();
-	}
+}
 	else
 	{
 		//isZHCN = GetSystemDefaultLCID() == 2052;
 		LOGMESSAGE(L"initialize_local failed!\n");
 	}
+#endif
 }
 
 void initialize_local()
