@@ -135,6 +135,7 @@ example configure
     ],
     "enable_groups": true,
     "groups_menu_symbol": "+",
+    "left_click": [0,1],
 }
 ```
 

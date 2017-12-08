@@ -7,6 +7,7 @@ extern nlohmann::json global_stat;
 //extern CHAR locale_name[];
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
+extern bool enable_left_click;
 extern int number_of_configs;
 extern HANDLE ghMutex;
 
@@ -128,6 +129,7 @@ bool initial_configure()
     ],
     "enable_groups": true, // 启用分组菜单
     "groups_menu_symbol": "+", // 分组菜单标志
+    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始
 })json" : u8R"json({
     "configs": [
         {
@@ -193,6 +195,7 @@ bool initial_configure()
     ],
     "enable_groups": true,
     "groups_menu_symbol": "+",
+    "left_click": [0,1],
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
@@ -402,6 +405,7 @@ int configure_reader(std::string& out)
 		d.HasMember("groups_menu_symbol") && !(d["groups_menu_symbol"].IsString()) ||
 		d.HasMember("icon") && !(d["icon"].IsString()) ||
 		d.HasMember("lang") && !(d["lang"].IsString()) ||
+		d.HasMember("left_click") && !(d["left_click"].IsArray()) ||
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
 		)
 	{
@@ -502,6 +506,35 @@ int configure_reader(std::string& out)
 			return NULL;*/
 		}
 	}
+	int left_click_cnt = 0;
+	if (d.HasMember("left_click"))
+	{
+		for (auto& m : d["left_click"].GetArray())
+		{
+			if (m.IsInt())
+			{
+				int ans = m.GetInt();
+				if (ans < 0 || ans >= cnt)
+				{
+					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				}
+			}
+			else
+			{
+				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+			}
+			left_click_cnt++;
+		}
+	}
+
+	if (left_click_cnt > 0)
+	{
+		enable_left_click = true;
+	}
+	else
+	{
+		enable_left_click = false;
+	}
 	StringBuffer sb;
 	Writer<StringBuffer> writer(sb);
 	d.Accept(writer);
@@ -548,7 +581,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 		return false;
 	}
 	return true;
-}
+	}
 
 /*
  * return NULL : failed
@@ -711,14 +744,14 @@ void start_all(HANDLE ghJob, bool force)
 			{
 				i["enabled"] = true;
 			}
-		}
+	}
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
 			create_process(i, ghJob);
 		}
 		//cmd_idx++;
-	}
+}
 }
 
 wchar_t const* level_menu_symbol_p;
@@ -1291,6 +1324,15 @@ void hideshow_all(bool is_hideall)
 
 }
 
+void left_click_toggle()
+{
+	for (auto& m : global_stat["left_click"])
+	{
+		int idx = m;
+		show_hide_toggle(global_stat["configs"][idx]);
+	}
+}
+
 void show_hide_toggle(nlohmann::json& jsp)
 {
 	bool is_show = jsp["show"];
@@ -1342,7 +1384,7 @@ void kill_all(bool is_exit/* = true*/)
 				{
 					continue;
 				}
-			}
+		}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -1362,8 +1404,8 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
-		}
 	}
+}
 
 }
 
@@ -1476,7 +1518,7 @@ BOOL DisableStartUp()
 		{
 			RegCloseKey(hKey);
 			hKey = NULL;
-		}
+}
 		return TRUE;
 	}
 #else

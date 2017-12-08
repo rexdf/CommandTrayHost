@@ -136,6 +136,7 @@ Windows命令行程序系统托盘管理工具
     ],
     "enable_groups": true, // 启用分组菜单
     "groups_menu_symbol": "+", // 分组菜单标志
+    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始
 }
 ```
 

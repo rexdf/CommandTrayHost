@@ -37,6 +37,7 @@ WCHAR szHIcon[MAX_PATH * 2];
 int icon_size;
 bool is_runas_admin;
 bool enable_groups_menu;
+bool enable_left_click;
 int number_of_configs;
 
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
@@ -864,8 +865,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (lParam == WM_LBUTTONUP)
 		{
 			LOGMESSAGE(L"WM_TASKBARNOTIFY\n");
-			ShowWindow(hConsole, !IsWindowVisible(hConsole));
-			SetForegroundWindow(hConsole);
+			if (enable_left_click)
+			{
+				left_click_toggle();
+			}
+			else
+			{
+				ShowWindow(hConsole, !IsWindowVisible(hConsole));
+				SetForegroundWindow(hConsole);
+			}
+
 		}
 		else if (lParam == WM_RBUTTONUP)
 		{

@@ -129,7 +129,7 @@ void update_locale_name_by_system()
 			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
 		}
 		//update_isZHCN();
-}
+	}
 	else
 	{
 		//isZHCN = GetSystemDefaultLCID() == 2052;
