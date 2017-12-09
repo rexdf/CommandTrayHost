@@ -13,7 +13,8 @@ bool try_read_optional_json(const nlohmann::json&, Type&, PCSTR);
 */
 
 void get_command_submenu(std::vector<HMENU>&);
-int init_global(HANDLE&, PWSTR, int&);
+//int init_global(HANDLE&, PWSTR, int&);
+int init_global(HANDLE&, HICON&);
 
 void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false);
 void show_hide_toggle(nlohmann::json& jsp);
@@ -53,6 +54,8 @@ BOOL DeleteTrayIcon();
 	kill_all(); \
 	CLEAN_MUTEX(); \
 	DeleteTrayIcon(); \
+	if (gHicon)DestroyIcon(gHicon); \
+	gHicon = NULL; \
 	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x where:%d\n",ghMutex,where); \
 }
 

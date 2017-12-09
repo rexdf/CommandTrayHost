@@ -32,9 +32,9 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 nlohmann::json global_stat;
 HANDLE ghJob;
 HANDLE ghMutex;
-//HICON gHicon;
-WCHAR szHIcon[MAX_PATH * 2];
-int icon_size;
+HICON gHicon;
+//WCHAR szHIcon[MAX_PATH * 2];
+//int icon_size;
 bool is_runas_admin;
 bool enable_groups_menu;
 bool enable_left_click;
@@ -168,7 +168,7 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 	nid.dwInfoFlags = NIIF_INFO;
 	nid.uCallbackMessage = WM_TASKBARNOTIFY;
 	HICON hIcon = NULL;
-	if (szHIcon[0] != NULL)
+	/*if (szHIcon[0] != NULL)
 	{
 		LOGMESSAGE(L"ShowTrayIcon Load from file %s\n", szHIcon);
 		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
@@ -182,7 +182,8 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		{
 			LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
 		}
-	}
+	}*/
+	hIcon = gHicon;
 	if (hIcon == NULL && is_runas_admin)
 	{
 		GetStockIcon(hIcon);
@@ -215,6 +216,24 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		}
 	}
 	Shell_NotifyIcon(dwMessage ? dwMessage : NIM_ADD, &nid);
+	BOOL hSuccess = NULL;;
+	if (gHicon)
+	{
+		if (true == enable_left_click)
+		{
+			hSuccess = DestroyIcon(hIcon);
+			gHicon = NULL;
+		}
+	}
+	else if (hIcon)
+	{
+		hSuccess = DestroyIcon(hIcon);
+	}
+	if (NULL == hSuccess)
+	{
+		LOGMESSAGE(L"ShowTrayIcon DestroyIcon Failed! %d\n", GetLastError());
+	}
+	/*
 	if (hIcon)
 	{
 		BOOL hSuccess = DestroyIcon(hIcon);
@@ -222,7 +241,7 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		{
 			LOGMESSAGE(L"DestroyIcon Failed! %d\n", GetLastError());
 		}
-	}
+	}*/
 	return TRUE;
 }
 
@@ -768,7 +787,7 @@ BOOL CreateConsole()
 			}
 		}
 	}
-	HICON hIcon = NULL;
+	/*HICON hIcon = NULL;
 	if (szHIcon[0] != NULL)
 	{
 		LOGMESSAGE(L"CreateConsole Load from file %s\n", szHIcon);
@@ -779,13 +798,15 @@ BOOL CreateConsole()
 		{
 			LOGMESSAGE(L"CreateConsole Load IMAGE_ICON failed!\n");
 		}
-	}
-	if (hIcon)
+	}*/
+	if (gHicon)
 	{
 		//ChangeIcon(hIcon);
-		SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-		SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		//https://social.msdn.microsoft.com/Forums/vstudio/en-US/dee0ac69-4236-49aa-a2a2-0ac672147769/win32-c-how-do-i-change-the-window-icon-during-runtime?forum=vcgeneral
+		SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)gHicon);
+		SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)gHicon);
 	}
+
 	return TRUE;
 }
 //#pragma warning( pop )
@@ -815,7 +836,7 @@ BOOL ExecCmdline()
 				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 		}
-}
+	}
 	else
 	{
 #ifdef _DEBUG
@@ -1100,7 +1121,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	makeSingleInstance3();
 	SetEenvironment();
 	ParseProxyList();
-	if (NULL == init_global(ghJob, szHIcon, icon_size))
+	//if (NULL == init_global(ghJob, szHIcon, icon_size))
+	if (NULL == init_global(ghJob, gHicon))
 	{
 		::MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;

@@ -597,7 +597,8 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
  * en_job bool
  * exe_seperator idx ".exe"
  */
-int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
+int init_global(HANDLE& ghJob, HICON& hIcon)
+//int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 {
 	std::string js_string;
 	int cmd_cnt = configure_reader(js_string);
@@ -693,15 +694,42 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 #endif
 	if (try_success)
 	{
+		int icon_size = -1, out_icon_size = 0;
+#ifdef _DEBUG
+		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", L"init_global");
+#else
+		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size");
+#endif
+		if (try_success && (icon_size == 16 || icon_size == 32 || icon_size == 256))
+		{
+			out_icon_size = icon_size;
+		}
+
 		std::wstring wicon = utf8_to_wstring(icon);
 		LPCWSTR pLoad = wicon.c_str();
 		if (TRUE == PathFileExists(pLoad))
 		{
 			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
 			// wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
+			WCHAR szIcon[MAX_PATH * 2];
 			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2 / sizeof(WCHAR), pLoad)))
 			{
 				LOGMESSAGE(L"init_global StringCchCopy failed\n");
+			}
+			else
+			{
+				LOGMESSAGE(L"ShowTrayIcon Load from file %s\n", szIcon);
+				hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
+					szIcon,
+					IMAGE_ICON,
+					icon_size ? icon_size : 256,
+					icon_size ? icon_size : 256,
+					LR_LOADFROMFILE)
+					);
+				if (hIcon == NULL)
+				{
+					LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
+				}
 			}
 			/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
 			NULL,             // hInstance must be NULL when loading from a file
@@ -715,16 +743,7 @@ int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 			));*/
 		}
 
-		int icon_size = -1;
-#ifdef _DEBUG
-		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", L"init_global");
-#else
-		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size");
-#endif
-		if (try_success && (icon_size == 16 || icon_size == 32 || icon_size == 256))
-		{
-			out_icon_size = icon_size;
-		}
+
 	}
 
 	return 1;
@@ -1651,6 +1670,7 @@ void ElevateNow()
 				/*delete_lockfile();
 				kill_all(js);
 				DeleteTrayIcon();*/
+				extern HICON gHicon;
 				CLEANUP_BEFORE_QUIT(1);
 				_exit(1);  // Quit itself
 			}
