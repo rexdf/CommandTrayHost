@@ -95,6 +95,14 @@ bool initial_configure()
             "require_admin": false, // 是否要用管理员运行
             "start_show": false, // 是否以显示(而不是隐藏)的方式启动子程序
             "ignore_all": false, // 是否忽略全部启用禁用操作
+            "position": [ // 显示窗口的初始位置
+                0.2, // STARTUPINFO.dwX 大于1就是数值，0-1之间的数值代表相对屏幕分辨率的百分比
+                200 // STARTUPINFO.dwY, 同上
+            ],
+            "size": [ // 显示窗口的初始大小
+                0.5, // STARTUPINFO.dwXSize,  同上
+                0.5 // STARTUPINFO.dwYSize, 同上
+            ],
         },
         {
             "name": "cmd例子2",
@@ -171,6 +179,14 @@ bool initial_configure()
             "require_admin": false, // to run as administrator, problems: User Interface Privilege Isolation
             "start_show": false, // whether to show when start process
             "ignore_all": false, // whether to ignore operation to disable/enable all
+            "position": [
+                0.2, // STARTUPINFO.dwX if not greater than 1, it means proportions to screen resolution. Greater than 1, value
+                200 // STARTUPINFO.dwY, same as above
+            ],
+            "size": [
+                0.5, // STARTUPINFO.dwXSize, as above
+                0.5 // STARTUPINFO.dwYSize, as above
+            ],
         },
         {
             "name": "cmd example 2",
@@ -371,6 +387,8 @@ int configure_reader(std::string& out)
 	Document d;         // Document 为 GenericDocument<UTF8<> > 
 	//d.ParseStream<0, AutoUTF<unsigned> >(eis); // 把任何 UTF 编码的文件解析至内存中的 UTF-8
 
+	Document::AllocatorType& allocator = d.GetAllocator(); // for change position/size double to in
+
 
 	/*Document d;
 	std::ifstream i("config.json");
@@ -459,6 +477,13 @@ int configure_reader(std::string& out)
 	}
 	LOGMESSAGE(L"configure_reader enable_groups_menu:%d\n", enable_groups_menu);
 
+	PCSTR size_postion_strs[] = {
+		"position",
+		"size"
+	};
+	int screen_fullx = ::GetSystemMetrics(SM_CXFULLSCREEN);
+	int screen_fully = ::GetSystemMetrics(SM_CYFULLSCREEN);
+
 	int cnt = 0;
 
 	for (auto& m : d["configs"].GetArray())
@@ -520,11 +545,50 @@ int configure_reader(std::string& out)
 			if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
 				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
 				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
+
 				)
 			{
 				::MessageBox(NULL, L"One of require_admin start_show ignore_all is not bool type!", L"Type Error", MB_OK | MB_ICONERROR);
 				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
+
+			for (auto str_item : size_postion_strs)
+			{
+				if (m.HasMember(str_item))
+				{
+					auto& ref = m[str_item];
+					if (false == ref.IsArray() || ref.GetArray().Size() != 2)
+					{
+						::MessageBox(NULL, L"One of position size is not array of two double numbers!", L"Type Error", MB_OK | MB_ICONERROR);
+						SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+					}
+					int cord_xy_cnt = 0, cords[2];
+					for (auto&itm : ref.GetArray())
+					{
+						if (false == itm.IsNumber() || itm.GetDouble() < 0)
+						{
+							::MessageBox(NULL, L"Number in position size array must be not less than zero!", L"Type Error", MB_OK | MB_ICONERROR);
+							SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+						}
+						double val = itm.GetDouble();
+						if (val <= 1)
+						{
+							//itm.SetDouble(val*(cord_xy_cnt ? screen_fully : screen_fullx));
+							cords[cord_xy_cnt] = static_cast<int>(val*(cord_xy_cnt ? screen_fully : screen_fullx));
+						}
+						else
+						{
+							cords[cord_xy_cnt] = static_cast<int>(val);
+						}
+						cord_xy_cnt++;
+					}
+					ref.Clear();
+
+					ref.PushBack(cords[0], allocator);
+					ref.PushBack(cords[1], allocator);
+				}
+			}
+
 			cnt++;
 		}
 		else
@@ -1171,6 +1235,20 @@ void create_process(
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
 	si.lpTitle = nameStr;
+
+	if (json_object_has_member(jsp, "position"))
+	{
+		si.dwFlags |= STARTF_USEPOSITION;
+		si.dwX = jsp["position"][0];
+		si.dwY = jsp["position"][1];
+	}
+	if (json_object_has_member(jsp, "size"))
+	{
+		si.dwFlags |= STARTF_USESIZE;
+		si.dwXSize = jsp["size"][0];
+		si.dwYSize = jsp["size"][1];
+	}
+
 
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));

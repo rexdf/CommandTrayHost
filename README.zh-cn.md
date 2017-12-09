@@ -44,6 +44,14 @@ Windows命令行程序系统托盘管理工具
             "require_admin": false, // 是否要用管理员运行,当CommandTrayHost不是以管理员运行的情况下，显示/隐藏会失效，其他功能正常。
             "start_show": false, // 是否以显示(而不是隐藏)的方式启动子程序
             "ignore_all": false, // 是否忽略全部启用禁用操作。当为true时，全部启用菜单对本程序无效
+            "position": [ // 显示窗口的初始位置
+                0.2, // STARTUPINFO.dwX 大于1就是数值，0-1之间的数值代表相对屏幕分辨率的百分比
+                200 // STARTUPINFO.dwY, 同上
+            ],
+            "size": [ // 显示窗口的初始大小
+                0.5, // STARTUPINFO.dwXSize,  同上
+                0.5 // STARTUPINFO.dwYSize, 同上
+            ],
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -137,7 +145,10 @@ Windows命令行程序系统托盘管理工具
     ],
     "enable_groups": true, // 启用分组菜单
     "groups_menu_symbol": "+", // 分组菜单标志
-    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
+    "left_click": [
+        0,
+        1
+    ], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
 }
 ```
 

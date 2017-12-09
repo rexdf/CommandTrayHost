@@ -42,6 +42,14 @@ example configure
             "require_admin": false, // to run as administrator, problems keywords: User Interface Privilege Isolation
             "start_show": false, // whether to show when start process 
             "ignore_all": false, // whether to ignore operation to disable/enable all
+            "position": [
+                0.2, // STARTUPINFO.dwX if not greater than 1, it means proportions to screen resolution. Greater than 1, value
+                200 // STARTUPINFO.dwY, same as above
+            ],
+            "size": [
+                0.5, // STARTUPINFO.dwXSize, as above
+                0.5 // STARTUPINFO.dwYSize, as above
+            ],
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -136,7 +144,10 @@ example configure
     ],
     "enable_groups": true,
     "groups_menu_symbol": "+",
-    "left_click": [0,1], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
+    "left_click": [
+        0,
+        1
+    ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 }
 ```
 
