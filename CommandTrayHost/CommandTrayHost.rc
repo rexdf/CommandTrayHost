@@ -57,7 +57,7 @@ VALUE "LegalTrademarks", "\0"
 VALUE "OriginalFilename", "CommandTrayHost.exe\0"
 VALUE "PrivateBuild", "\0"
 VALUE "ProductName", "CommandTrayHost taskbar\0"
-VALUE "ProductVersion", "1, 3, 0, 0\0"
+VALUE "ProductVersion", "1, 4, 0, 0\0"
 VALUE "SpecialBuild", "\0"
 END
 END
