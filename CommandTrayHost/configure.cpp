@@ -581,7 +581,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 		return false;
 	}
 	return true;
-	}
+}
 
 /*
  * return NULL : failed
@@ -744,14 +744,14 @@ void start_all(HANDLE ghJob, bool force)
 			{
 				i["enabled"] = true;
 			}
-	}
+		}
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
 		{
 			create_process(i, ghJob);
 		}
 		//cmd_idx++;
-}
+	}
 }
 
 wchar_t const* level_menu_symbol_p;
@@ -1326,10 +1326,11 @@ void hideshow_all(bool is_hideall)
 
 void left_click_toggle()
 {
+	auto& jsps = global_stat["configs"];
 	for (auto& m : global_stat["left_click"])
 	{
 		int idx = m;
-		show_hide_toggle(global_stat["configs"][idx]);
+		show_hide_toggle(jsps[idx]);
 	}
 }
 
@@ -1384,7 +1385,7 @@ void kill_all(bool is_exit/* = true*/)
 				{
 					continue;
 				}
-		}
+			}
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
@@ -1404,8 +1405,8 @@ void kill_all(bool is_exit/* = true*/)
 				itm["show"] = false;
 				itm["enabled"] = false;
 			}
+		}
 	}
-}
 
 }
 
@@ -1518,7 +1519,7 @@ BOOL DisableStartUp()
 		{
 			RegCloseKey(hKey);
 			hKey = NULL;
-}
+		}
 		return TRUE;
 	}
 #else
