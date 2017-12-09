@@ -15,6 +15,7 @@ bool try_read_optional_json(const nlohmann::json&, Type&, PCSTR);
 void get_command_submenu(std::vector<HMENU>&);
 //int init_global(HANDLE&, PWSTR, int&);
 int init_global(HANDLE&, HICON&);
+bool init_cth_path();
 
 void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false);
 void show_hide_toggle(nlohmann::json& jsp);

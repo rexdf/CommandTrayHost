@@ -40,6 +40,9 @@ bool enable_groups_menu;
 bool enable_left_click;
 int number_of_configs;
 
+TCHAR szPathToExe[MAX_PATH * 10];
+TCHAR szPathToExeToken[MAX_PATH * 10];
+
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 BOOL isZHCN, isENUS;
 
@@ -412,7 +415,7 @@ BOOL ShowPopupMenuJson3()
 	vctHmenu.push_back(hSubMenu);
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
-	UINT uFlags = IsMyProgramRegisteredForStartup(CommandTrayHost) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
+	UINT uFlags = IsMyProgramRegisteredForStartup(szPathToExeToken) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
 	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot").c_str()));
 	{
 		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate").c_str()));
@@ -676,12 +679,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 BOOL CDCurrentDirectory()
 {
-	WCHAR szPath[4096] = L"";
+
+	WCHAR* szPath = _wcsdup(szPathToExe);
+
+	/*WCHAR szPath[4096] = L"";
 	//GetModuleFileName(NULL, szPath, sizeof(szPath) / sizeof(szPath[0]) - 1);
-	GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));
+	GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));*/
+
 	*wcsrchr(szPath, L'\\') = 0;
 	SetCurrentDirectory(szPath);
 	SetEnvironmentVariableW(L"CWD", szPath);
+	LOGMESSAGE(L"CDCurrentDirectory CWD: %s\n", szPath);
+	free(szPath);
 	return TRUE;
 }
 
@@ -945,7 +954,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
 		{
-			if (IsMyProgramRegisteredForStartup(CommandTrayHost))
+			if (IsMyProgramRegisteredForStartup(szPathToExeToken))
 			{
 				DisableStartUp();
 			}
@@ -1116,6 +1125,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (is_runas_admin)
 	{
 		Sleep(100); // Wait for self Elevate to cleanup.
+	}
+	if (!init_cth_path())
+	{
+		::MessageBox(NULL, L"Initialization CommandTrayHost Path failed!", L"Error", MB_OK | MB_ICONERROR);
+		return -1;
 	}
 	CDCurrentDirectory();
 	makeSingleInstance3();

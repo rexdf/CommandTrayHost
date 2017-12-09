@@ -11,6 +11,8 @@ extern bool enable_left_click;
 extern int number_of_configs;
 extern HANDLE ghMutex;
 
+extern TCHAR szPathToExe[MAX_PATH * 10];
+extern TCHAR szPathToExeToken[MAX_PATH * 10];
 //extern WCHAR szWindowClass[36];
 //extern HINSTANCE hInst;
 
@@ -75,6 +77,7 @@ bool initial_configure()
      *    其他路径则是CommandTrayHost.exe所在
      * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
      *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
+     * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响
      */
     "configs": [
         {
@@ -152,6 +155,7 @@ bool initial_configure()
      * 2. All paths must be "C:\\Windows" but not "C:\Windows". Json string will escape \<c>.
      * 3. You can use Notepad from "Start Menu\Programs\Accessories" and save with Unicode or UTF-8.
      * 4. Relative path base is where CommandTrayHost.exe is started.
+     * 5. CommandTrayHost.exe in different directories can run at same time.
      */
     "configs": [
         {
@@ -1461,8 +1465,8 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 	LONG lResult = 0;
 	BOOL fSuccess = TRUE;
 	DWORD dwRegType = REG_SZ;
-	TCHAR szPathToExe[MAX_PATH] = {};
-	DWORD dwSize = sizeof(szPathToExe);
+	TCHAR szPathToExe_reg[MAX_PATH * 5] = {};
+	DWORD dwSize = sizeof(szPathToExe_reg);
 
 	lResult = RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_READ, &hKey);
 
@@ -1471,16 +1475,26 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 	if (fSuccess)
 	{
 #if VER_PRODUCTBUILD == 7600
-		lResult = RegQueryValueEx(hKey, pszAppName, NULL, &dwRegType, (LPBYTE)&szPathToExe, &dwSize);
+		lResult = RegQueryValueEx(hKey, pszAppName, NULL, &dwRegType, (LPBYTE)&szPathToExe_reg, &dwSize);
 #else
-		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe, &dwSize);
+		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
 	}
 
 	if (fSuccess)
 	{
-		fSuccess = (wcslen(szPathToExe) > 0) ? TRUE : FALSE;
+		*wcsrchr(szPathToExe_reg, L'"') = 0;
+		/*size_t len = 0;
+		if (SUCCEEDED(StringCchLength(szPathToExe_reg, ARRAYSIZE(szPathToExe_reg), &len)))
+		{
+			LOGMESSAGE(L"IsMyProgramRegisteredForStartup [%c] [%c] \n", szPathToExe_reg[len - 1], szPathToExe_reg[len - 2]);
+			szPathToExe_reg[len - 2] = 0; // There is a space at end except for quote ".
+		}*/
+		fSuccess = (wcscmp(szPathToExe, szPathToExe_reg + 1) == 0) ? TRUE : FALSE;
+		//fSuccess = (wcslen(szPathToExe) > 0) ? TRUE : FALSE;
+		LOGMESSAGE(L"IsMyProgramRegisteredForStartup \n szPathToExe_reg: %s\n szPathToExe    : %s \nfSuccess:%d \n", szPathToExe_reg + 1, szPathToExe, fSuccess);
+
 	}
 
 	if (hKey != NULL)
@@ -1499,7 +1513,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 	BOOL fSuccess = TRUE;
 	DWORD dwSize;
 
-	const size_t count = MAX_PATH * 2;
+	const size_t count = MAX_PATH * 20;
 	TCHAR szValue[count] = {};
 
 	if (FAILED(StringCchCopy(szValue, count, L"\"")) ||
@@ -1536,6 +1550,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		dwSize = static_cast<DWORD>((wcslen(szValue) + 1) * 2);
 		lResult = RegSetValueEx(hKey, pszAppName, 0, REG_SZ, reinterpret_cast<BYTE*>(szValue), dwSize);
 		fSuccess = (lResult == 0);
+		LOGMESSAGE(L"RegisterMyProgramForStartup %s %s %d %d\n", pszAppName, szValue, fSuccess, GetLastError());
 	}
 
 	if (hKey != NULL)
@@ -1547,7 +1562,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 	return fSuccess;
 }
 
-BOOL DisableStartUp()
+BOOL DisableStartUp2(PCWSTR valueName)
 {
 #if VER_PRODUCTBUILD == 7600
 	HKEY hKey = NULL;
@@ -1556,7 +1571,11 @@ BOOL DisableStartUp()
 		0,
 		KEY_ALL_ACCESS,
 		&hKey)) &&
-		(ERROR_SUCCESS == RegDeleteValue(hKey, CommandTrayHost))
+		(ERROR_SUCCESS == RegDeleteValue(
+			hKey,
+			//CommandTrayHost)
+			valueName)
+			)
 		)
 	{
 		if (hKey != NULL)
@@ -1567,7 +1586,12 @@ BOOL DisableStartUp()
 		return TRUE;
 	}
 #else
-	if (ERROR_SUCCESS == RegDeleteKeyValue(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", CommandTrayHost))
+	if (ERROR_SUCCESS == RegDeleteKeyValue(
+		HKEY_CURRENT_USER,
+		L"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+		//CommandTrayHost)
+		valueName)
+		)
 	{
 		return TRUE;
 	}
@@ -1585,11 +1609,23 @@ BOOL DisableStartUp()
 	}
 }
 
+BOOL DisableStartUp()
+{
+#ifdef CLEANUP_HISTORY_STARTUP
+	DisableStartUp2(CommandTrayHost);
+#endif
+	return DisableStartUp2(szPathToExeToken);
+}
+
 BOOL EnableStartup()
 {
-	TCHAR szPathToExe[MAX_PATH * 10];
-	GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe));
-	return RegisterMyProgramForStartup(CommandTrayHost, szPathToExe, L"");
+#ifdef CLEANUP_HISTORY_STARTUP
+	DisableStartUp2(CommandTrayHost);
+#endif
+	//TCHAR szPathToExe[MAX_PATH * 10];
+	//GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe));
+	//return RegisterMyProgramForStartup(CommandTrayHost, szPathToExe, L"");
+	return RegisterMyProgramForStartup(szPathToExeToken, szPathToExe, L"");
 }
 
 BOOL IsRunAsAdministrator()
@@ -1652,13 +1688,15 @@ void ElevateNow()
 {
 	if (!is_runas_admin)
 	{
-		wchar_t szPath[MAX_PATH * 10];
-		if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+		//wchar_t szPath[MAX_PATH * 10];
+		//if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+		if (szPathToExe[0])
 		{
 			// Launch itself as admin
 			SHELLEXECUTEINFO sei = { sizeof(sei) };
 			sei.lpVerb = L"runas";
-			sei.lpFile = szPath;
+			//sei.lpFile = szPath;
+			sei.lpFile = szPathToExe;
 			sei.hwnd = NULL;
 			sei.nShow = SW_NORMAL;
 
@@ -1735,31 +1773,46 @@ void check_admin(bool is_admin)
 	}
 }
 
+bool init_cth_path()
+{
+	if (0 == GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+	{
+		return false;
+	}
+	if (FAILED(StringCchCopy(szPathToExeToken, ARRAYSIZE(szPathToExeToken), szPathToExe)))
+	{
+		return false;
+	}
+	for (int i = 0; i < ARRAYSIZE(szPathToExeToken); i++)
+	{
+		if (L'\\' == szPathToExeToken[i] || L':' == szPathToExeToken[i])
+		{
+			szPathToExeToken[i] = L'_';
+		}
+		else if (L'\x0' == szPathToExeToken[i])
+		{
+			LOGMESSAGE(L"init_cth_path changed to :%s, length:%d\n", szPathToExeToken, i);
+			break;
+		}
+	}
+	return true;
+}
+
 //https://support.microsoft.com/en-us/help/243953/how-to-limit-32-bit-applications-to-one-instance-in-visual-c
 bool is_another_instance_running()
 {
 	bool ret = false;
-	TCHAR szPathToExe[MAX_PATH * 2];
-	if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+	//TCHAR szPath[MAX_PATH * 2];
+	//if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)))
+	if (szPathToExeToken[0])
 	{
 		//size_t length = 0;
 		//StringCchLength(szPathToExe, ARRAYSIZE(szPathToExe), &length);
-		for (int i = 0; i < ARRAYSIZE(szPathToExe); i++)
-		{
-			if (L'\\' == szPathToExe[i] || L':' == szPathToExe[i])
-			{
-				szPathToExe[i] = L'_';
-			}
-			else if (L'\x0' == szPathToExe[i])
-			{
-				LOGMESSAGE(L"GetModuleFileName changed to :%s, length:%d\n", szPathToExe, i);
-				break;
-			}
-		}
+
 		//SECURITY_ATTRIBUTES sa;
 		//ZeroMemory(&sa, sizeof(sa));
 		//sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-		HANDLE m_hMutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, szPathToExe);
+		HANDLE m_hMutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, szPathToExeToken);
 		if (NULL == m_hMutex)
 		{
 			if (ERROR_FILE_NOT_FOUND != GetLastError())
@@ -1768,7 +1821,7 @@ bool is_another_instance_running()
 					L"Error",
 					MB_OK | MB_ICONERROR);
 			}
-			m_hMutex = CreateMutex(NULL, TRUE, szPathToExe); //do early
+			m_hMutex = CreateMutex(NULL, TRUE, szPathToExeToken); //do early
 			//DWORD m_dwLastError = GetLastError(); //save for use later...
 			ret = ERROR_ALREADY_EXISTS == GetLastError();
 			if (ret == true)
@@ -1851,8 +1904,9 @@ void makeSingleInstance3()
 		// check by filepath
 		if (false == is_runas_admin)
 		{
-			TCHAR szPathToExe[MAX_PATH * 2];
-			if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+			//TCHAR szPathToExe[MAX_PATH * 2];
+			//if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
+			if (szPathToExe[0])
 			{
 				DWORD pid = GetNamedProcessID(szPathToExe);
 				if (0 != pid)

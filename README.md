@@ -16,6 +16,7 @@ A Command Line program systray for Windows
 - Customize systray icon
 - i18n
 - Menu level limit is 40
+- Multiple instance of startup and running
 
 # Usage
 

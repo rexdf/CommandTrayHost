@@ -75,8 +75,12 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE (WM_APP + 0x50)
 #define WM_APP_END 0xBFFF
 
+#define CLEANUP_HISTORY_STARTUP
+
+#ifdef CLEANUP_HISTORY_STARTUP
 #define CommandTrayHost (L"Command_Tray_Host")
 //#define LOCK_FILE_NAME L"commandtrayhost_lock_pid.txt"
+#endif
 
 #define VERSION_NUMS L"1.3.0"
 
