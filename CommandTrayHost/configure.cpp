@@ -11,6 +11,9 @@ extern bool enable_left_click;
 extern int number_of_configs;
 extern HANDLE ghMutex;
 
+//extern WCHAR szWindowClass[36];
+//extern HINSTANCE hInst;
+
 std::wstring get_utf16(const std::string& str, int codepage)
 {
 	if (str.empty()) return std::wstring();
@@ -1965,3 +1968,30 @@ void makeSingleInstance()
 	fo.close();
 }
 */
+
+#ifdef _DEBUG
+//only work for current process
+//http://ntcoder.com/bab/2007/07/24/changing-console-application-window-icon-at-runtime/
+void ChangeIcon(const HICON hNewIcon)
+{
+	// Load kernel 32 library
+	HMODULE hMod = LoadLibrary(_T("Kernel32.dll"));
+	assert(hMod);
+	if (hMod == NULL)
+	{
+		return;
+	}
+
+	// Load console icon changing procedure
+	typedef DWORD(__stdcall *SCI)(HICON);
+	SCI pfnSetConsoleIcon = reinterpret_cast<SCI>(GetProcAddress(hMod, "SetConsoleIcon"));
+	assert(pfnSetConsoleIcon);
+	if (pfnSetConsoleIcon != NULL)
+	{
+		// Call function to change icon
+		pfnSetConsoleIcon(hNewIcon);
+	}
+
+	FreeLibrary(hMod);
+}// End ChangeIcon
+#endif

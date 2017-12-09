@@ -35,6 +35,10 @@ void ElevateNow();
 //void delete_lockfile();
 void makeSingleInstance3();
 
+#ifdef _DEBUG
+void ChangeIcon(const HICON);
+#endif
+
 BOOL DeleteTrayIcon();
 
 #define CLEAN_MUTEX() { \
@@ -51,3 +55,5 @@ BOOL DeleteTrayIcon();
 	DeleteTrayIcon(); \
 	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x where:%d\n",ghMutex,where); \
 }
+
+//	UnregisterClass(szWindowClass, hInst);

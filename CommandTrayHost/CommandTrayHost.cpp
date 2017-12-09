@@ -768,7 +768,24 @@ BOOL CreateConsole()
 			}
 		}
 	}
-
+	HICON hIcon = NULL;
+	if (szHIcon[0] != NULL)
+	{
+		LOGMESSAGE(L"CreateConsole Load from file %s\n", szHIcon);
+		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
+			szHIcon, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED)
+			);
+		if (hIcon == NULL)
+		{
+			LOGMESSAGE(L"CreateConsole Load IMAGE_ICON failed!\n");
+		}
+	}
+	if (hIcon)
+	{
+		//ChangeIcon(hIcon);
+		SendMessage(hConsole, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessage(hConsole, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	}
 	return TRUE;
 }
 //#pragma warning( pop )
@@ -798,7 +815,7 @@ BOOL ExecCmdline()
 				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 		}
-	}
+}
 	else
 	{
 #ifdef _DEBUG
@@ -1025,7 +1042,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	HICON hIcon = NULL, hIconSm = NULL;
+	/*HICON hIcon = NULL, hIconSm = NULL;
 	if (szHIcon[0] != NULL)
 	{
 		LOGMESSAGE(L"MyRegisterClass Load from file %s\n", szHIcon);
@@ -1047,15 +1064,15 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 		{
 			LOGMESSAGE(L"MyRegisterClass icon load ok!\n");
 		}
-	}
-	wcex.hIcon = (hIcon == NULL) ? LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR) : hIcon;
-	//wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR);
+	}*/
+	//wcex.hIcon = (hIcon == NULL) ? LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR) : hIcon;
+	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = (LPCTSTR)NULL;
 	wcex.lpszClassName = szWindowClass;
-	wcex.hIconSm = (hIconSm == NULL) ? LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL) : hIconSm;
-	//wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+	//wcex.hIconSm = (hIconSm == NULL) ? LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL) : hIconSm;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
 	ATOM ret = RegisterClassEx(&wcex);
 	/*if (hIcon)
