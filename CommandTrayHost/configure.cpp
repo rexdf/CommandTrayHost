@@ -129,7 +129,7 @@ bool initial_configure()
     ],
     "enable_groups": true, // 启用分组菜单
     "groups_menu_symbol": "+", // 分组菜单标志
-    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始
+    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
 })json" : u8R"json({
     "configs": [
         {
@@ -194,8 +194,8 @@ bool initial_configure()
         },
     ],
     "enable_groups": true,
-    "groups_menu_symbol": "+",
-    "left_click": [0,1],
+    "groups_menu_symbol": "+", // characters to mark menu groups
+    "left_click": [0,1], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }

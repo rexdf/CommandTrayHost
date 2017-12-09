@@ -135,7 +135,7 @@ example configure
     ],
     "enable_groups": true,
     "groups_menu_symbol": "+",
-    "left_click": [0,1],
+    "left_click": [0,1], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 }
 ```
 
