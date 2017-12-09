@@ -66,6 +66,16 @@ bool initial_configure()
 	update_isZHCN(true);
 
 	std::string config = isZHCN ? u8R"json({
+    /**
+     * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c.
+     * 2. 所有的路径必须要是C:\\Windows这样的双斜杠分割，这是json的字符串规定。
+     * 3. 所有的路径都可以是相对路径，比如 ..\..\icons\icon.ico这种形式。
+     *    但是参考各有不同：
+     *    cmd里面的子程序工作路径由working_directory指定
+     *    其他路径则是CommandTrayHost.exe所在
+     * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
+     *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
+     */
     "configs": [
         {
             // 下面8个一个不能少
@@ -132,13 +142,22 @@ bool initial_configure()
     ],
     "enable_groups": true, // 启用分组菜单
     "groups_menu_symbol": "+", // 分组菜单标志
-    "left_click": [0,1], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
+    "left_click": [
+        0,
+        1
+    ], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
 })json" : u8R"json({
+    /**
+     * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
+     * 2. All paths must be "C:\\Windows" but not "C:\Windows". Json string will escape \<c>.
+     * 3. You can use Notepad from "Start Menu\Programs\Accessories" and save with Unicode or UTF-8.
+     * 4. Relative path base is where CommandTrayHost.exe is started.
+     */
     "configs": [
         {
             "name": "cmd example", // Menu item name in systray
             "path": "C:\\Windows\\System32", // path which includes cmd exe, relative path is ok.
-            "cmd": "cmd.exe",  // must contain .exe
+            "cmd": "cmd.exe", // must contain .exe
             "working_directory": "", // working directory. empty is same as path
             "addition_env_path": "", //dll search path
             "use_builtin_console": false, //CREATE_NEW_CONSOLE
@@ -198,7 +217,10 @@ bool initial_configure()
     ],
     "enable_groups": true,
     "groups_menu_symbol": "+", // characters to mark menu groups
-    "left_click": [0,1], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
+    "left_click": [
+        0,
+        1
+    ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 })json";
 	std::ofstream o("config.json");
 	if (o.good()) { o << config << std::endl; return true; }
