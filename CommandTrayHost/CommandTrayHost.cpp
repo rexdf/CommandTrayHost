@@ -780,7 +780,7 @@ BOOL ExecCmdline()
 	PROCESS_INFORMATION pi;
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
-	BOOL bRet = CreateProcess(NULL, szCommandLine, NULL, NULL, FALSE, NULL, NULL, NULL, &si, &pi);
+	BOOL bRet = CreateProcess(NULL, szCommandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB, NULL, NULL, &si, &pi);
 	if (bRet)
 	{
 #ifdef _DEBUG
@@ -791,6 +791,13 @@ BOOL ExecCmdline()
 		dwChildrenPid = GetProcessId(pi.hProcess);
 #endif
 		LOGMESSAGE(L"ExecCmdline pid %d\n", dwChildrenPid);
+		if (ghJob)
+		{
+			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
+			{
+				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+			}
+		}
 	}
 	else
 	{
@@ -1018,19 +1025,19 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	/*HICON hIcon = NULL, hIconSm = NULL;
+	HICON hIcon = NULL, hIconSm = NULL;
 	if (szHIcon[0] != NULL)
 	{
 		LOGMESSAGE(L"MyRegisterClass Load from file %s\n", szHIcon);
 		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
-			szHIcon, IMAGE_ICON, 256, 256, LR_LOADFROMFILE)
+			szHIcon, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED)
 			);
 		if (hIcon == NULL)
 		{
 			LOGMESSAGE(L"MyRegisterClass Load IMAGE_ICON failed!\n");
 		}
 		hIconSm = reinterpret_cast<HICON>(LoadImage(NULL,
-			szHIcon, IMAGE_ICON, 16, 16, LR_LOADFROMFILE)
+			szHIcon, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED)
 			);
 		if (hIconSm == NULL)
 		{
@@ -1040,15 +1047,15 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 		{
 			LOGMESSAGE(L"MyRegisterClass icon load ok!\n");
 		}
-	}*/
-	//wcex.hIcon = (hIcon == NULL) ? LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR) : hIcon;
-	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR);
+	}
+	wcex.hIcon = (hIcon == NULL) ? LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR) : hIcon;
+	//wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TASKBAR);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = (LPCTSTR)NULL;
 	wcex.lpszClassName = szWindowClass;
-	//wcex.hIconSm = (hIconSm == NULL) ? LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL) : hIconSm;
-	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+	wcex.hIconSm = (hIconSm == NULL) ? LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL) : hIconSm;
+	//wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
 	ATOM ret = RegisterClassEx(&wcex);
 	/*if (hIcon)
