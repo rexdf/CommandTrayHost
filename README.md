@@ -50,6 +50,9 @@ example configure
                 0.5, // STARTUPINFO.dwXSize, as above
                 0.5 // STARTUPINFO.dwYSize, as above
             ],
+            "icon": "",  // icon for console windows
+            "alpha": 230, // alpha for console windows, 0-255 integer
+            "topmost": false, // topmost for console windows
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -147,7 +150,12 @@ example configure
     "left_click": [
         0,
         1
-    ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
+    ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost
+    "enable_cache": true,
+    "disable_cache_position": false,
+    "disable_cache_size": false,
+    "disable_cache_enabled": true,
+    "disable_cache_show": true,
 }
 ```
 

@@ -17,6 +17,14 @@ FIX_VERSION = '0'
 '''
 
 
+def local_time(zone='Asia/Shanghai'):
+    from datetime import datetime
+    from pytz import timezone
+    other_zone = timezone(zone)
+    other_zone_time = datetime.now(other_zone)
+    return other_zone_time.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+
+
 def main():
     global MAJOR_VERSION, MINOR_VERSION, FIX_VERSION
     print(sys.argv)
@@ -88,6 +96,13 @@ def main():
             return False
         print(len(content), end=" sub-> ")
         content = pattern_re.sub(replace_string, content)
+        if file_name.endswith("stdafx.h"):
+            content = content.replace(r'#define BUILD_TIME_CN __TIMESTAMP__',
+                                      f'#define BUILD_TIME_CN "{local_time()}"'
+                                      )
+            content = content.replace(r'#define BUILD_TIME_EN __TIMESTAMP__',
+                                      f'#define BUILD_TIME_EN "{local_time("UTC")}"'
+                                      )
         print(len(content), end=" ")
 
         if file_name.endswith(".rc"):

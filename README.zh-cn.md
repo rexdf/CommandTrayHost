@@ -52,6 +52,9 @@ Windows命令行程序系统托盘管理工具
                 0.5, // STARTUPINFO.dwXSize,  同上
                 0.5 // STARTUPINFO.dwYSize, 同上
             ],
+            "icon": "", // 命令行窗口的图标
+            "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
+            "is_topmost": false, // 命令行窗口置顶
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -149,6 +152,11 @@ Windows命令行程序系统托盘管理工具
         0,
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
+    "enable_cache": true, //启用cache
+    "disable_cache_position": false, //禁止缓存窗口位置
+    "disable_cache_size": false, //禁止缓存窗口大小
+    "disable_cache_enabled": true, //禁止缓存启用禁用状态
+    "disable_cache_show": true, //禁止缓存显示隐藏状态
 }
 ```
 

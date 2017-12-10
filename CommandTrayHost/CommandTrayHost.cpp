@@ -2,6 +2,7 @@
 #include "CommandTrayHost.h"
 #include "configure.h"
 #include "language.h"
+#include "utils.h"
 
 #ifndef __cplusplus
 #undef NULL
@@ -224,7 +225,7 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 		}
 	}
 	Shell_NotifyIcon(dwMessage ? dwMessage : NIM_ADD, &nid);
-	BOOL hSuccess = NULL;;
+	BOOL hSuccess = NULL;
 	if (gHicon)
 	{
 		if (true == enable_left_click)
@@ -1133,7 +1134,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	}
 	if (!init_cth_path())
 	{
-		::MessageBox(NULL, L"Initialization CommandTrayHost Path failed!", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"Initialization CommandTrayHost Path failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	CDCurrentDirectory();
@@ -1143,7 +1144,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
 	if (NULL == init_global(ghJob, gHicon))
 	{
-		::MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	check_admin(is_runas_admin);

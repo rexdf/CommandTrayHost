@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
+#include "utils.h"
 #include "configure.h"
 #include "language.h"
+
 
 extern bool is_runas_admin;
 extern nlohmann::json global_stat;
@@ -15,47 +17,6 @@ extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
 //extern WCHAR szWindowClass[36];
 //extern HINSTANCE hInst;
-
-std::wstring get_utf16(const std::string& str, int codepage)
-{
-	if (str.empty()) return std::wstring();
-	int sz = MultiByteToWideChar(codepage, 0, &str[0], (int)str.size(), 0, 0);
-	std::wstring res(sz, 0);
-	MultiByteToWideChar(codepage, 0, &str[0], (int)str.size(), &res[0], sz);
-	return res;
-}
-
-std::wstring string_to_wstring(const std::string& text)
-{
-	return std::wstring(text.begin(), text.end());
-}
-
-std::wstring s2ws(const std::string& s)
-{
-	int len;
-	int slength = (int)s.length() + 1;
-	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
-	wchar_t* buf = new wchar_t[len];
-	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-	std::wstring r(buf);
-	delete[] buf;
-	return r;
-}
-
-
-// convert UTF-8 string to wstring
-std::wstring utf8_to_wstring(const std::string& str)
-{
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-	return myconv.from_bytes(str);
-}
-
-// convert wstring to UTF-8 string
-std::string wstring_to_utf8(const std::wstring& str)
-{
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
-	return myconv.to_bytes(str);
-}
 
 bool initial_configure()
 {
@@ -247,25 +208,6 @@ bool initial_configure()
 	else { return false; }
 }
 
-// https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
-int64_t FileSize(PCWSTR name)
-{
-	HANDLE hFile = CreateFile(name, GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return -1; // error condition, could call GetLastError to find out more
-
-	LARGE_INTEGER size;
-	if (!GetFileSizeEx(hFile, &size))
-	{
-		CloseHandle(hFile);
-		return -1; // error condition, could call GetLastError to find out more
-	}
-
-	CloseHandle(hFile);
-	return size.QuadPart;
-}
 
 /*
  * true no type error
@@ -275,7 +217,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 {
 	if (deep > MAX_MENU_LEVEL_LIMIT)
 	{
-		::MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
 	if (!root.is_array())
@@ -290,7 +232,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 			int val = m;
 			if (val >= number_of_configs)
 			{
-				::MessageBox(NULL,
+				MessageBox(NULL,
 					L"groups index must start from 0, and not exceed number of configs!",
 					L"Error",
 					MB_OK | MB_ICONERROR
@@ -351,7 +293,7 @@ int configure_reader(std::string& out)
 	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
 	if (json_file_size > 1024 * 1024 * 100)
 	{
-		::MessageBox(NULL, L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
+		MessageBox(NULL, L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
 	}
 	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 10)));
 	if (NULL == readBuffer)
@@ -362,7 +304,7 @@ int configure_reader(std::string& out)
 	errno_t err = _wfopen_s(&fp, json_filename, L"rb"); // 非 Windows 平台使用 "r"
 	if (0 != err)
 	{
-		::MessageBox(NULL, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		free(readBuffer);
 		return NULL;
 	}
@@ -456,7 +398,7 @@ int configure_reader(std::string& out)
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
 		)
 	{
-		::MessageBox(NULL, L"One of require_admin(bool) icon(string) lang(string)"
+		MessageBox(NULL, L"One of require_admin(bool) icon(string) lang(string)"
 			L" icon_size(number) has type error!",
 			L"Type Error",
 			MB_OK | MB_ICONERROR
@@ -505,6 +447,7 @@ int configure_reader(std::string& out)
 			true,
 			true
 		};
+		int cache_cnt = 0;
 		for (int i = 0; i < ARRAYSIZE(cache_options_strs); i++)
 		{
 			PCSTR cache_str = cache_options_strs[i];
@@ -513,7 +456,7 @@ int configure_reader(std::string& out)
 				auto& ref = d[cache_str];
 				if (false == ref.IsBool())
 				{
-					::MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
+					MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
 						L"Type Error",
 						MB_OK | MB_ICONERROR
 					);
@@ -523,11 +466,16 @@ int configure_reader(std::string& out)
 				{
 					*(cache_options_global_pointer[i]) = ref.GetBool();
 				}
+				cache_cnt++;
 			}
 			else
 			{
 				*(cache_options_global_pointer[i]) = cache_options_default_value[i];
 			}
+		}
+		if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
+		{
+			enable_cache = false;
 		}
 	} // End cache options
 
@@ -535,8 +483,15 @@ int configure_reader(std::string& out)
 		"position",
 		"size"
 	};
-	int screen_fullx = ::GetSystemMetrics(SM_CXFULLSCREEN);
-	int screen_fully = ::GetSystemMetrics(SM_CYFULLSCREEN);
+	//int screen_fullx = GetSystemMetrics(SM_CXFULLSCREEN);
+	//int screen_fully = GetSystemMetrics(SM_CYFULLSCREEN);
+	int screen_full_ints[] = {
+		GetSystemMetrics(SM_CXFULLSCREEN),
+		GetSystemMetrics(SM_CYFULLSCREEN)
+	};
+
+	assert(screen_full_ints[0] == GetSystemMetrics(SM_CXFULLSCREEN));
+	assert(screen_full_ints[1] == GetSystemMetrics(SM_CYFULLSCREEN));
 
 	int cnt = 0;
 
@@ -602,7 +557,7 @@ int configure_reader(std::string& out)
 
 				)
 			{
-				::MessageBox(NULL, L"One of require_admin start_show ignore_all is not bool type!", L"Type Error", MB_OK | MB_ICONERROR);
+				MessageBox(NULL, L"One of require_admin start_show ignore_all is not bool type!", L"Type Error", MB_OK | MB_ICONERROR);
 				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
 
@@ -613,7 +568,7 @@ int configure_reader(std::string& out)
 					auto& ref = m[str_item];
 					if (false == ref.IsArray() || ref.GetArray().Size() != 2)
 					{
-						::MessageBox(NULL, L"One of position size is not array of two double numbers!", L"Type Error", MB_OK | MB_ICONERROR);
+						MessageBox(NULL, L"One of position size is not array of two double numbers!", L"Type Error", MB_OK | MB_ICONERROR);
 						SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 					}
 					int cord_xy_cnt = 0, cords[2];
@@ -621,14 +576,15 @@ int configure_reader(std::string& out)
 					{
 						if (false == itm.IsNumber() || itm.GetDouble() < 0)
 						{
-							::MessageBox(NULL, L"Number in position size array must be not less than zero!", L"Type Error", MB_OK | MB_ICONERROR);
+							MessageBox(NULL, L"Number in position size array must be not less than zero!", L"Type Error", MB_OK | MB_ICONERROR);
 							SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 						}
 						double val = itm.GetDouble();
 						if (val <= 1)
 						{
 							//itm.SetDouble(val*(cord_xy_cnt ? screen_fully : screen_fullx));
-							cords[cord_xy_cnt] = static_cast<int>(val*(cord_xy_cnt ? screen_fully : screen_fullx));
+							//cords[cord_xy_cnt] = static_cast<int>(val*(cord_xy_cnt ? screen_fully : screen_fullx));
+							cords[cord_xy_cnt] = static_cast<int>(val*screen_full_ints[cord_xy_cnt]);
 						}
 						else
 						{
@@ -695,42 +651,6 @@ int configure_reader(std::string& out)
 }
 
 /*
- * Make sure out is initialized with default value before call try_read_optional_json
- */
-template<typename Type>
-#ifdef _DEBUG
-bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string, PCSTR caller_fuc_name)
-#else
-bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string)
-#endif
-{
-	//Type ignore_all = false; // Do it before call try_read_optional_json
-	try
-	{
-		out = root.at(query_string);
-	}
-#ifdef _DEBUG
-	catch (std::out_of_range& e)
-#else
-	catch (std::out_of_range&)
-#endif
-	{
-		LOGMESSAGE(L"%S %S out_of_range %S\n", caller_fuc_name, query_string, e.what());
-		return false;
-	}
-	catch (...)
-	{
-		::MessageBox(NULL,
-			(utf8_to_wstring(query_string) + L" type check failed!").c_str(),
-			L"Type Error",
-			MB_OK | MB_ICONERROR
-		);
-		return false;
-	}
-	return true;
-}
-
-/*
  * return NULL : failed
  * return 1 : sucess
  * enabled bool
@@ -750,7 +670,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
 	{
-		::MessageBox(NULL, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	number_of_configs = cmd_cnt;
@@ -777,7 +697,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			PTSTR pIdx = StrStr(commandLine, L".exe");
 			if (pIdx == NULL)
 			{
-				::MessageBox(NULL, L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
+				MessageBox(NULL, L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
 			}
 			if (pIdx)
 			{
@@ -810,7 +730,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	ghJob = CreateJobObject(NULL, NULL); // GLOBAL
 	if (ghJob == NULL)
 	{
-		::MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
+		MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	else
@@ -821,7 +741,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 		if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
 		{
-			::MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
+			MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
 	}
@@ -888,10 +808,10 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 
 
-		}
+	}
 
 	return 1;
-	}
+}
 
 void start_all(HANDLE ghJob, bool force)
 {
@@ -1267,7 +1187,7 @@ void create_process(
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
-}
+	}
 
 	bool require_admin = false, start_show = false;
 #ifdef _DEBUG
@@ -1413,7 +1333,7 @@ void create_process(
 			}
 			else
 			{
-				//::MessageBox(NULL, L"User rejected UAC prompt.", L"Msg", MB_OK | MB_ICONSTOP);
+				//MessageBox(NULL, L"User rejected UAC prompt.", L"Msg", MB_OK | MB_ICONSTOP);
 				LOGMESSAGE(L"User rejected UAC prompt.\n");
 			}
 		}
@@ -1548,21 +1468,36 @@ void show_hide_toggle(nlohmann::json& jsp)
 		{
 			ShowWindow(Info.Windows[0], SW_HIDE);
 			jsp["show"] = false;
+
 #ifdef _DEBUG
 			RECT rect = { NULL };
 			GetWindowRect(Info.Windows[0], &rect);
-			LOGMESSAGE(L"show_hide_toggle GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
+			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
 #endif
 		}
 		else
 		{
+#ifdef _DEBUG
+			RECT rect = { NULL };
+			GetWindowRect(Info.Windows[0], &rect);
+			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
+			//extern HICON gHicon;
+			//SendMessage(Info.Windows[0], WM_SETICON, ICON_BIG, (LPARAM)gHicon);
+			//SendMessage(Info.Windows[0], WM_SETICON, ICON_SMALL, (LPARAM)gHicon);
+			//SetForegroundWindow(Info.Windows[0]);
+			//SetWindowPos(Info.Windows[0], HWND_NOTOPMOST, rect.left, 500, 200, 200, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+			SetWindowLong(Info.Windows[0], GWL_EXSTYLE,
+				GetWindowLong(Info.Windows[0], GWL_EXSTYLE) | WS_EX_LAYERED);
+			SetLayeredWindowAttributes(Info.Windows[0], 0, 170, LWA_ALPHA);
+#endif
+
 			ShowWindow(Info.Windows[0], SW_SHOW);
 			SetForegroundWindow(Info.Windows[0]);
 			jsp["show"] = true;
 		}
-		}
-
 	}
+
+}
 
 void kill_all(bool is_exit/* = true*/)
 {
@@ -1758,7 +1693,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-		}
+}
 
 BOOL DisableStartUp()
 {
@@ -1871,7 +1806,7 @@ void ElevateNow()
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
-					::MessageBox(NULL, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
+					MessageBox(NULL, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
 					//bool is_another_instance_running();
 					//is_another_instance_running();
 				}
@@ -1899,7 +1834,7 @@ bool check_runas_admin()
 	try
 	{
 		bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
-}
+	}
 	catch (...)
 	{
 		LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
@@ -1907,7 +1842,7 @@ bool check_runas_admin()
 		LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
 	}
 	return bAlreadyRunningAsAdministrator;
-	}
+}
 
 void check_admin(bool is_admin)
 {
@@ -1968,7 +1903,7 @@ bool is_another_instance_running()
 		{
 			if (ERROR_FILE_NOT_FOUND != GetLastError())
 			{
-				::MessageBox(NULL, L"OpenMutex Failed with unknown error!",
+				MessageBox(NULL, L"OpenMutex Failed with unknown error!",
 					L"Error",
 					MB_OK | MB_ICONERROR);
 			}
@@ -1984,11 +1919,11 @@ bool is_another_instance_running()
 		else
 		{
 			ret = true;
-	}
+		}
 
 		ghMutex = m_hMutex;
 		LOGMESSAGE(L"%d ghMutex: 0x%x\n", ret, ghMutex);
-}
+	}
 	return ret;
 }
 
@@ -2080,7 +2015,7 @@ void makeSingleInstance3()
 
 		if (true == to_exit_now)
 		{
-			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
+			MessageBox(NULL, L"CommandTrayHost is already running!\n"
 				L"If you are sure not, you can reboot your computer \n"
 				L"or move CommandTrayHost.exe to other folder \n"
 				L"or rename CommandTrayHost.exe",
@@ -2123,7 +2058,7 @@ void makeSingleInstance2()
 			ghMutex = CreateMutex(0, 0, szPathToExe);
 			if (ghMutex == NULL)
 			{
-				::MessageBox(NULL, L"CommandTrayHost cannot CreateMutex, please report to Author!",
+				MessageBox(NULL, L"CommandTrayHost cannot CreateMutex, please report to Author!",
 					L"Error",
 					MB_OK | MB_ICONERROR);
 			}
@@ -2134,7 +2069,7 @@ void makeSingleInstance2()
 			// The mutex exists so this is the
 			// the second instance so return.
 			LOGMESSAGE(L"makeSingleInstance2 found!\n");
-			::MessageBox(NULL, L"CommandTrayHost is already running!\n"
+			MessageBox(NULL, L"CommandTrayHost is already running!\n"
 				L"If you are sure not, you can reboot your computer \n"
 				L"or move CommandTrayHost.exe to other folder \n"
 				L"or rename CommandTrayHost.exe",
@@ -2187,7 +2122,7 @@ void makeSingleInstance()
 					&& (0 == wcscmp(Buffer, szPathToExe)))
 				{
 					LOGMESSAGE(L"makeSingleInstance found!\n");
-					::MessageBox(NULL, L"CommandTrayHost is already running!", L"Error", MB_OK | MB_ICONERROR);
+					MessageBox(NULL, L"CommandTrayHost is already running!", L"Error", MB_OK | MB_ICONERROR);
 					exit(-1);
 					return;
 				}
@@ -2216,29 +2151,3 @@ void makeSingleInstance()
 }
 */
 
-#ifdef _DEBUG
-//only work for current process
-//http://ntcoder.com/bab/2007/07/24/changing-console-application-window-icon-at-runtime/
-void ChangeIcon(const HICON hNewIcon)
-{
-	// Load kernel 32 library
-	HMODULE hMod = LoadLibrary(_T("Kernel32.dll"));
-	assert(hMod);
-	if (hMod == NULL)
-	{
-		return;
-	}
-
-	// Load console icon changing procedure
-	typedef DWORD(__stdcall *SCI)(HICON);
-	SCI pfnSetConsoleIcon = reinterpret_cast<SCI>(GetProcAddress(hMod, "SetConsoleIcon"));
-	assert(pfnSetConsoleIcon);
-	if (pfnSetConsoleIcon != NULL)
-	{
-		// Call function to change icon
-		pfnSetConsoleIcon(hNewIcon);
-	}
-
-	FreeLibrary(hMod);
-}// End ChangeIcon
-#endif

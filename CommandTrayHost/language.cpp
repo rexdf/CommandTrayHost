@@ -1,35 +1,11 @@
 ﻿#include "stdafx.h"
 #include "language.h"
-#include "configure.h"
+//#include "configure.h"
 #include "language_data.h"
+#include "utils.h"
 
 ////////////////// CODE AREA ////////////////////////
-bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
-{
-	try
-	{
-		root.at(query_string);
-	}
-#ifdef _DEBUG
-	catch (std::out_of_range& e)
-#else
-	catch (std::out_of_range&)
-#endif
-	{
-		LOGMESSAGE(L"out_of_range %S\n", e.what());
-		return false;
-	}
-	catch (...)
-	{
-		::MessageBox(NULL,
-			L"json_object_has_member error",
-			L"Type Error",
-			MB_OK | MB_ICONERROR
-		);
-		return false;
-	}
-	return true;
-}
+
 
 extern nlohmann::json global_stat;
 extern CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
