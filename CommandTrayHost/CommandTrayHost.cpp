@@ -38,6 +38,11 @@ HICON gHicon;
 bool is_runas_admin;
 bool enable_groups_menu;
 bool enable_left_click;
+bool enable_cache;
+bool disable_cache_position;
+bool disable_cache_size;
+bool disable_cache_enabled;
+bool disable_cache_show;
 int number_of_configs;
 
 TCHAR szPathToExe[MAX_PATH * 10];
@@ -234,7 +239,7 @@ BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 	}
 	if (NULL == hSuccess)
 	{
-		LOGMESSAGE(L"ShowTrayIcon DestroyIcon Failed! %d\n", GetLastError());
+		LOGMESSAGE(L"DestroyIcon Failed! %d\n", GetLastError());
 	}
 	/*
 	if (hIcon)
@@ -689,7 +694,7 @@ BOOL CDCurrentDirectory()
 	*wcsrchr(szPath, L'\\') = 0;
 	SetCurrentDirectory(szPath);
 	SetEnvironmentVariableW(L"CWD", szPath);
-	LOGMESSAGE(L"CDCurrentDirectory CWD: %s\n", szPath);
+	LOGMESSAGE(L"CWD: %s\n", szPath);
 	free(szPath);
 	return TRUE;
 }
@@ -724,7 +729,7 @@ BOOL SetEenvironment()
 		}
 		//token = wcstok(NULL, sep);
 		token = wcstok_s(nullptr, sep, &next_token);
-		LOGMESSAGE(L"SetEenvironment loop token:%s\n", token);
+		LOGMESSAGE(L"loop token:%s\n", token);
 	}
 	LOGMESSAGE(L"Get out of loop!\n");
 
@@ -837,7 +842,7 @@ BOOL ExecCmdline()
 #else
 		dwChildrenPid = GetProcessId(pi.hProcess);
 #endif
-		LOGMESSAGE(L"ExecCmdline pid %d\n", dwChildrenPid);
+		LOGMESSAGE(L"pid %d\n", dwChildrenPid);
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
@@ -873,7 +878,7 @@ BOOL TryDeleteUpdateFiles()
 
 	do
 	{
-		LOGMESSAGE(FindFileData.cFileName);
+		LOGMESSAGE(L"%s", FindFileData.cFileName);
 		DeleteFile(FindFileData.cFileName);
 		if (!FindNextFile(hFind, &FindFileData))
 		{
@@ -974,10 +979,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ABOUT)
 		{
 			std::wstring msg = (isZHCN) ?
-				(L"CommandTrayHost\n" L"版本: " VERSION_NUMS L"\n作者: rexdf") :
-				(L"CommandTrayHost\n" L"Version: " VERSION_NUMS L"\nAuthor: rexdf");
+				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n作者: rexdf" L"\n编译时间: " BUILD_TIME_CN) :
+				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\nAuthor: rexdf" L"\nBuild Timestamp: " BUILD_TIME_EN);
 
-			MessageBox(hWnd, msg.c_str(), szWindowClass, 0);
+			MessageBox(hWnd, msg.c_str(), isZHCN ? L"关于" : translate_w2w(L"About").c_str(), 0);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{

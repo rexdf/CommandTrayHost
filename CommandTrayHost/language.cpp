@@ -16,7 +16,7 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 	catch (std::out_of_range&)
 #endif
 	{
-		LOGMESSAGE(L"json_object_has_member out_of_range %S\n", e.what());
+		LOGMESSAGE(L"out_of_range %S\n", e.what());
 		return false;
 	}
 	catch (...)
@@ -48,7 +48,7 @@ std::string translate(std::string en)
 	{
 		return en;
 	}
-	LOGMESSAGE(L"translation success: %s -> %s\n",
+	LOGMESSAGE(L"success: %s -> %s\n",
 		utf8_to_wstring(en).c_str(),
 		utf8_to_wstring(language_data[locale_name][en.c_str()]).c_str()
 	);
@@ -92,13 +92,13 @@ void update_locale_name_by_alias()
 		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, locale_alias.c_str());
 		if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), locale_alias.c_str())))
 		{
-			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
+			LOGMESSAGE(L"StringCchCopyA Failed\n");
 		}
-		LOGMESSAGE(L"update_locale_name_by_alias %S\n", locale_alias);
+		LOGMESSAGE(L"locale_alias:%S\n", locale_alias);
 	}
 	else
 	{
-		LOGMESSAGE(L"update_locale_name_by_alias not found!\n");
+		LOGMESSAGE(L"locale_name not found!\n");
 	}
 }
 
@@ -122,11 +122,11 @@ void update_locale_name_by_system()
 	WCHAR wlocale_name[LOCALE_NAME_MAX_LENGTH];
 	if (GetUserDefaultLocaleName(wlocale_name, LOCALE_NAME_MAX_LENGTH))
 	{
-		LOGMESSAGE(L"initialize_local GetUserDefaultLocaleName %s\n", wlocale_name);
+		LOGMESSAGE(L"GetUserDefaultLocaleName %s\n", wlocale_name);
 		// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, wstring_to_utf8(wlocale_name).c_str());
 		if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), wstring_to_utf8(wlocale_name).c_str())))
 		{
-			LOGMESSAGE(L"update_locale_name_by_alias StringCchCopyA Failed\n");
+			LOGMESSAGE(L"StringCchCopyA Failed\n");
 		}
 		//update_isZHCN();
 	}
@@ -160,13 +160,13 @@ void initialize_local()
 			// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
 			if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), local.c_str())))
 			{
-				LOGMESSAGE(L"initialize_local StringCchCopyA Failed\n");
+				LOGMESSAGE(L"StringCchCopyA Failed\n");
 			}
 		}
 		update_locale_name_by_alias();
 		update_isZHCN(false); //use user defined
 	}
-	LOGMESSAGE(L"initialize_local final locale_name %S\n", locale_name);
+	LOGMESSAGE(L"final locale_name %S\n", locale_name);
 
 	/*if (json_object_has_member(global_stat, "lang"))
 	{
@@ -184,7 +184,7 @@ void initialize_local()
 			update_locale_name_by_alias();
 			update_isZHCN(false); //use user defined
 		}
-		LOGMESSAGE(L"initialize_local json_object_has_member %S\n", locale_name);
+		LOGMESSAGE(L"json_object_has_member %S\n", locale_name);
 	}
 	else // no lang items
 	{
@@ -203,7 +203,7 @@ void initialize_local()
 	{
 		isENUS = FALSE;
 	}
-	LOGMESSAGE(L"initialize_local locale_name: %S isZHCN: %d isENUS: %d\n", locale_name, isZHCN, isENUS);
+	LOGMESSAGE(L"locale_name: %S isZHCN: %d isENUS: %d\n", locale_name, isZHCN, isENUS);
 	// BOOL isZHCN = GetSystemDefaultLCID() == 2052;
 	extern WCHAR szBalloon[512];
 	if (not isZHCN)

@@ -280,7 +280,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 	}
 	if (!root.is_array())
 	{
-		LOGMESSAGE(L"type_check_groups !root.is_array()\n");
+		LOGMESSAGE(L"!root.is_array()\n");
 		return false;
 	}
 	for (auto& m : root)
@@ -307,7 +307,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 				!(m["name"].is_string()) // name field is not a string, has_name must be true
 				)
 			{
-				LOGMESSAGE(L"type_check_groups name error! %d %S\n", has_name, m.dump().c_str());
+				LOGMESSAGE(L"name error! %d %S\n", has_name, m.dump().c_str());
 				return false;
 			}
 			// have groups field but field failed
@@ -315,13 +315,13 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 				false == type_check_groups(m["groups"], deep + 1)
 				)
 			{
-				LOGMESSAGE(L"type_check_groups groups error!\n");
+				LOGMESSAGE(L"groups error!\n");
 				return false;
 			}
 		}
 		else
 		{
-			LOGMESSAGE(L"type_check_groups neither number nor object\n");
+			LOGMESSAGE(L"neither number nor object\n");
 			return false;
 		}
 	}
@@ -475,7 +475,61 @@ int configure_reader(std::string& out)
 	{
 		enable_groups_menu = false;
 	}
-	LOGMESSAGE(L"configure_reader enable_groups_menu:%d\n", enable_groups_menu);
+	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
+
+	//cache options
+	{
+		extern bool enable_cache;
+		extern bool disable_cache_position;
+		extern bool disable_cache_size;
+		extern bool disable_cache_enabled;
+		extern bool disable_cache_show;
+		PCSTR cache_options_strs[] = {
+			"enable_cache",
+			"disable_cache_position",
+			"disable_cache_size",
+			"disable_cache_enabled",
+			"disable_cache_show"
+		};
+		bool* cache_options_global_pointer[] = {
+			&enable_cache,
+			&disable_cache_position,
+			&disable_cache_size,
+			&disable_cache_enabled,
+			&disable_cache_show
+		};
+		bool cache_options_default_value[] = {
+			true,
+			false,
+			false,
+			true,
+			true
+		};
+		for (int i = 0; i < ARRAYSIZE(cache_options_strs); i++)
+		{
+			PCSTR cache_str = cache_options_strs[i];
+			if (d.HasMember(cache_str))
+			{
+				auto& ref = d[cache_str];
+				if (false == ref.IsBool())
+				{
+					::MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
+						L"Type Error",
+						MB_OK | MB_ICONERROR
+					);
+					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				}
+				else
+				{
+					*(cache_options_global_pointer[i]) = ref.GetBool();
+				}
+			}
+			else
+			{
+				*(cache_options_global_pointer[i]) = cache_options_default_value[i];
+			}
+		}
+	} // End cache options
 
 	PCSTR size_postion_strs[] = {
 		"position",
@@ -537,10 +591,10 @@ int configure_reader(std::string& out)
 			m.HasMember("enabled") && m["enabled"].IsBool()
 			)
 		{
-			if (m["working_directory"] == "")
+			/*if (m["working_directory"] == "")
 			{
 				m["working_directory"] = StringRef(m["path"].GetString());
-			}
+			}*/
 			// type check for optional items
 			if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
 				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
@@ -645,7 +699,7 @@ int configure_reader(std::string& out)
  */
 template<typename Type>
 #ifdef _DEBUG
-bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string, PCWSTR caller_fuc_name)
+bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string, PCSTR caller_fuc_name)
 #else
 bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string)
 #endif
@@ -661,7 +715,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	catch (std::out_of_range&)
 #endif
 	{
-		LOGMESSAGE(L"%s %S out_of_range %S\n", caller_fuc_name, query_string, e.what());
+		LOGMESSAGE(L"%S %S out_of_range %S\n", caller_fuc_name, query_string, e.what());
 		return false;
 	}
 	catch (...)
@@ -746,7 +800,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			global_stat["groups_menu_symbol"] = "+";
 		}
 	}
-	LOGMESSAGE(L"init_global enable_groups_menu:%d\n", enable_groups_menu);
+	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
 
 	if (ghJob != NULL)
 	{
@@ -778,7 +832,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	assert(icon.empty());
 
 #ifdef _DEBUG
-	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon", L"init_global");
+	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon", __FUNCTION__);
 #else
 	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon");
 #endif
@@ -786,7 +840,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	{
 		int icon_size = -1, out_icon_size = 0;
 #ifdef _DEBUG
-		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", L"init_global");
+		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", __FUNCTION__);
 #else
 		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size");
 #endif
@@ -804,7 +858,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			WCHAR szIcon[MAX_PATH * 2];
 			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2 / sizeof(WCHAR), pLoad)))
 			{
-				LOGMESSAGE(L"init_global StringCchCopy failed\n");
+				LOGMESSAGE(L"StringCchCopy failed\n");
 			}
 			else
 			{
@@ -834,10 +888,10 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 
 
-	}
+		}
 
 	return 1;
-}
+	}
 
 void start_all(HANDLE ghJob, bool force)
 {
@@ -848,7 +902,7 @@ void start_all(HANDLE ghJob, bool force)
 		{
 			bool ignore_all = false;
 #ifdef _DEBUG
-			try_read_optional_json<bool>(i, ignore_all, "ignore_all", L"start_all");
+			try_read_optional_json<bool>(i, ignore_all, "ignore_all", __FUNCTION__);
 #else
 			try_read_optional_json<bool>(i, ignore_all, "ignore_all");
 #endif
@@ -909,7 +963,7 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 
 void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 {
-	LOGMESSAGE(L"get_command_submenu enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
+	LOGMESSAGE(L"enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
 	//return {};
 
 #define RUNAS_ADMINISRATOR_INDEX 5
@@ -1179,11 +1233,25 @@ void create_process(
 	std::wstring working_directory_wstring = utf8_to_wstring(jsp["working_directory"]);
 	LPCTSTR cmd = cmd_wstring.c_str();
 	LPCTSTR path = path_wstring.c_str();
-	LPCTSTR working_directory = working_directory_wstring.c_str();
+	//LPCTSTR working_directory = working_directory_wstring.c_str();
+	LPCTSTR working_directory = NULL;
+	LOGMESSAGE(L"%S %S %S\n", __DATE__, __TIME__, __TIMESTAMP__);
+	if (working_directory_wstring == L"")
+	{
+		working_directory = path;
+	}
+	else
+	{
+		working_directory = working_directory_wstring.c_str();
+	}
+
+	LOGMESSAGE(L"wcslen(cmd):%d wcslen(path):%d wcslen(working_directory):%d\n",
+		wcslen(cmd),
+		wcslen(path),
+		wcslen(working_directory)
+	);
 
 	LPVOID env = NULL;
-
-	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
 
 	bool is_running = jsp["running"];
 	if (is_running)
@@ -1191,7 +1259,7 @@ void create_process(
 		int64_t handle = jsp["handle"];
 		int64_t pid = jsp["pid"];
 
-		LOGMESSAGE(L"create_process process running, now kill it\n");
+		LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 #ifdef _DEBUG
 		std::string name = jsp["name"];
@@ -1199,14 +1267,12 @@ void create_process(
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
 #endif
-	}
-
-	LOGMESSAGE(L"%d %d\n", wcslen(cmd), wcslen(path));
+}
 
 	bool require_admin = false, start_show = false;
 #ifdef _DEBUG
-	try_read_optional_json<bool>(jsp, require_admin, "require_admin", L"create_process");
-	try_read_optional_json<bool>(jsp, start_show, "start_show", L"create_process");
+	try_read_optional_json<bool>(jsp, require_admin, "require_admin", __FUNCTION__);
+	try_read_optional_json<bool>(jsp, start_show, "start_show", __FUNCTION__);
 #else
 	try_read_optional_json<bool>(jsp, require_admin, "require_admin");
 	try_read_optional_json<bool>(jsp, start_show, "start_show");
@@ -1225,7 +1291,7 @@ void create_process(
 	// wcscpy_s(nameStr, name.c_str());
 	if (name.length() > 255 || FAILED(StringCchCopy(nameStr, 256, name.c_str())))
 	{
-		LOGMESSAGE(L"create_process StringCchCopy failed\n");
+		LOGMESSAGE(L"StringCchCopy failed\n");
 		MessageBox(NULL, L"name is too long to exceed 256 characters", L"Error", MB_OK | MB_ICONERROR);
 	}
 
@@ -1236,6 +1302,7 @@ void create_process(
 	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
 	si.lpTitle = nameStr;
 
+	//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
 	if (json_object_has_member(jsp, "position"))
 	{
 		si.dwFlags |= STARTF_USEPOSITION;
@@ -1299,7 +1366,7 @@ void create_process(
 	{
 
 		DWORD error_code = GetLastError();
-		LOGMESSAGE(L"CreateProcess Failed. %d\n", error_code);
+		LOGMESSAGE(L"CreateProcess Failed. error_code:0x%x\n", error_code);
 		if (require_admin || ERROR_ELEVATION_REQUIRED == error_code)
 		{
 			//jsp["require_admin"] = true;
@@ -1346,11 +1413,12 @@ void create_process(
 			}
 			else
 			{
+				//::MessageBox(NULL, L"User rejected UAC prompt.", L"Msg", MB_OK | MB_ICONSTOP);
 				LOGMESSAGE(L"User rejected UAC prompt.\n");
 			}
 		}
 		jsp["enabled"] = false;
-		MessageBox(NULL, L"CreateProcess Failed.", L"Msg", MB_ICONERROR);
+		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
 }
 
@@ -1364,7 +1432,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 			int64_t handle = jsp["handle"];
 			int64_t pid = jsp["pid"];
 
-			LOGMESSAGE(L"disable_enable_menu disable_menu process running, now kill it\n");
+			LOGMESSAGE(L"pid:%d disable_menu process running, now kill it\n", pid);
 
 #ifdef _DEBUG
 			std::string name = jsp["name"];
@@ -1428,7 +1496,7 @@ void hideshow_all(bool is_hideall)
 				reinterpret_cast<LPARAM>(&Info));
 
 			size_t num_of_windows = Info.Windows.size();
-			LOGMESSAGE(L"show_terminal size: %d\n", num_of_windows);
+			LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
 			if (num_of_windows > 0)
 			{
 				/*if (is_hideall && is_show)
@@ -1473,13 +1541,18 @@ void show_hide_toggle(nlohmann::json& jsp)
 		reinterpret_cast<LPARAM>(&Info));
 
 	size_t num_of_windows = Info.Windows.size();
-	LOGMESSAGE(L"show_terminal size: %d\n", num_of_windows);
+	LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
 	if (num_of_windows > 0)
 	{
 		if (is_show)
 		{
 			ShowWindow(Info.Windows[0], SW_HIDE);
 			jsp["show"] = false;
+#ifdef _DEBUG
+			RECT rect = { NULL };
+			GetWindowRect(Info.Windows[0], &rect);
+			LOGMESSAGE(L"show_hide_toggle GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
+#endif
 		}
 		else
 		{
@@ -1487,9 +1560,9 @@ void show_hide_toggle(nlohmann::json& jsp)
 			SetForegroundWindow(Info.Windows[0]);
 			jsp["show"] = true;
 		}
-	}
+		}
 
-}
+	}
 
 void kill_all(bool is_exit/* = true*/)
 {
@@ -1502,7 +1575,7 @@ void kill_all(bool is_exit/* = true*/)
 			{
 				bool ignore_all = false;
 #ifdef _DEBUG
-				try_read_optional_json<bool>(itm, ignore_all, "ignore_all", L"kill_all");
+				try_read_optional_json<bool>(itm, ignore_all, "ignore_all", __FUNCTION__);
 #else
 				try_read_optional_json<bool>(itm, ignore_all, "ignore_all");
 #endif
@@ -1515,7 +1588,7 @@ void kill_all(bool is_exit/* = true*/)
 			int64_t handle = itm["handle"];
 			int64_t pid = itm["pid"];
 
-			LOGMESSAGE(L"create_process process running, now kill it\n");
+			LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 #ifdef _DEBUG
 			std::string name = itm["name"];
@@ -1566,12 +1639,12 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		/*size_t len = 0;
 		if (SUCCEEDED(StringCchLength(szPathToExe_reg, ARRAYSIZE(szPathToExe_reg), &len)))
 		{
-			LOGMESSAGE(L"IsMyProgramRegisteredForStartup [%c] [%c] \n", szPathToExe_reg[len - 1], szPathToExe_reg[len - 2]);
+			LOGMESSAGE(L"[%c] [%c] \n", szPathToExe_reg[len - 1], szPathToExe_reg[len - 2]);
 			szPathToExe_reg[len - 2] = 0; // There is a space at end except for quote ".
 		}*/
 		fSuccess = (wcscmp(szPathToExe, szPathToExe_reg + 1) == 0) ? TRUE : FALSE;
 		//fSuccess = (wcslen(szPathToExe) > 0) ? TRUE : FALSE;
-		LOGMESSAGE(L"IsMyProgramRegisteredForStartup \n szPathToExe_reg: %s\n szPathToExe    : %s \nfSuccess:%d \n", szPathToExe_reg + 1, szPathToExe, fSuccess);
+		LOGMESSAGE(L"\n szPathToExe_reg: %s\n szPathToExe    : %s \nfSuccess:%d \n", szPathToExe_reg + 1, szPathToExe, fSuccess);
 
 	}
 
@@ -1599,7 +1672,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		FAILED(StringCchCat(szValue, count, L"\" "))
 		)
 	{
-		LOGMESSAGE(L"RegisterMyProgramForStartup StringCchCopy failed\n");
+		LOGMESSAGE(L"StringCchCopy failed\n");
 		MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
@@ -1614,7 +1687,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		// wcscat_s(szValue, count, args);
 		if (FAILED(StringCchCat(szValue, count, args)))
 		{
-			LOGMESSAGE(L"RegisterMyProgramForStartup StringCchCat failed\n");
+			LOGMESSAGE(L"StringCchCat failed\n");
 			MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
 		}
 	}
@@ -1628,7 +1701,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		dwSize = static_cast<DWORD>((wcslen(szValue) + 1) * 2);
 		lResult = RegSetValueEx(hKey, pszAppName, 0, REG_SZ, reinterpret_cast<BYTE*>(szValue), dwSize);
 		fSuccess = (lResult == 0);
-		LOGMESSAGE(L"RegisterMyProgramForStartup %s %s %d %d\n", pszAppName, szValue, fSuccess, GetLastError());
+		LOGMESSAGE(L"%s %s %d %d\n", pszAppName, szValue, fSuccess, GetLastError());
 	}
 
 	if (hKey != NULL)
@@ -1685,7 +1758,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-}
+		}
 
 BOOL DisableStartUp()
 {
@@ -1826,7 +1899,7 @@ bool check_runas_admin()
 	try
 	{
 		bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
-	}
+}
 	catch (...)
 	{
 		LOGMESSAGE(L"Failed to determine if application was running with admin rights\n");
@@ -1834,13 +1907,13 @@ bool check_runas_admin()
 		LOGMESSAGE(L"Error code returned was 0x%08lx\n", dwErrorCode);
 	}
 	return bAlreadyRunningAsAdministrator;
-}
+	}
 
 void check_admin(bool is_admin)
 {
 	bool require_admin = false;
 #ifdef _DEBUG
-	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", L"check_admin");
+	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", __FUNCTION__);
 #else
 	try_read_optional_json<bool>(global_stat, require_admin, "require_admin");
 #endif
@@ -1869,7 +1942,7 @@ bool init_cth_path()
 		}
 		else if (L'\x0' == szPathToExeToken[i])
 		{
-			LOGMESSAGE(L"init_cth_path changed to :%s, length:%d\n", szPathToExeToken, i);
+			LOGMESSAGE(L"changed to :%s, length:%d\n", szPathToExeToken, i);
 			break;
 		}
 	}
@@ -1911,11 +1984,11 @@ bool is_another_instance_running()
 		else
 		{
 			ret = true;
-		}
+	}
 
 		ghMutex = m_hMutex;
-		LOGMESSAGE(L"is_another_instance_running %d ghMutex: 0x%x\n", ret, ghMutex);
-	}
+		LOGMESSAGE(L"%d ghMutex: 0x%x\n", ret, ghMutex);
+}
 	return ret;
 }
 
@@ -1977,7 +2050,7 @@ void makeSingleInstance3()
 {
 	if (is_another_instance_running())
 	{
-		LOGMESSAGE(L"makeSingleInstance3 is_another_instance_running!\n");
+		LOGMESSAGE(L"is_another_instance_running!\n");
 		bool to_exit_now = false;
 		// check by filepath
 		if (false == is_runas_admin)
@@ -1998,7 +2071,7 @@ void makeSingleInstance3()
 		if (false == to_exit_now)
 		{
 			DWORD dwWaitResult = WaitForSingleObject(ghMutex, 1000 * 5);
-			LOGMESSAGE(L"makeSingleInstance3 WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
+			LOGMESSAGE(L"WaitForSingleObject 0x%x 0x%x\n", dwWaitResult, GetLastError());
 			if (WAIT_TIMEOUT == dwWaitResult)
 			{
 				to_exit_now = true;

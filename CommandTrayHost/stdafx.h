@@ -64,7 +64,9 @@
 
 #ifdef _DEBUG
 //#define LOGMESSAGE( str ) OutputDebugString( str );
-void LOGMESSAGE(wchar_t* pszFormat, ...);
+void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
+//void log_message(PCSTR, PCSTR, int, PCSTR, ...);
+#define LOGMESSAGE( str, ... )  log_message(__FILE__,__FUNCTION__,__LINE__,str L"\n",__VA_ARGS__)
 #else
 #define LOGMESSAGE( str, ... )
 #endif
@@ -85,3 +87,7 @@ void LOGMESSAGE(wchar_t* pszFormat, ...);
 #define VERSION_NUMS L"1.4.0"
 
 #define MAX_MENU_LEVEL_LIMIT	40
+
+#define BUILD_TIME_CN __TIMESTAMP__
+#define BUILD_TIME_EN __TIMESTAMP__
+

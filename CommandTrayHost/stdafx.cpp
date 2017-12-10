@@ -14,15 +14,44 @@
 #endif
 
 #ifdef _DEBUG
-void LOGMESSAGE(wchar_t* pszFormat, ...)
+void log_message(PCSTR caller_filename, PCSTR caller_function, int line_number, PCWSTR pszFormat, ...)
 {
 	// Expression: ("Buffer too small", 0)
-	const int len = 2048 * 16;
+	const size_t len = 2048 * 16;
 	static wchar_t s_acBuf[len]; // this here is a caveat!
-	va_list args;
-	va_start(args, pszFormat);
-	vswprintf_s(s_acBuf, len, pszFormat, args);
-	OutputDebugString(s_acBuf);
-	va_end(args);
+	int len_caller = swprintf_s(s_acBuf, len, L"%S\n[%S]:#%d, ", caller_filename, caller_function, line_number);
+	if (len_caller >= 0)
+	{
+		va_list args;
+		va_start(args, pszFormat);
+		vswprintf_s(s_acBuf + len_caller, len - len_caller, pszFormat, args);
+		OutputDebugString(s_acBuf);
+		va_end(args);
+	}
+	else
+	{
+		assert(false);
+	}
 }
+/*
+ #include "configure.h"
+ void log_message(PCSTR caller_filename, PCSTR caller_function, int line_number, PCSTR pszFormat, ...)
+{
+	// Expression: ("Buffer too small", 0)
+	const size_t len = 2048 * 16;
+	static wchar_t s_acBuf[len]; // this here is a caveat!
+	int len_caller = swprintf_s(s_acBuf, len, L"%S\n[%S]:#%d, ", caller_filename, caller_function, line_number);
+	if (len_caller >= 0)
+	{
+		va_list args;
+		va_start(args, pszFormat);
+		vswprintf_s(s_acBuf + len_caller, len - len_caller, utf8_to_wstring(pszFormat).c_str(), args);
+		OutputDebugString(s_acBuf);
+		va_end(args);
+	}
+	else
+	{
+		assert(false);
+	}
+}*/
 #endif
