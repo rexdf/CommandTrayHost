@@ -125,7 +125,7 @@ bool rapidjson_check_exist_type(
 		LOGMESSAGE(L"%S ret:%d type:%d GetType:%d\n", name, ret, type, ref.GetType());
 		return ret;
 	}
-	LOGMESSAGE(L"%S not exist:%d ret:%d \n", name, not_exist_return);
+	LOGMESSAGE(L"%S not exist: ret:%d \n", name, not_exist_return);
 	return not_exist_return;
 }
 

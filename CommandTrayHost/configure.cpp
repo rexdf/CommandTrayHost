@@ -209,66 +209,50 @@ bool initial_configure()
 }
 
 
-/*
- * true no type error
- * false error
- */
-bool type_check_groups(const nlohmann::json& root, int deep)
+typedef struct {
+	PCSTR name;
+	RapidJsonType type;
+	bool not_exist_ret;
+	std::function<bool(rapidjson::Value&, PCSTR)> caller;
+} RapidJsonChecker, *pRapidJsonChecker;
+
+bool check_rapidjson_array(
+	rapidjson::Value& d,
+	RapidJsonChecker check_arrys[],
+	size_t array_size,
+	PWSTR msg_text,
+	PWSTR msg_title,
+	PWSTR msg_text_header,
+	bool use_name
+)
 {
-	if (deep > MAX_MENU_LEVEL_LIMIT)
+	for (int i = 0; i < array_size; i++)
 	{
-		MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-	if (!root.is_array())
-	{
-		LOGMESSAGE(L"!root.is_array()\n");
-		return false;
-	}
-	for (auto& m : root)
-	{
-		if (m.is_number_unsigned())
+		RapidJsonChecker& cur_Foo = check_arrys[i];
+		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
 		{
-			int val = m;
-			if (val >= number_of_configs)
+			std::wstring wname;
+			if (use_name)
 			{
-				MessageBox(NULL,
-					L"groups index must start from 0, and not exceed number of configs!",
-					L"Error",
-					MB_OK | MB_ICONERROR
-				);
-				return false;
+				wname = i ? utf8_to_wstring(d["name"].GetString()) //other error
+					: L"configs name error "; // name field error
 			}
-			continue;
-		}
-		else if (m.is_object())
-		{
-			bool has_name = json_object_has_member(m, "name");
-			if (!has_name ||  //have no name field
-				//(has_name && !(m["name"].is_string())) // name field is not a string
-				!(m["name"].is_string()) // name field is not a string, has_name must be true
-				)
+			else
 			{
-				LOGMESSAGE(L"name error! %d %S\n", has_name, m.dump().c_str());
-				return false;
+				wname = msg_text_header;
 			}
-			// have groups field but field failed
-			if (json_object_has_member(m, "groups") &&
-				false == type_check_groups(m["groups"], deep + 1)
-				)
-			{
-				LOGMESSAGE(L"groups error!\n");
-				return false;
-			}
-		}
-		else
-		{
-			LOGMESSAGE(L"neither number nor object\n");
+			MessageBox(
+				NULL,
+				(wname + msg_text).c_str(),
+				(utf8_to_wstring(cur_Foo.name) + msg_title).c_str(),
+				MB_OK | MB_ICONERROR
+			);
 			return false;
 		}
 	}
 	return true;
 }
+
 
 /*
  * return NULL: failed
@@ -379,12 +363,12 @@ int configure_reader(std::string& out)
 	}
 
 	// type check for global optional items
-	typedef struct {
+	/*typedef struct {
 		PCSTR name;
 		RapidJsonType type;
 		bool not_exist_ret;
 		std::function<bool(Value&, PCSTR)> caller;
-	} Foo, *pFoo;
+	} Foo, *pFoo;*/
 	auto lambda_remove_empty_string = [](Value& val, PCSTR name)->bool {
 		LOGMESSAGE(L"%S lambda_remove_empty_string\n", name);
 		if (val[name] == "")
@@ -394,16 +378,9 @@ int configure_reader(std::string& out)
 		}
 		return true;
 	};
-	Foo global_optional_items[] = {
-		{ "require_admin", iBoolType, true, nullptr },
-		{ "enable_groups", iBoolType, true, nullptr },
-		{ "groups_menu_symbol", iStringType, true, nullptr },
-		{ "icon", iStringType, true, lambda_remove_empty_string },
-		{ "lang", iStringType, true, lambda_remove_empty_string },
-		{ "left_click", iArrayType, true, nullptr },
-		{ "icon_size", iIntType, true, nullptr }
-	};
-	for (int i = 0; i < ARRAYSIZE(global_optional_items); i++)
+
+
+	/*for (int i = 0; i < ARRAYSIZE(global_optional_items); i++)
 	{
 		Foo& cur_Foo = global_optional_items[i];
 		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, true, cur_Foo.caller))
@@ -415,110 +392,9 @@ int configure_reader(std::string& out)
 			);
 			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		}
-	}
-
-	/*if (!rapidjson_check_exist_type(d, "require_admin", iBoolType) ||
-		!rapidjson_check_exist_type(d, "enable_groups", iBoolType) ||
-		!rapidjson_check_exist_type(d, "groups_menu_symbol", iStringType) ||
-		!rapidjson_check_exist_type(d, "icon", iStringType) ||
-		!rapidjson_check_exist_type(d, "lang", iStringType) ||
-		!rapidjson_check_exist_type(d, "left_click", iArrayType) ||
-		!rapidjson_check_exist_type(d, "icon_size", iIntType)
-		)
-	{
-		MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
-			L" icon_size(number) has type error!",
-			L"Type Error",
-			MB_OK | MB_ICONERROR
-		);
-		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-	}
-
-	//remove empty string, except for groups_menu_symbol.
-	{
-		PCSTR str_names_to_remove[] = { "lang","icon" };
-		for (int i = 0; i < ARRAYSIZE(str_names_to_remove); i++)
-		{
-			PCSTR str_pointer = str_names_to_remove[i];
-			if (d.HasMember(str_pointer) && d[str_pointer] == "")
-			{
-				d.RemoveMember(str_pointer);
-			}
-		}
 	}*/
 
-	if (d.HasMember("enable_groups") &&
-		(true == d["enable_groups"].GetBool()) &&
-		d.HasMember("groups")
-		)
-	{
-		enable_groups_menu = true;
-	}
-	else
-	{
-		enable_groups_menu = false;
-	}
-	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
 
-	//cache options
-	{
-		extern bool enable_cache;
-		extern bool disable_cache_position;
-		extern bool disable_cache_size;
-		extern bool disable_cache_enabled;
-		extern bool disable_cache_show;
-		PCSTR cache_options_strs[] = {
-			"enable_cache",
-			"disable_cache_position",
-			"disable_cache_size",
-			"disable_cache_enabled",
-			"disable_cache_show"
-		};
-		bool* cache_options_global_pointer[] = {
-			&enable_cache,
-			&disable_cache_position,
-			&disable_cache_size,
-			&disable_cache_enabled,
-			&disable_cache_show
-		};
-		bool cache_options_default_value[] = {
-			true,
-			false,
-			false,
-			true,
-			true
-		};
-		int cache_cnt = 0;
-		for (int i = 0; i < ARRAYSIZE(cache_options_strs); i++)
-		{
-			PCSTR cache_str = cache_options_strs[i];
-			if (d.HasMember(cache_str))
-			{
-				auto& ref = d[cache_str];
-				if (false == ref.IsBool())
-				{
-					MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
-						L"Type Error",
-						MB_OK | MB_ICONERROR
-					);
-					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-				}
-				else
-				{
-					*(cache_options_global_pointer[i]) = ref.GetBool();
-				}
-				cache_cnt++;
-			}
-			else
-			{
-				*(cache_options_global_pointer[i]) = cache_options_default_value[i];
-			}
-		}
-		if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
-		{
-			enable_cache = false;
-		}
-	} // End cache options
 
 	PCSTR size_postion_strs[] = {
 		"position",
@@ -569,7 +445,8 @@ int configure_reader(std::string& out)
 		}
 		return false;
 	};
-	Foo config_items[] = {
+
+	RapidJsonChecker config_items[] = {
 		//must exist
 		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
 		{ "path", iStringType, false, nullptr },
@@ -646,7 +523,21 @@ int configure_reader(std::string& out)
 		}
 
 		//check for config item
-		for (int i = 0; i < ARRAYSIZE(config_items); i++)
+		if (false == check_rapidjson_array(
+			m,
+			config_items,
+			ARRAYSIZE(config_items),
+			L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
+			L" is_topmost(bool) icon(str) alpha(0-255)",
+			L" Type Error",
+			NULL,
+			true)
+			)
+		{
+			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+		}
+
+		/*for (int i = 0; i < ARRAYSIZE(config_items); i++)
 		{
 			Foo& cur_Foo = config_items[i];
 			if (!rapidjson_check_exist_type(m, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
@@ -662,7 +553,8 @@ int configure_reader(std::string& out)
 				);
 				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
-		}
+		}*/
+
 		//position update to integer
 		for (int i = 0; i < ARRAYSIZE(size_postion_strs); i++)
 		{
@@ -681,8 +573,70 @@ int configure_reader(std::string& out)
 		cnt++;
 	}
 
-	int left_click_cnt = 0;
-	if (d.HasMember("left_click"))
+
+	RapidJsonChecker global_optional_items[] = {
+		{ "require_admin", iBoolType, true, nullptr },
+		{ "enable_groups", iBoolType, true, [](Value& val,PCSTR name)->bool {
+			if (val[name].GetBool() && val.HasMember("groups"))
+			{
+				enable_groups_menu = true;
+			}
+			else
+			{
+				enable_groups_menu = false;
+			}
+			LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
+			return true;
+		}},
+		{ "groups_menu_symbol", iStringType, true, nullptr },
+		{ "icon", iStringType, true, lambda_remove_empty_string },
+		{ "lang", iStringType, true, lambda_remove_empty_string },
+		{ "left_click", iArrayType, true, [cnt](Value& val,PCSTR name)->bool {
+			int left_click_cnt = 0;
+			for (auto& m : val[name].GetArray())
+			{
+				if (m.IsInt())
+				{
+					int ans = m.GetInt();
+					if (ans < 0 || ans >= cnt)
+					{
+						return false;
+					}
+				}
+				else
+				{
+					return false;
+				}
+				left_click_cnt++;
+			}
+			if (left_click_cnt > 0)
+			{
+				enable_left_click = true;
+			}
+			else
+			{
+				enable_left_click = false;
+			}
+			return true;
+		} },
+		{ "icon_size", iIntType, true, nullptr }
+	};
+
+	if (false == check_rapidjson_array(
+		d,
+		global_optional_items,
+		ARRAYSIZE(global_optional_items),
+		L"One of global section require_admin(bool) icon(string) lang(string)"
+		L" icon_size(number) has type error!",
+		L" Type Error",
+		L"global section",
+		false)
+		)
+	{
+		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+	}
+	//int left_click_cnt = 0;
+	/*if (d.HasMember("left_click"))
 	{
 		for (auto& m : d["left_click"].GetArray())
 		{
@@ -709,7 +663,82 @@ int configure_reader(std::string& out)
 	else
 	{
 		enable_left_click = false;
+	}*/
+
+
+	/*if (d.HasMember("enable_groups") &&
+		(true == d["enable_groups"].GetBool()) &&
+		d.HasMember("groups")
+		)
+	{
+		enable_groups_menu = true;
 	}
+	else
+	{
+		enable_groups_menu = false;
+	}
+	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);*/
+
+	//cache options
+	{
+		extern bool enable_cache;
+		extern bool disable_cache_position;
+		extern bool disable_cache_size;
+		extern bool disable_cache_enabled;
+		extern bool disable_cache_show;
+		PCSTR cache_options_strs[] = {
+			"enable_cache",
+			"disable_cache_position",
+			"disable_cache_size",
+			"disable_cache_enabled",
+			"disable_cache_show"
+		};
+		bool* cache_options_global_pointer[] = {
+			&enable_cache,
+			&disable_cache_position,
+			&disable_cache_size,
+			&disable_cache_enabled,
+			&disable_cache_show
+		};
+		bool cache_options_default_value[] = {
+			true,
+			false,
+			false,
+			true,
+			true
+		};
+		int cache_cnt = 0;
+		for (int i = 0; i < ARRAYSIZE(cache_options_strs); i++)
+		{
+			PCSTR cache_str = cache_options_strs[i];
+			if (d.HasMember(cache_str))
+			{
+				auto& ref = d[cache_str];
+				if (false == ref.IsBool())
+				{
+					MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
+						L"Type Error",
+						MB_OK | MB_ICONERROR
+					);
+					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				}
+				else
+				{
+					*(cache_options_global_pointer[i]) = ref.GetBool();
+				}
+				cache_cnt++;
+			}
+			else
+			{
+				*(cache_options_global_pointer[i]) = cache_options_default_value[i];
+			}
+		}
+		if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
+		{
+			enable_cache = false;
+		}
+	} // End cache options
+
 	StringBuffer sb;
 	Writer<StringBuffer> writer(sb);
 	d.Accept(writer);
@@ -720,6 +749,67 @@ int configure_reader(std::string& out)
 	/*free(readBuffer);
 	fclose(fp);
 	return cnt;*/
+}
+
+/*
+* true no type error
+* false error
+*/
+bool type_check_groups(const nlohmann::json& root, int deep)
+{
+	if (deep > MAX_MENU_LEVEL_LIMIT)
+	{
+		MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+	if (!root.is_array())
+	{
+		LOGMESSAGE(L"!root.is_array()\n");
+		return false;
+	}
+	for (auto& m : root)
+	{
+		if (m.is_number_unsigned())
+		{
+			int val = m;
+			if (val >= number_of_configs)
+			{
+				MessageBox(NULL,
+					L"groups index must start from 0, and not exceed number of configs!",
+					L"Error",
+					MB_OK | MB_ICONERROR
+				);
+				return false;
+			}
+			continue;
+		}
+		else if (m.is_object())
+		{
+			bool has_name = json_object_has_member(m, "name");
+			if (!has_name ||  //have no name field
+							  //(has_name && !(m["name"].is_string())) // name field is not a string
+				!(m["name"].is_string()) // name field is not a string, has_name must be true
+				)
+			{
+				LOGMESSAGE(L"name error! %d %S\n", has_name, m.dump().c_str());
+				return false;
+			}
+			// have groups field but field failed
+			if (json_object_has_member(m, "groups") &&
+				false == type_check_groups(m["groups"], deep + 1)
+				)
+			{
+				LOGMESSAGE(L"groups error!\n");
+				return false;
+			}
+		}
+		else
+		{
+			LOGMESSAGE(L"neither number nor object\n");
+			return false;
+		}
+	}
+	return true;
 }
 
 /*
