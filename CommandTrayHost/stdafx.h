@@ -50,6 +50,8 @@
 #include <rapidjson/encodings.h>
 #include <rapidjson/filereadstream.h>   // FileReadStream
 #include <rapidjson/encodedstream.h>    // AutoUTFInputStream
+#include <rapidjson/pointer.h>
+
 
 #ifdef _M_AMD64
 #define RAPIDJSON_48BITPOINTER_OPTIMIZATION	1

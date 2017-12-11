@@ -328,20 +328,9 @@ int configure_reader(std::string& out)
 	LOGMESSAGE(L"config.json encoding is: %S HasBom:%d\n", utf_type_name[eis.GetType()], eis.HasBOM());
 #endif
 	Document d;         // Document 为 GenericDocument<UTF8<> > 
-	//d.ParseStream<0, AutoUTF<unsigned> >(eis); // 把任何 UTF 编码的文件解析至内存中的 UTF-8
 
 	Document::AllocatorType& allocator = d.GetAllocator(); // for change position/size double to in
 
-
-	/*Document d;
-	std::ifstream i("config.json");
-	if (i.bad())
-	{
-		return NULL;
-	}
-	IStreamWrapper isw(i);
-	LOGMESSAGE(L"configure_reader\n");
-	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag>(isw).HasParseError())*/
 	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag,
 		AutoUTF<unsigned>>(eis).HasParseError())
 	{
@@ -390,30 +379,51 @@ int configure_reader(std::string& out)
 	}
 
 	// type check for global optional items
-	/*if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
-		d.HasMember("enable_groups") && !(d["enable_groups"].IsBool()) ||
-		d.HasMember("groups_menu_symbol") && !(d["groups_menu_symbol"].IsString()) ||
-		d.HasMember("icon") && !(d["icon"].IsString()) ||
-		d.HasMember("lang") && !(d["lang"].IsString()) ||
-		d.HasMember("left_click") && !(d["left_click"].IsArray()) ||
-		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
-		)*/
+	typedef struct {
+		PCSTR name;
+		RapidJsonType type;
+		bool not_exist_ret;
+		std::function<bool(Value&, PCSTR)> caller;
+	} Foo, *pFoo;
+	auto lambda_remove_empty_string = [](Value& val, PCSTR name)->bool {
+		LOGMESSAGE(L"%S lambda_remove_empty_string\n", name);
+		if (val[name] == "")
+		{
+			val.RemoveMember(name);
+			LOGMESSAGE(L"%S is empty, now remove it!\n", name);
+		}
+		return true;
+	};
+	Foo global_optional_items[] = {
+		{ "require_admin", iBoolType, true, nullptr },
+		{ "enable_groups", iBoolType, true, nullptr },
+		{ "groups_menu_symbol", iStringType, true, nullptr },
+		{ "icon", iStringType, true, lambda_remove_empty_string },
+		{ "lang", iStringType, true, lambda_remove_empty_string },
+		{ "left_click", iArrayType, true, nullptr },
+		{ "icon_size", iIntType, true, nullptr }
+	};
+	for (int i = 0; i < ARRAYSIZE(global_optional_items); i++)
+	{
+		Foo& cur_Foo = global_optional_items[i];
+		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, true, cur_Foo.caller))
+		{
+			MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
+				L" icon_size(number) has type error!",
+				(utf8_to_wstring(cur_Foo.name) + L" Type Error").c_str(),
+				MB_OK | MB_ICONERROR
+			);
+			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+		}
+	}
 
-		/*if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
-			!rapidjson_check_exist_type<bool>(d, "enable_groups") ||
-			!rapidjson_check_exist_type<JsonStr>(d, "groups_menu_symbol") ||
-			!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
-			!rapidjson_check_exist_type<JsonStr>(d, "lang") ||
-			!rapidjson_check_exist_type<JsonArray>(d, "left_click") ||
-			!rapidjson_check_exist_type<int>(d, "icon_size")
-			)*/
-	if (!rapidjson_check_exist_type2(d, "require_admin", iBoolType) ||
-		!rapidjson_check_exist_type2(d, "enable_groups", iBoolType) ||
-		!rapidjson_check_exist_type2(d, "groups_menu_symbol", iStringType) ||
-		!rapidjson_check_exist_type2(d, "icon", iStringType) ||
-		!rapidjson_check_exist_type2(d, "lang", iStringType) ||
-		!rapidjson_check_exist_type2(d, "left_click", iArrayType) ||
-		!rapidjson_check_exist_type2(d, "icon_size", iIntType)
+	/*if (!rapidjson_check_exist_type(d, "require_admin", iBoolType) ||
+		!rapidjson_check_exist_type(d, "enable_groups", iBoolType) ||
+		!rapidjson_check_exist_type(d, "groups_menu_symbol", iStringType) ||
+		!rapidjson_check_exist_type(d, "icon", iStringType) ||
+		!rapidjson_check_exist_type(d, "lang", iStringType) ||
+		!rapidjson_check_exist_type(d, "left_click", iArrayType) ||
+		!rapidjson_check_exist_type(d, "icon_size", iIntType)
 		)
 	{
 		MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
@@ -435,7 +445,7 @@ int configure_reader(std::string& out)
 				d.RemoveMember(str_pointer);
 			}
 		}
-	}
+	}*/
 
 	if (d.HasMember("enable_groups") &&
 		(true == d["enable_groups"].GetBool()) &&
@@ -524,6 +534,62 @@ int configure_reader(std::string& out)
 	assert(screen_full_ints[0] == GetSystemMetrics(SM_CXFULLSCREEN));
 	assert(screen_full_ints[1] == GetSystemMetrics(SM_CYFULLSCREEN));
 
+	auto lambda_check_position_size = [/*&screen_fullx, &screen_fully*/](const Value& val, PCSTR name)->bool {
+		auto& ref = val[name];
+		if (ref.GetArray().Size() == 2)
+		{
+			auto& ref1 = ref[0];
+			auto& ref2 = ref[1];
+			if (ref1.IsNumber() && ref2.IsNumber())
+			{
+				double v1 = ref1.GetDouble(), v2 = ref2.GetDouble();
+				if (v1 >= 0 && v2 >= 0)
+				{
+					/*if (v1 <= 1)
+					{
+						v1 *= screen_fullx;
+					}
+					if (v2 <= 1)
+					{
+						v2 *= screen_fully;
+					}
+					if (Value* stars = GetValueByPointer(d, "/stars"))
+						stars->SetInt(stars->GetInt() + 1);
+
+					//ref.Clear();
+					//ref.PushBack(static_cast<int>(v1), allocator);
+					//ref.PushBack(static_cast<int>(v2), allocator);
+					*/
+
+					return true;
+				}
+				//return false;
+			}
+			//return false;
+		}
+		return false;
+	};
+	Foo config_items[] = {
+		//must exist
+		{ "name", iStringType, false, nullptr },
+		{ "path", iStringType, false, nullptr },
+		{ "cmd", iStringType, false, nullptr },
+		{ "working_directory", iStringType, false, nullptr },
+		{ "addition_env_path", iStringType, false, nullptr },
+		{ "use_builtin_console", iBoolType, false, nullptr },
+		{ "is_gui", iBoolType, false, nullptr },
+		{ "enabled", iBoolType, false, nullptr },
+		//optional
+		{ "require_admin", iBoolType, true, nullptr },
+		{ "start_show", iBoolType, true, nullptr },
+		{ "icon", iStringType, true, lambda_remove_empty_string },
+		{ "alpha", iIntType, true, [](const Value& val, PCSTR name)->bool {int v = val[name].GetInt(); LOGMESSAGE(L"lambda! getint:%d", v); return v >= 0 && v < 256; } },
+		{ "is_topmost", iBoolType, true, nullptr },
+		{ "position", iArrayType , true, lambda_check_position_size },
+		{ "size", iArrayType, true, lambda_check_position_size },
+		{ "ignore_all", iBoolType, true, nullptr }
+	};
+
 	int cnt = 0;
 
 	for (auto& m : d["configs"].GetArray())
@@ -540,100 +606,84 @@ int configure_reader(std::string& out)
 		//LOGMESSAGE(L"Type of member %S is %S\n",
 		//m.GetString(), kTypeNames[m.GetType()]);
 #endif
-		assert(m.IsObject());
 
-		assert(m.HasMember("name"));
-		assert(m["name"].IsString());
+		{
+			assert(m.IsObject());
 
-		assert(m.HasMember("path"));
-		assert(m["path"].IsString());
+			assert(m.HasMember("name"));
+			assert(m["name"].IsString());
 
-		assert(m.HasMember("cmd"));
-		assert(m["cmd"].IsString());
+			assert(m.HasMember("path"));
+			assert(m["path"].IsString());
 
-		assert(m.HasMember("working_directory"));
-		assert(m["working_directory"].IsString());
+			assert(m.HasMember("cmd"));
+			assert(m["cmd"].IsString());
 
-		assert(m.HasMember("addition_env_path"));
-		assert(m["addition_env_path"].IsString());
+			assert(m.HasMember("working_directory"));
+			assert(m["working_directory"].IsString());
 
-		assert(m.HasMember("use_builtin_console"));
-		assert(m["use_builtin_console"].IsBool());
+			assert(m.HasMember("addition_env_path"));
+			assert(m["addition_env_path"].IsString());
 
-		assert(m.HasMember("is_gui"));
-		assert(m["is_gui"].IsBool());
+			assert(m.HasMember("use_builtin_console"));
+			assert(m["use_builtin_console"].IsBool());
 
-		assert(m.HasMember("enabled"));
-		assert(m["enabled"].IsBool());
+			assert(m.HasMember("is_gui"));
+			assert(m["is_gui"].IsBool());
 
-		/*if (m.IsObject() &&
-			m.HasMember("name") && m["name"].IsString() &&
-			m.HasMember("path") && m["path"].IsString() &&
-			m.HasMember("cmd") && m["cmd"].IsString() &&
-			m.HasMember("working_directory") && m["working_directory"].IsString() &&
-			m.HasMember("addition_env_path") && m["addition_env_path"].IsString() &&
-			m.HasMember("use_builtin_console") && m["use_builtin_console"].IsBool() &&
-			m.HasMember("is_gui") && m["is_gui"].IsBool() &&
-			m.HasMember("enabled") && m["enabled"].IsBool()
-			)*/
-			/*if (m.IsObject() &&
-				rapidjson_check_exist_type<JsonStr>(m, "name", false) &&
-				rapidjson_check_exist_type<JsonStr>(m, "path", false) &&
-				rapidjson_check_exist_type<JsonStr>(m, "cmd", false) &&
-				rapidjson_check_exist_type<JsonStr>(m, "working_directory", false) &&
-				rapidjson_check_exist_type<JsonStr>(m, "addition_env_path", false) &&
-				rapidjson_check_exist_type<bool>(m, "use_builtin_console", false) &&
-				rapidjson_check_exist_type<bool>(m, "is_gui", false) &&
-				rapidjson_check_exist_type<bool>(m, "enabled", false)
-				)*/
+			assert(m.HasMember("enabled"));
+			assert(m["enabled"].IsBool());
+		}
+
+		if (!m.IsObject())
+		{
+			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+		}
+
+		for (int i = 0; i < ARRAYSIZE(config_items); i++)
+		{
+			Foo& cur_Foo = config_items[i];
+			if (!rapidjson_check_exist_type(m, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
+			{
+				std::wstring wname = utf8_to_wstring(m["name"].GetString());
+				MessageBox(NULL, (wname + L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
+					L" is_topmost(bool) icon(str) alpha(0-255)"
+					L" has a type error!").c_str(),
+					(utf8_to_wstring(cur_Foo.name) + L"Type Error").c_str(),
+					MB_OK | MB_ICONERROR
+				);
+				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+			}
+		}
+
 		if (m.IsObject() &&
-			rapidjson_check_exist_type2(m, "name", iStringType, false) &&
-			rapidjson_check_exist_type2(m, "path", iStringType, false) &&
-			rapidjson_check_exist_type2(m, "cmd", iStringType, false) &&
-			rapidjson_check_exist_type2(m, "working_directory", iStringType, false) &&
-			rapidjson_check_exist_type2(m, "addition_env_path", iStringType, false) &&
-			rapidjson_check_exist_type2(m, "use_builtin_console", iBoolType, false) &&
-			rapidjson_check_exist_type2(m, "is_gui", iBoolType, false) &&
-			rapidjson_check_exist_type2(m, "enabled", iBoolType, false)
+			rapidjson_check_exist_type(m, "name", iStringType, false) &&
+			rapidjson_check_exist_type(m, "path", iStringType, false) &&
+			rapidjson_check_exist_type(m, "cmd", iStringType, false) &&
+			rapidjson_check_exist_type(m, "working_directory", iStringType, false) &&
+			rapidjson_check_exist_type(m, "addition_env_path", iStringType, false) &&
+			rapidjson_check_exist_type(m, "use_builtin_console", iBoolType, false) &&
+			rapidjson_check_exist_type(m, "is_gui", iBoolType, false) &&
+			rapidjson_check_exist_type(m, "enabled", iBoolType, false)
 			)
 		{
 			/*//we donnot need it now, it can be easy implemented in create_process
 			if (m["working_directory"] == "")
 			{
-				m["working_directory"] = StringRef(m["path"].GetString());
+			m["working_directory"] = StringRef(m["path"].GetString());
 			}*/
 
 			std::wstring wname = utf8_to_wstring(m["name"].GetString());
 
 			// type check for optional items
-			/*if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
-				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
-				m.HasMember("icon") && !(m["icon"].IsString()) ||
-				m.HasMember("alpha") && !(m["alpha"].IsInt()) ||
-				m.HasMember("is_topmost") && !(m["is_topmost"].IsBool()) ||
-				m.HasMember("position") && !(m["position"].IsArray()) ||
-				m.HasMember("size") && !(m["size"].IsArray()) ||
-				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
-				)*/
-
-				/*if (!rapidjson_check_exist_type<bool>(m, "require_admin") ||
-						!rapidjson_check_exist_type<bool>(m, "start_show") ||
-						!rapidjson_check_exist_type<JsonStr>(m, "icon") ||
-						!rapidjson_check_exist_type<int>(m, "alpha") ||
-						!rapidjson_check_exist_type<bool>(m, "is_topmost") ||
-						!rapidjson_check_exist_type<JsonArray>(m, "position") ||
-						!rapidjson_check_exist_type<JsonArray>(m, "size") ||
-						!rapidjson_check_exist_type<bool>(m, "ignore_all")
-						)*/
-
-			if (!rapidjson_check_exist_type2(m, "require_admin", iBoolType) ||
-				!rapidjson_check_exist_type2(m, "start_show", iBoolType) ||
-				!rapidjson_check_exist_type2(m, "icon", iStringType) ||
-				!rapidjson_check_exist_type2(m, "alpha", iIntType, true, [](const Value& val)->bool {int v = val.GetInt(); LOGMESSAGE(L"lambda! getint:%d",v); return v >= 0 && v < 256; }) ||
-				!rapidjson_check_exist_type2(m, "is_topmost", iBoolType) ||
-				!rapidjson_check_exist_type2(m, "position", iArrayType) ||
-				!rapidjson_check_exist_type2(m, "size", iArrayType) ||
-				!rapidjson_check_exist_type2(m, "ignore_all", iBoolType)
+			if (!rapidjson_check_exist_type(m, "require_admin", iBoolType) ||
+				!rapidjson_check_exist_type(m, "start_show", iBoolType) ||
+				!rapidjson_check_exist_type(m, "icon", iStringType) ||
+				!rapidjson_check_exist_type(m, "alpha", iIntType, true, [](const Value& val, PCSTR name)->bool {int v = val[name].GetInt(); LOGMESSAGE(L"lambda! getint:%d", v); return v >= 0 && v < 256; }) ||
+				!rapidjson_check_exist_type(m, "is_topmost", iBoolType) ||
+				!rapidjson_check_exist_type(m, "position", iArrayType) ||
+				!rapidjson_check_exist_type(m, "size", iArrayType) ||
+				!rapidjson_check_exist_type(m, "ignore_all", iBoolType)
 				)
 			{
 				MessageBox(NULL, (wname + L" One of require_admin(bool) start_show(bool) ignore_all(bool)"
@@ -648,15 +698,15 @@ int configure_reader(std::string& out)
 			//alpha extra check
 			/*if (m.HasMember("alpha"))
 			{
-				int alpha = m["alpha"].GetInt();
-				if (alpha < 0 || alpha>255)
-				{
-					MessageBox(NULL, (wname + L" alpha must be 0-255 integer").c_str(),
-						L"Type Error",
-						MB_OK | MB_ICONERROR
-					);
-					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-				}
+			int alpha = m["alpha"].GetInt();
+			if (alpha < 0 || alpha>255)
+			{
+			MessageBox(NULL, (wname + L" alpha must be 0-255 integer").c_str(),
+			L"Type Error",
+			MB_OK | MB_ICONERROR
+			);
+			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+			}
 			}*/
 
 			//size position extra check
@@ -709,9 +759,6 @@ int configure_reader(std::string& out)
 		else
 		{
 			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-			/*free(readBuffer);
-			fclose(fp);
-			return NULL;*/
 		}
 	}
 	int left_click_cnt = 0;
@@ -1475,7 +1522,7 @@ void create_process(
 		jsp["enabled"] = false;
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
-	}
+}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
@@ -1701,7 +1748,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{
@@ -1828,7 +1875,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-	}
+}
 
 BOOL DisableStartUp()
 {
