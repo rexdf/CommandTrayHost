@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "utils.h"
+#include "utils.hpp"
 
 std::wstring get_utf16(const std::string& str, int codepage)
 {
@@ -89,14 +89,84 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 	return true;
 }
 
-BOOL set_wnd_alpha()
+/*
+* when not_exist_return is true
+* return false only when exist and type not correct
+*/
+bool rapidjson_check_exist_type2(rapidjson::Value& val, PCSTR name, rapidjson::Type type, bool not_exist_return)
 {
+	if (val.HasMember(name))
+	{
+		return val[name].GetType() == type;
+	}
+	return not_exist_return;
+}
+
+//HWND WINAPI GetForegroundWindow(void);
+
+inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
+{
+	return GetWindowRect(hWnd, &rect);
+}
+
+inline BOOL set_wnd_pos(HWND hWnd, RECT& rect)
+{
+	return SetWindowPos(hWnd,
+		HWND_NOTOPMOST,
+		rect.left,
+		rect.top,
+		rect.right - rect.left,
+		rect.bottom - rect.top,
+		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+	);
+}
+
+inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
+{
+	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+	SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
 	return TRUE;
 }
 
-BOOL set_wnd_icon()
+inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
 {
-	return TRUE;
+	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	errno_t err = GetLastError();
+	LOGMESSAGE(L"SendMessage error_code:0x%x", err);
+	return 0 == err;
+}
+
+BOOL get_hicon(PCWSTR filename, int icon_size, HICON& hIcon, bool share)
+{
+	if (TRUE == PathFileExists(filename))
+	{
+		LOGMESSAGE(L"icon file eixst %s\n", filename);
+		hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
+			filename,
+			IMAGE_ICON,
+			icon_size ? icon_size : 256,
+			icon_size ? icon_size : 256,
+			share ? (LR_LOADFROMFILE | LR_SHARED) : LR_LOADFROMFILE)
+			);
+		if (hIcon == NULL)
+		{
+			LOGMESSAGE(L"Load IMAGE_ICON failed! error:0x%x\n", GetLastError());
+			return FALSE;
+		}
+		return TRUE;
+		/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
+		NULL,             // hInstance must be NULL when loading from a file
+		wicon.c_str(),   // the icon file name
+		IMAGE_ICON,       // specifies that the file is an icon
+		16,                // width of the image (we'll specify default later on)
+		16,                // height of the image
+		LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
+		//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
+		//LR_SHARED         // let the system release the handle when it's no longer used
+		));*/
+	}
+	return FALSE;
 }
 
 #ifdef _DEBUG

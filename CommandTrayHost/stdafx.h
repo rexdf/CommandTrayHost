@@ -51,6 +51,9 @@
 #include <rapidjson/filereadstream.h>   // FileReadStream
 #include <rapidjson/encodedstream.h>    // AutoUTFInputStream
 
+#ifdef _M_AMD64
+#define RAPIDJSON_48BITPOINTER_OPTIMIZATION	1
+#endif
 
 #include <ntverp.h>
 #if VER_PRODUCTBUILD == 7600

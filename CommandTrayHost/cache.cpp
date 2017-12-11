@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "language.h"
 #include "configure.h"
-#include "utils.h"
+#include "utils.hpp"
 
 extern nlohmann::json global_stat;
 

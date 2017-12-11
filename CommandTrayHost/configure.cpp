@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "utils.h"
+#include "utils.hpp"
 #include "configure.h"
 #include "language.h"
 
@@ -293,6 +293,7 @@ int configure_reader(std::string& out)
 	LOGMESSAGE(L"config.json file size: %lld\n", json_file_size);
 	if (json_file_size > 1024 * 1024 * 100)
 	{
+		json_file_size = 1024 * 1024 * 100;
 		MessageBox(NULL, L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
 	}
 	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 10)));
@@ -389,21 +390,43 @@ int configure_reader(std::string& out)
 	}
 
 	// type check for global optional items
-	if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
+	/*if (d.HasMember("require_admin") && !(d["require_admin"].IsBool()) ||
 		d.HasMember("enable_groups") && !(d["enable_groups"].IsBool()) ||
 		d.HasMember("groups_menu_symbol") && !(d["groups_menu_symbol"].IsString()) ||
 		d.HasMember("icon") && !(d["icon"].IsString()) ||
 		d.HasMember("lang") && !(d["lang"].IsString()) ||
 		d.HasMember("left_click") && !(d["left_click"].IsArray()) ||
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
+		)*/
+
+	if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
+		!rapidjson_check_exist_type<bool>(d, "enable_groups") ||
+		!rapidjson_check_exist_type<JsonStr>(d, "groups_menu_symbol") ||
+		!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
+		!rapidjson_check_exist_type<JsonStr>(d, "lang") ||
+		!rapidjson_check_exist_type<JsonArray>(d, "left_click") ||
+		!rapidjson_check_exist_type<int>(d, "icon_size")
 		)
 	{
-		MessageBox(NULL, L"One of require_admin(bool) icon(string) lang(string)"
+		MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
 			L" icon_size(number) has type error!",
 			L"Type Error",
 			MB_OK | MB_ICONERROR
 		);
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+	}
+
+	//remove empty string, except for groups_menu_symbol.
+	{
+		PCSTR str_names_to_remove[] = { "lang","icon" };
+		for (int i = 0; i < ARRAYSIZE(str_names_to_remove); i++)
+		{
+			PCSTR str_pointer = str_names_to_remove[i];
+			if (d.HasMember(str_pointer) && d[str_pointer] == "")
+			{
+				d.RemoveMember(str_pointer);
+			}
+		}
 	}
 
 	if (d.HasMember("enable_groups") &&
@@ -535,7 +558,7 @@ int configure_reader(std::string& out)
 		assert(m.HasMember("enabled"));
 		assert(m["enabled"].IsBool());
 
-		if (m.IsObject() &&
+		/*if (m.IsObject() &&
 			m.HasMember("name") && m["name"].IsString() &&
 			m.HasMember("path") && m["path"].IsString() &&
 			m.HasMember("cmd") && m["cmd"].IsString() &&
@@ -544,23 +567,71 @@ int configure_reader(std::string& out)
 			m.HasMember("use_builtin_console") && m["use_builtin_console"].IsBool() &&
 			m.HasMember("is_gui") && m["is_gui"].IsBool() &&
 			m.HasMember("enabled") && m["enabled"].IsBool()
+			)*/
+		if (m.IsObject() &&
+			rapidjson_check_exist_type<JsonStr>(m, "name", false) &&
+			rapidjson_check_exist_type<JsonStr>(m, "path", false) &&
+			rapidjson_check_exist_type<JsonStr>(m, "cmd", false) &&
+			rapidjson_check_exist_type<JsonStr>(m, "working_directory", false) &&
+			rapidjson_check_exist_type<JsonStr>(m, "addition_env_path", false) &&
+			rapidjson_check_exist_type<bool>(m, "use_builtin_console", false) &&
+			rapidjson_check_exist_type<bool>(m, "is_gui", false) &&
+			rapidjson_check_exist_type<bool>(m, "enabled", false)
 			)
 		{
-			/*if (m["working_directory"] == "")
+			/*//we donnot need it now, it can be easy implemented in create_process
+			if (m["working_directory"] == "")
 			{
 				m["working_directory"] = StringRef(m["path"].GetString());
 			}*/
-			// type check for optional items
-			if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
-				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
-				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
 
+			std::wstring wname = utf8_to_wstring(m["name"].GetString());
+
+			// type check for optional items
+			/*if (m.HasMember("require_admin") && !(m["require_admin"].IsBool()) ||
+				m.HasMember("start_show") && !(m["start_show"].IsBool()) ||
+				m.HasMember("icon") && !(m["icon"].IsString()) ||
+				m.HasMember("alpha") && !(m["alpha"].IsInt()) ||
+				m.HasMember("is_topmost") && !(m["is_topmost"].IsBool()) ||
+				m.HasMember("position") && !(m["position"].IsArray()) ||
+				m.HasMember("size") && !(m["size"].IsArray()) ||
+				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
+				)*/
+
+			if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
+				!rapidjson_check_exist_type<bool>(d, "start_show") ||
+				!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
+				!rapidjson_check_exist_type<int>(d, "alpha") ||
+				!rapidjson_check_exist_type<bool>(d, "is_topmost") ||
+				!rapidjson_check_exist_type<JsonArray>(d, "position") ||
+				!rapidjson_check_exist_type<JsonArray>(d, "size") ||
+				!rapidjson_check_exist_type<bool>(d, "ignore_all")
 				)
 			{
-				MessageBox(NULL, L"One of require_admin start_show ignore_all is not bool type!", L"Type Error", MB_OK | MB_ICONERROR);
+				MessageBox(NULL, (wname + L" One of require_admin(bool) start_show(bool) ignore_all(bool)"
+					L" is_topmost(bool) icon(str) alpha(0-255)"
+					L" has a type error!").c_str(),
+					L"Type Error",
+					MB_OK | MB_ICONERROR
+				);
 				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
 
+			//alpha extra check
+			if (m.HasMember("alpha"))
+			{
+				int alpha = m["alpha"].GetInt();
+				if (alpha < 0 || alpha>255)
+				{
+					MessageBox(NULL, (wname + L" alpha must be 0-255 integer").c_str(),
+						L"Type Error",
+						MB_OK | MB_ICONERROR
+					);
+					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				}
+			}
+
+			//size position extra check
 			for (auto str_item : size_postion_strs)
 			{
 				if (m.HasMember(str_item))
@@ -597,6 +668,12 @@ int configure_reader(std::string& out)
 					ref.PushBack(cords[0], allocator);
 					ref.PushBack(cords[1], allocator);
 				}
+			}
+
+			//empty icon string to remove
+			if (m.HasMember("icon") && m["icon"] == "")
+			{
+				m.RemoveMember("icon");
 			}
 
 			cnt++;
@@ -746,7 +823,37 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 	}
 
-	bool try_success;
+	if (json_object_has_member(global_stat, "icon"))
+	{
+		std::string icon = global_stat["icon"];
+		//assert(icon.empty());
+		if (icon.length())
+		{
+			int icon_size = 0;
+			if (json_object_has_member(global_stat, "icon_size"))
+			{
+				icon_size = global_stat["icon_size"];
+				int out_icon_size = 0;
+				if (icon_size == 16 || icon_size == 32 || icon_size == 256)
+				{
+					out_icon_size = icon_size;
+				}
+				else
+				{
+					MessageBox(NULL, L"icon_size value must be one of 16 32 256", L"WARNING", MB_OK | MB_ICONWARNING);
+					icon_size = out_icon_size = 256;
+				}
+			}
+			std::wstring icon_wfilename = utf8_to_wstring(icon);
+			if (FALSE == get_hicon(icon_wfilename.c_str(), icon_size, hIcon))
+			{
+				MessageBox(NULL, (icon_wfilename + L" icon file load failed!").c_str(), L"WARNING", MB_OK | MB_ICONWARNING);
+			}
+		}
+
+	}
+
+	/*bool try_success;
 	std::string icon;// = global_stat.at("icon");
 
 	assert(icon.empty());
@@ -795,7 +902,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 					LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
 				}
 			}
-			/*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
+			*//*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
 			NULL,             // hInstance must be NULL when loading from a file
 			wicon.c_str(),   // the icon file name
 			IMAGE_ICON,       // specifies that the file is an icon
@@ -804,11 +911,11 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
 			//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
 			//LR_SHARED         // let the system release the handle when it's no longer used
-			));*/
+			));*//*
 		}
 
 
-	}
+	}*/
 
 	return 1;
 }

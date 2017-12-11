@@ -2,9 +2,7 @@
 #include "language.h"
 //#include "configure.h"
 #include "language_data.h"
-#include "utils.h"
-
-////////////////// CODE AREA ////////////////////////
+#include "utils.hpp"
 
 
 extern nlohmann::json global_stat;

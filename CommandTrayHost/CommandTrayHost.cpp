@@ -2,7 +2,7 @@
 #include "CommandTrayHost.h"
 #include "configure.h"
 #include "language.h"
-#include "utils.h"
+#include "utils.hpp"
 
 #ifndef __cplusplus
 #undef NULL
@@ -979,11 +979,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ABOUT)
 		{
-			std::wstring msg = (isZHCN) ?
-				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n作者: rexdf" L"\n编译时间: " BUILD_TIME_CN) :
-				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\nAuthor: rexdf" L"\nBuild Timestamp: " BUILD_TIME_EN);
+			PCWSTR msg = (isZHCN) ?
+				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n\n作者: rexdf" L"\n\n编译时间: " BUILD_TIME_CN) :
+				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\n\nAuthor: rexdf" L"\n\nBuild Timestamp: " BUILD_TIME_EN);
 
-			MessageBox(hWnd, msg.c_str(), isZHCN ? L"关于" : translate_w2w(L"About").c_str(), 0);
+			MessageBox(hWnd, msg, isZHCN ? L"关于" : translate_w2w(L"About").c_str(), 0);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{
