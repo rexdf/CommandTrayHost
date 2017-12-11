@@ -330,17 +330,9 @@ int configure_reader(std::string& out)
 
 	assert(d.IsObject());
 	assert(!d.ObjectEmpty());
-	if (!d.IsObject() || d.ObjectEmpty())
-	{
-		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		/*free(readBuffer);
-		fclose(fp);
-		return NULL;*/
-	}
-
-
 	assert(d.HasMember("configs"));
-	if (!d.HasMember("configs"))
+	assert(d["configs"].IsArray());
+	if (!d.IsObject() /*|| d.ObjectEmpty()*/ || !d.HasMember("configs") || !d["configs"].IsArray())
 	{
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		/*free(readBuffer);
@@ -352,17 +344,6 @@ int configure_reader(std::string& out)
 	static const char* kTypeNames[] =
 	{ "Null", "False", "True", "Object", "Array", "String", "Number" };
 #endif
-
-	assert(d["configs"].IsArray());
-	if (!(d["configs"].IsArray()))
-	{
-		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		/*free(readBuffer);
-		fclose(fp);
-		return NULL;*/
-	}
-
-	
 
 	auto lambda_remove_empty_string = [](Value& val, PCSTR name)->bool {
 		LOGMESSAGE(L"%S lambda_remove_empty_string\n", name);
@@ -424,6 +405,7 @@ int configure_reader(std::string& out)
 		return false;
 	};
 
+	//type check for items in configs
 	RapidJsonChecker config_items[] = {
 		//must exist
 		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
@@ -1467,7 +1449,7 @@ void create_process(
 		jsp["enabled"] = false;
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
-	}
+}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
