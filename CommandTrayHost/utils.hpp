@@ -43,7 +43,32 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	return true;
 }
 
-bool rapidjson_check_exist_type2(rapidjson::Value&, PCSTR, rapidjson::Type, bool not_exist_return = true);
+//! Type of JSON value
+enum RapidJsonType {
+	iNullType = 0,      //!< null
+	iFalseType = 1,     //!< false
+	iTrueType = 2,      //!< true
+	iObjectType = 3,    //!< object
+	iArrayType = 4,     //!< array 
+	iStringType = 5,    //!< string
+	iNumberType = 6,    //!< number
+	iBoolType = 7,		//!< boolean
+	iIntType = 8		//!< integer
+};
+/*bool rapidjson_check_exist_type2(
+	rapidjson::Value& val,
+	PCSTR name,
+	RapidJsonType type,
+	bool not_exist_return = true
+);*/
+
+bool rapidjson_check_exist_type2(
+	const rapidjson::Value& val,
+	PCSTR name,
+	RapidJsonType type,
+	bool not_exist_return = true,
+	std::function<bool(const rapidjson::Value&)> func = nullptr
+);
 
 /*struct JsonArray {};
 struct JsonStr {};

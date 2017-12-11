@@ -399,13 +399,21 @@ int configure_reader(std::string& out)
 		d.HasMember("icon_size") && !(d["icon_size"].IsInt())
 		)*/
 
-	if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
-		!rapidjson_check_exist_type<bool>(d, "enable_groups") ||
-		!rapidjson_check_exist_type<JsonStr>(d, "groups_menu_symbol") ||
-		!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
-		!rapidjson_check_exist_type<JsonStr>(d, "lang") ||
-		!rapidjson_check_exist_type<JsonArray>(d, "left_click") ||
-		!rapidjson_check_exist_type<int>(d, "icon_size")
+		/*if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
+			!rapidjson_check_exist_type<bool>(d, "enable_groups") ||
+			!rapidjson_check_exist_type<JsonStr>(d, "groups_menu_symbol") ||
+			!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
+			!rapidjson_check_exist_type<JsonStr>(d, "lang") ||
+			!rapidjson_check_exist_type<JsonArray>(d, "left_click") ||
+			!rapidjson_check_exist_type<int>(d, "icon_size")
+			)*/
+	if (!rapidjson_check_exist_type2(d, "require_admin", iBoolType) ||
+		!rapidjson_check_exist_type2(d, "enable_groups", iBoolType) ||
+		!rapidjson_check_exist_type2(d, "groups_menu_symbol", iStringType) ||
+		!rapidjson_check_exist_type2(d, "icon", iStringType) ||
+		!rapidjson_check_exist_type2(d, "lang", iStringType) ||
+		!rapidjson_check_exist_type2(d, "left_click", iArrayType) ||
+		!rapidjson_check_exist_type2(d, "icon_size", iIntType)
 		)
 	{
 		MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
@@ -568,15 +576,25 @@ int configure_reader(std::string& out)
 			m.HasMember("is_gui") && m["is_gui"].IsBool() &&
 			m.HasMember("enabled") && m["enabled"].IsBool()
 			)*/
+			/*if (m.IsObject() &&
+				rapidjson_check_exist_type<JsonStr>(m, "name", false) &&
+				rapidjson_check_exist_type<JsonStr>(m, "path", false) &&
+				rapidjson_check_exist_type<JsonStr>(m, "cmd", false) &&
+				rapidjson_check_exist_type<JsonStr>(m, "working_directory", false) &&
+				rapidjson_check_exist_type<JsonStr>(m, "addition_env_path", false) &&
+				rapidjson_check_exist_type<bool>(m, "use_builtin_console", false) &&
+				rapidjson_check_exist_type<bool>(m, "is_gui", false) &&
+				rapidjson_check_exist_type<bool>(m, "enabled", false)
+				)*/
 		if (m.IsObject() &&
-			rapidjson_check_exist_type<JsonStr>(m, "name", false) &&
-			rapidjson_check_exist_type<JsonStr>(m, "path", false) &&
-			rapidjson_check_exist_type<JsonStr>(m, "cmd", false) &&
-			rapidjson_check_exist_type<JsonStr>(m, "working_directory", false) &&
-			rapidjson_check_exist_type<JsonStr>(m, "addition_env_path", false) &&
-			rapidjson_check_exist_type<bool>(m, "use_builtin_console", false) &&
-			rapidjson_check_exist_type<bool>(m, "is_gui", false) &&
-			rapidjson_check_exist_type<bool>(m, "enabled", false)
+			rapidjson_check_exist_type2(m, "name", iStringType, false) &&
+			rapidjson_check_exist_type2(m, "path", iStringType, false) &&
+			rapidjson_check_exist_type2(m, "cmd", iStringType, false) &&
+			rapidjson_check_exist_type2(m, "working_directory", iStringType, false) &&
+			rapidjson_check_exist_type2(m, "addition_env_path", iStringType, false) &&
+			rapidjson_check_exist_type2(m, "use_builtin_console", iBoolType, false) &&
+			rapidjson_check_exist_type2(m, "is_gui", iBoolType, false) &&
+			rapidjson_check_exist_type2(m, "enabled", iBoolType, false)
 			)
 		{
 			/*//we donnot need it now, it can be easy implemented in create_process
@@ -598,14 +616,24 @@ int configure_reader(std::string& out)
 				m.HasMember("ignore_all") && !(m["ignore_all"].IsBool())
 				)*/
 
-			if (!rapidjson_check_exist_type<bool>(d, "require_admin") ||
-				!rapidjson_check_exist_type<bool>(d, "start_show") ||
-				!rapidjson_check_exist_type<JsonStr>(d, "icon") ||
-				!rapidjson_check_exist_type<int>(d, "alpha") ||
-				!rapidjson_check_exist_type<bool>(d, "is_topmost") ||
-				!rapidjson_check_exist_type<JsonArray>(d, "position") ||
-				!rapidjson_check_exist_type<JsonArray>(d, "size") ||
-				!rapidjson_check_exist_type<bool>(d, "ignore_all")
+				/*if (!rapidjson_check_exist_type<bool>(m, "require_admin") ||
+						!rapidjson_check_exist_type<bool>(m, "start_show") ||
+						!rapidjson_check_exist_type<JsonStr>(m, "icon") ||
+						!rapidjson_check_exist_type<int>(m, "alpha") ||
+						!rapidjson_check_exist_type<bool>(m, "is_topmost") ||
+						!rapidjson_check_exist_type<JsonArray>(m, "position") ||
+						!rapidjson_check_exist_type<JsonArray>(m, "size") ||
+						!rapidjson_check_exist_type<bool>(m, "ignore_all")
+						)*/
+
+			if (!rapidjson_check_exist_type2(m, "require_admin", iBoolType) ||
+				!rapidjson_check_exist_type2(m, "start_show", iBoolType) ||
+				!rapidjson_check_exist_type2(m, "icon", iStringType) ||
+				!rapidjson_check_exist_type2(m, "alpha", iIntType, true, [](const Value& val)->bool {int v = val.GetInt(); LOGMESSAGE(L"lambda! getint:%d",v); return v >= 0 && v < 256; }) ||
+				!rapidjson_check_exist_type2(m, "is_topmost", iBoolType) ||
+				!rapidjson_check_exist_type2(m, "position", iArrayType) ||
+				!rapidjson_check_exist_type2(m, "size", iArrayType) ||
+				!rapidjson_check_exist_type2(m, "ignore_all", iBoolType)
 				)
 			{
 				MessageBox(NULL, (wname + L" One of require_admin(bool) start_show(bool) ignore_all(bool)"
@@ -618,7 +646,7 @@ int configure_reader(std::string& out)
 			}
 
 			//alpha extra check
-			if (m.HasMember("alpha"))
+			/*if (m.HasMember("alpha"))
 			{
 				int alpha = m["alpha"].GetInt();
 				if (alpha < 0 || alpha>255)
@@ -629,7 +657,7 @@ int configure_reader(std::string& out)
 					);
 					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 				}
-			}
+			}*/
 
 			//size position extra check
 			for (auto str_item : size_postion_strs)
@@ -1447,7 +1475,7 @@ void create_process(
 		jsp["enabled"] = false;
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
-}
+	}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
@@ -1800,7 +1828,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-}
+	}
 
 BOOL DisableStartUp()
 {

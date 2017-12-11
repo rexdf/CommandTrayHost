@@ -93,12 +93,69 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 * when not_exist_return is true
 * return false only when exist and type not correct
 */
-bool rapidjson_check_exist_type2(rapidjson::Value& val, PCSTR name, rapidjson::Type type, bool not_exist_return)
+/*bool rapidjson_check_exist_type2(
+	rapidjson::Value& val,
+	PCSTR name,
+	RapidJsonType type,
+	bool not_exist_return
+)
 {
 	if (val.HasMember(name))
 	{
-		return val[name].GetType() == type;
+		auto& ref = val[name];
+		bool ret;
+		if (type == iBoolType)
+		{
+			int val_type = ref.GetType();
+			ret = val_type == iTrueType || val_type == iFalseType;
+		}
+		else if (type == iIntType)
+		{
+			ret = ref.IsInt();
+		}
+		else
+		{
+			ret = ref.GetType() == type;
+		}
+		LOGMESSAGE(L"%S result:%d type:%d GetType:%d\n", name, ret, type, ref.GetType());
+		return ret;
 	}
+	return not_exist_return;
+}*/
+
+bool rapidjson_check_exist_type2(
+	const rapidjson::Value& val,
+	PCSTR name,
+	RapidJsonType type,
+	bool not_exist_return,
+	std::function<bool(const rapidjson::Value&)> func
+)
+{
+	if (val.HasMember(name))
+	{
+		const rapidjson::Value& ref = val[name];
+		bool ret;
+		if (type == iBoolType)
+		{
+			int val_type = ref.GetType();
+			ret = val_type == iTrueType || val_type == iFalseType;
+		}
+		else if (type == iIntType)
+		{
+			ret = ref.IsInt();
+		}
+		else
+		{
+			ret = ref.GetType() == type;
+		}
+		if (ret && func != nullptr)
+		{
+			ret = func(ref);
+		}
+		LOGMESSAGE(L"%S ret:%d type:%d GetType:%d\n", name, ret, type, ref.GetType());
+		return ret;
+	}
+	LOGMESSAGE(L"%S not exist:%d ret:%d \n", name, not_exist_return);
 	return not_exist_return;
 }
 
