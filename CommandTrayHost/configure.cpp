@@ -13,6 +13,12 @@ extern bool enable_left_click;
 extern int number_of_configs;
 extern HANDLE ghMutex;
 
+extern bool enable_cache;
+extern bool disable_cache_position;
+extern bool disable_cache_size;
+extern bool disable_cache_enabled;
+extern bool disable_cache_show;
+
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
 //extern WCHAR szWindowClass[36];
@@ -216,7 +222,7 @@ typedef struct {
 	std::function<bool(rapidjson::Value&, PCSTR)> caller;
 } RapidJsonChecker, *pRapidJsonChecker;
 
-bool check_rapidjson_array(
+bool check_rapidjson_object(
 	rapidjson::Value& d,
 	RapidJsonChecker check_arrys[],
 	size_t array_size,
@@ -483,7 +489,7 @@ int configure_reader(std::string& out)
 		}
 
 		//check for config item
-		if (false == check_rapidjson_array(
+		if (false == check_rapidjson_object(
 			m,
 			config_items,
 			ARRAYSIZE(config_items),
@@ -533,8 +539,15 @@ int configure_reader(std::string& out)
 		cnt++;
 	}
 
+	int cache_cnt = 0;
+	enable_cache = true;
+	disable_cache_position = false;
+	disable_cache_size = false;
+	disable_cache_enabled = true;
+	disable_cache_show = true;
 	// type check for global optional items
 	RapidJsonChecker global_optional_items[] = {
+		//global setting
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "enable_groups", iBoolType, true, [](Value& val,PCSTR name)->bool {
 			if (val[name].GetBool() && val.HasMember("groups"))
@@ -579,14 +592,40 @@ int configure_reader(std::string& out)
 			}
 			return true;
 		} },
-		{ "icon_size", iIntType, true, nullptr }
+		{ "icon_size", iIntType, true, nullptr },
+
+		{ "enable_cache", iBoolType, true,[&cache_cnt](Value& val,PCSTR name)->bool {
+			enable_cache = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
+		{ "disable_cache_position", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+			disable_cache_position = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
+		{ "disable_cache_size", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+			disable_cache_size = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
+		{ "disable_cache_enabled", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+			disable_cache_enabled = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
+		{ "disable_cache_show", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+			disable_cache_show = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
 	};
 
-	if (false == check_rapidjson_array(
+	if (false == check_rapidjson_object(
 		d,
 		global_optional_items,
 		ARRAYSIZE(global_optional_items),
-		L"One of global section require_admin(bool) icon(string) lang(string)"
+		L": One of global section require_admin(bool) icon(string) lang(string)"
 		L" icon_size(number) has type error!",
 		L" Type Error",
 		L"global section",
@@ -596,13 +635,14 @@ int configure_reader(std::string& out)
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 	}
 
+	if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
+	{
+		enable_cache = false;
+	}
+
+	/*
 	//cache options
 	{
-		extern bool enable_cache;
-		extern bool disable_cache_position;
-		extern bool disable_cache_size;
-		extern bool disable_cache_enabled;
-		extern bool disable_cache_show;
 		PCSTR cache_options_strs[] = {
 			"enable_cache",
 			"disable_cache_position",
@@ -655,6 +695,7 @@ int configure_reader(std::string& out)
 			enable_cache = false;
 		}
 	} // End cache options
+	*/
 
 	StringBuffer sb;
 	Writer<StringBuffer> writer(sb);

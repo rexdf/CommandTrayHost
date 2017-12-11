@@ -51,7 +51,7 @@ example configure
                 0.5 // STARTUPINFO.dwYSize, as above
             ],
             "icon": "",  // icon for console windows
-            "alpha": 230, // alpha for console windows, 0-255 integer
+            "alpha": 170, // alpha for console windows, 0-255 integer
             "topmost": false, // topmost for console windows
         },
         {
