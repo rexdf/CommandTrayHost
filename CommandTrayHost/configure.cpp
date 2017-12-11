@@ -571,7 +571,7 @@ int configure_reader(std::string& out)
 	};
 	Foo config_items[] = {
 		//must exist
-		{ "name", iStringType, false, nullptr },
+		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
 		{ "path", iStringType, false, nullptr },
 		{ "cmd", iStringType, false, nullptr },
 		{ "working_directory", iStringType, false, nullptr },
@@ -594,6 +594,7 @@ int configure_reader(std::string& out)
 
 	for (auto& m : d["configs"].GetArray())
 	{
+
 #ifdef _DEBUG
 		StringBuffer sb;
 		Writer<StringBuffer> writer(sb);
@@ -606,7 +607,7 @@ int configure_reader(std::string& out)
 		//LOGMESSAGE(L"Type of member %S is %S\n",
 		//m.GetString(), kTypeNames[m.GetType()]);
 #endif
-
+		//assert
 		{
 			assert(m.IsObject());
 
@@ -637,15 +638,22 @@ int configure_reader(std::string& out)
 
 		if (!m.IsObject())
 		{
+			MessageBox(NULL, L"configs must be object",
+				L"config Type error",
+				MB_OK | MB_ICONERROR
+			);
 			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		}
 
+		//check for config item
 		for (int i = 0; i < ARRAYSIZE(config_items); i++)
 		{
 			Foo& cur_Foo = config_items[i];
 			if (!rapidjson_check_exist_type(m, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
 			{
-				std::wstring wname = utf8_to_wstring(m["name"].GetString());
+				std::wstring wname = i ?
+					utf8_to_wstring(m["name"].GetString()) //other error
+					: L"configs name error "; // name field error
 				MessageBox(NULL, (wname + L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
 					L" is_topmost(bool) icon(str) alpha(0-255)"
 					L" has a type error!").c_str(),
@@ -655,112 +663,24 @@ int configure_reader(std::string& out)
 				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 			}
 		}
-
-		if (m.IsObject() &&
-			rapidjson_check_exist_type(m, "name", iStringType, false) &&
-			rapidjson_check_exist_type(m, "path", iStringType, false) &&
-			rapidjson_check_exist_type(m, "cmd", iStringType, false) &&
-			rapidjson_check_exist_type(m, "working_directory", iStringType, false) &&
-			rapidjson_check_exist_type(m, "addition_env_path", iStringType, false) &&
-			rapidjson_check_exist_type(m, "use_builtin_console", iBoolType, false) &&
-			rapidjson_check_exist_type(m, "is_gui", iBoolType, false) &&
-			rapidjson_check_exist_type(m, "enabled", iBoolType, false)
-			)
+		//position update to integer
+		for (int i = 0; i < ARRAYSIZE(size_postion_strs); i++)
 		{
-			/*//we donnot need it now, it can be easy implemented in create_process
-			if (m["working_directory"] == "")
+			PCSTR cur_name_str = size_postion_strs[i];
+			if (m.HasMember(cur_name_str))
 			{
-			m["working_directory"] = StringRef(m["path"].GetString());
-			}*/
-
-			std::wstring wname = utf8_to_wstring(m["name"].GetString());
-
-			// type check for optional items
-			if (!rapidjson_check_exist_type(m, "require_admin", iBoolType) ||
-				!rapidjson_check_exist_type(m, "start_show", iBoolType) ||
-				!rapidjson_check_exist_type(m, "icon", iStringType) ||
-				!rapidjson_check_exist_type(m, "alpha", iIntType, true, [](const Value& val, PCSTR name)->bool {int v = val[name].GetInt(); LOGMESSAGE(L"lambda! getint:%d", v); return v >= 0 && v < 256; }) ||
-				!rapidjson_check_exist_type(m, "is_topmost", iBoolType) ||
-				!rapidjson_check_exist_type(m, "position", iArrayType) ||
-				!rapidjson_check_exist_type(m, "size", iArrayType) ||
-				!rapidjson_check_exist_type(m, "ignore_all", iBoolType)
-				)
-			{
-				MessageBox(NULL, (wname + L" One of require_admin(bool) start_show(bool) ignore_all(bool)"
-					L" is_topmost(bool) icon(str) alpha(0-255)"
-					L" has a type error!").c_str(),
-					L"Type Error",
-					MB_OK | MB_ICONERROR
-				);
-				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				auto& ref = m[cur_name_str];
+				double v1 = ref[0].GetDouble(), v2 = ref[1].GetDouble();
+				if (v1 <= 1)v1 *= screen_full_ints[0];
+				if (v2 <= 1)v2 *= screen_full_ints[1];
+				ref.Clear();
+				ref.PushBack(static_cast<int>(v1), allocator);
+				ref.PushBack(static_cast<int>(v2), allocator);
 			}
-
-			//alpha extra check
-			/*if (m.HasMember("alpha"))
-			{
-			int alpha = m["alpha"].GetInt();
-			if (alpha < 0 || alpha>255)
-			{
-			MessageBox(NULL, (wname + L" alpha must be 0-255 integer").c_str(),
-			L"Type Error",
-			MB_OK | MB_ICONERROR
-			);
-			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-			}
-			}*/
-
-			//size position extra check
-			for (auto str_item : size_postion_strs)
-			{
-				if (m.HasMember(str_item))
-				{
-					auto& ref = m[str_item];
-					if (false == ref.IsArray() || ref.GetArray().Size() != 2)
-					{
-						MessageBox(NULL, L"One of position size is not array of two double numbers!", L"Type Error", MB_OK | MB_ICONERROR);
-						SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-					}
-					int cord_xy_cnt = 0, cords[2];
-					for (auto&itm : ref.GetArray())
-					{
-						if (false == itm.IsNumber() || itm.GetDouble() < 0)
-						{
-							MessageBox(NULL, L"Number in position size array must be not less than zero!", L"Type Error", MB_OK | MB_ICONERROR);
-							SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-						}
-						double val = itm.GetDouble();
-						if (val <= 1)
-						{
-							//itm.SetDouble(val*(cord_xy_cnt ? screen_fully : screen_fullx));
-							//cords[cord_xy_cnt] = static_cast<int>(val*(cord_xy_cnt ? screen_fully : screen_fullx));
-							cords[cord_xy_cnt] = static_cast<int>(val*screen_full_ints[cord_xy_cnt]);
-						}
-						else
-						{
-							cords[cord_xy_cnt] = static_cast<int>(val);
-						}
-						cord_xy_cnt++;
-					}
-					ref.Clear();
-
-					ref.PushBack(cords[0], allocator);
-					ref.PushBack(cords[1], allocator);
-				}
-			}
-
-			//empty icon string to remove
-			if (m.HasMember("icon") && m["icon"] == "")
-			{
-				m.RemoveMember("icon");
-			}
-
-			cnt++;
 		}
-		else
-		{
-			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		}
+		cnt++;
 	}
+
 	int left_click_cnt = 0;
 	if (d.HasMember("left_click"))
 	{
@@ -1748,7 +1668,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{
