@@ -362,13 +362,8 @@ int configure_reader(std::string& out)
 		return NULL;*/
 	}
 
-	// type check for global optional items
-	/*typedef struct {
-		PCSTR name;
-		RapidJsonType type;
-		bool not_exist_ret;
-		std::function<bool(Value&, PCSTR)> caller;
-	} Foo, *pFoo;*/
+	
+
 	auto lambda_remove_empty_string = [](Value& val, PCSTR name)->bool {
 		LOGMESSAGE(L"%S lambda_remove_empty_string\n", name);
 		if (val[name] == "")
@@ -378,23 +373,6 @@ int configure_reader(std::string& out)
 		}
 		return true;
 	};
-
-
-	/*for (int i = 0; i < ARRAYSIZE(global_optional_items); i++)
-	{
-		Foo& cur_Foo = global_optional_items[i];
-		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, true, cur_Foo.caller))
-		{
-			MessageBox(NULL, L"One of global section require_admin(bool) icon(string) lang(string)"
-				L" icon_size(number) has type error!",
-				(utf8_to_wstring(cur_Foo.name) + L" Type Error").c_str(),
-				MB_OK | MB_ICONERROR
-			);
-			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		}
-	}*/
-
-
 
 	PCSTR size_postion_strs[] = {
 		"position",
@@ -573,7 +551,7 @@ int configure_reader(std::string& out)
 		cnt++;
 	}
 
-
+	// type check for global optional items
 	RapidJsonChecker global_optional_items[] = {
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "enable_groups", iBoolType, true, [](Value& val,PCSTR name)->bool {
