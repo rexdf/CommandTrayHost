@@ -635,49 +635,6 @@ int configure_reader(std::string& out)
 	{
 		SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 	}
-	//int left_click_cnt = 0;
-	/*if (d.HasMember("left_click"))
-	{
-		for (auto& m : d["left_click"].GetArray())
-		{
-			if (m.IsInt())
-			{
-				int ans = m.GetInt();
-				if (ans < 0 || ans >= cnt)
-				{
-					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-				}
-			}
-			else
-			{
-				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-			}
-			left_click_cnt++;
-		}
-	}
-
-	if (left_click_cnt > 0)
-	{
-		enable_left_click = true;
-	}
-	else
-	{
-		enable_left_click = false;
-	}*/
-
-
-	/*if (d.HasMember("enable_groups") &&
-		(true == d["enable_groups"].GetBool()) &&
-		d.HasMember("groups")
-		)
-	{
-		enable_groups_menu = true;
-	}
-	else
-	{
-		enable_groups_menu = false;
-	}
-	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);*/
 
 	//cache options
 	{
@@ -1532,7 +1489,7 @@ void create_process(
 		jsp["enabled"] = false;
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
-}
+	}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
