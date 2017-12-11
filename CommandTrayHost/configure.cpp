@@ -640,63 +640,6 @@ int configure_reader(std::string& out)
 		enable_cache = false;
 	}
 
-	/*
-	//cache options
-	{
-		PCSTR cache_options_strs[] = {
-			"enable_cache",
-			"disable_cache_position",
-			"disable_cache_size",
-			"disable_cache_enabled",
-			"disable_cache_show"
-		};
-		bool* cache_options_global_pointer[] = {
-			&enable_cache,
-			&disable_cache_position,
-			&disable_cache_size,
-			&disable_cache_enabled,
-			&disable_cache_show
-		};
-		bool cache_options_default_value[] = {
-			true,
-			false,
-			false,
-			true,
-			true
-		};
-		int cache_cnt = 0;
-		for (int i = 0; i < ARRAYSIZE(cache_options_strs); i++)
-		{
-			PCSTR cache_str = cache_options_strs[i];
-			if (d.HasMember(cache_str))
-			{
-				auto& ref = d[cache_str];
-				if (false == ref.IsBool())
-				{
-					MessageBox(NULL, L"One of enable_cache disable_cacahe_* options is not bool type error!",
-						L"Type Error",
-						MB_OK | MB_ICONERROR
-					);
-					SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-				}
-				else
-				{
-					*(cache_options_global_pointer[i]) = ref.GetBool();
-				}
-				cache_cnt++;
-			}
-			else
-			{
-				*(cache_options_global_pointer[i]) = cache_options_default_value[i];
-			}
-		}
-		if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
-		{
-			enable_cache = false;
-		}
-	} // End cache options
-	*/
-
 	StringBuffer sb;
 	Writer<StringBuffer> writer(sb);
 	d.Accept(writer);
