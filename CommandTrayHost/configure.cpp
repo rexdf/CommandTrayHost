@@ -234,7 +234,7 @@ bool check_rapidjson_object(
 	bool use_name
 )
 {
-	for (int i = 0; i < array_size; i++)
+	for (size_t i = 0; i < array_size; i++)
 	{
 		RapidJsonObjectChecker& cur_Foo = check_arrys[i];
 		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
@@ -751,7 +751,7 @@ int configure_reader(std::string& out)
 			size_t buffer_index = 0;
 			if (false == printf_to_bufferA(
 				readBuffer,
-				json_file_size,
+				static_cast<size_t>(json_file_size),
 				buffer_index,
 				u8R"({"configs":[)"
 			))
@@ -799,7 +799,7 @@ int configure_reader(std::string& out)
 				}
 				if (false == printf_to_bufferA(
 					readBuffer,
-					json_file_size,
+					static_cast<size_t>(json_file_size),
 					buffer_index,
 #ifdef _DEBUG
 					u8R"(%s{"x": 0, "y": 0, "width": 0, "height": 0, "alpha": %d, "enabled": %s, "start_show": %s, "name": "%s"})",
@@ -825,7 +825,7 @@ int configure_reader(std::string& out)
 			LOGMESSAGE(L"buffer_index: %d json_file_size: %d\n", buffer_index, json_file_size);
 			if (false == printf_to_bufferA(
 				readBuffer,
-				json_file_size,
+				static_cast<size_t>(json_file_size),
 				buffer_index,
 				u8R"(]})"
 			))
