@@ -3,6 +3,8 @@
 std::wstring utf8_to_wstring(const std::string&);
 std::string wstring_to_utf8(const std::wstring&);
 
+bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...);
+
 int64_t FileSize(PCWSTR);
 
 bool json_object_has_member(const nlohmann::json&, PCSTR);

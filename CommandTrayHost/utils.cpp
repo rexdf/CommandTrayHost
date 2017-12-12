@@ -42,6 +42,32 @@ std::string wstring_to_utf8(const std::wstring& str)
 	return myconv.to_bytes(str);
 }
 
+bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	HRESULT hr = StringCchVPrintfA(
+		dst + cursor,
+		max_len - cursor,
+		fmt,
+		args
+	);
+	if (FAILED(hr))
+	{
+		LOGMESSAGE(L"StringCchVPrintfA failed\n");
+		return false;
+	}
+	size_t len = 0;
+	hr = StringCchLengthA(dst + cursor, max_len - cursor, &len);
+	if (FAILED(hr))
+	{
+		LOGMESSAGE(L"StringCchLengthA failed\n");
+		return false;
+	}
+	cursor += len;
+	return true;
+}
+
 // https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
 int64_t FileSize(PCWSTR name)
 {

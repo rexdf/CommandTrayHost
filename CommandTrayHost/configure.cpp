@@ -211,7 +211,7 @@ bool initial_configure()
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 })json";
-	std::ofstream o(CONFIG_FILENAME);
+	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
 	else { return false; }
 }
@@ -267,7 +267,7 @@ bool check_rapidjson_object(
  */
 int configure_reader(std::string& out)
 {
-	PCWSTR json_filename = CONFIG_FILENAME;
+	PCWSTR json_filename = CONFIG_FILENAMEW;
 	if (TRUE != PathFileExists(json_filename))
 	{
 		if (!initial_configure())
@@ -651,7 +651,7 @@ int configure_reader(std::string& out)
 	{
 		if (d.HasMember("cache"))
 		{
-			MessageBox(NULL, L"You should never put \"cache\" in " CONFIG_FILENAME
+			MessageBox(NULL, L"You should never put \"cache\" in " CONFIG_FILENAMEW
 				L"\n Cache is now removed!",
 				L"Cache error",
 				MB_OK | MB_ICONWARNING
@@ -663,7 +663,7 @@ int configure_reader(std::string& out)
 		if (is_cache_not_expired())
 		{
 			FILE* fp_cache;
-			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAME, L"rb"); // 非 Windows 平台使用 "r"
+			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAMEW, L"rb"); // 非 Windows 平台使用 "r"
 			if (0 != err)
 			{
 				MessageBox(NULL, L"Open cache failed!", L"Error", MB_OK | MB_ICONERROR);
@@ -748,7 +748,20 @@ int configure_reader(std::string& out)
 			cache_config_array.SetArray();
 			d["cache"].AddMember("configs", cache_config_array, allocator);
 			auto d_cache_config_ref = d["cache"]["configs"].GetArray();
-			int buffer_index = 0;
+			size_t buffer_index = 0;
+			if (false == printf_to_bufferA(
+				readBuffer,
+				json_file_size,
+				buffer_index,
+				u8R"({"configs":[)"
+			))
+			{
+				MessageBox(NULL, L"cache buffer error 1",
+					L"Cache error",
+					MB_OK | MB_ICONWARNING
+				);
+				assert(false);
+			}
 			for (int i = 0; i < cnt; i++)
 			{
 				auto& d_config_i_ref = d_config_ref[i];
@@ -763,7 +776,9 @@ int configure_reader(std::string& out)
 				{
 					cache_start_show = d_config_i_ref["start_show"].GetBool();
 				}
-
+#ifdef _DEBUG
+				std::string cache_name = d_config_i_ref["name"].GetString();
+#endif
 				//generate cache configs items, and pushback to document
 				{
 					Value cache_item;
@@ -775,23 +790,57 @@ int configure_reader(std::string& out)
 					cache_item.AddMember("alpha", cache_alpha, allocator);
 					cache_item.AddMember("enabled", cache_enabled, allocator);
 					cache_item.AddMember("start_show", cache_start_show, allocator);
+#ifdef _DEBUG
+					Value cache_item_name;
+					cache_item_name.SetString(cache_name.c_str(), static_cast<unsigned>(cache_name.length()), allocator);
+					cache_item.AddMember("name", cache_item_name, allocator);
+#endif
 					d_cache_config_ref.PushBack(cache_item, allocator);
 				}
-
-				if (FAILED(StringCchPrintfA(
-					buffer_index + readBuffer,
-					json_file_size - buffer_index,
-					u8R"(%s{"x": 0, "y": 0, "width": 0, "height": 0, "alpha": %d, "enabled": %s, "start_show": %s})",
+				if (false == printf_to_bufferA(
+					readBuffer,
+					json_file_size,
+					buffer_index,
+#ifdef _DEBUG
+					u8R"(%s{"x": 0, "y": 0, "width": 0, "height": 0, "alpha": %d, "enabled": %s, "start_show": %s, "name": "%s"})",
+#else
+					u8R"(%s{"x":0,"y":0,"width":0,"height":0,"alpha": %d,"enabled":%s,"start_show":%s})",
+#endif
 					i ? "," : "",
 					cache_alpha,
 					cache_enabled ? "true" : "false",
 					cache_start_show ? "true" : "false"
-				)))
+#ifdef _DEBUG
+					, cache_name.c_str()
+#endif
+				))
 				{
+					MessageBox(NULL, L"cache buffer error 2",
+						L"Cache error",
+						MB_OK | MB_ICONWARNING
+					);
 					assert(false);
 				}
 			}
-
+			LOGMESSAGE(L"buffer_index: %d json_file_size: %d\n", buffer_index, json_file_size);
+			if (false == printf_to_bufferA(
+				readBuffer,
+				json_file_size,
+				buffer_index,
+				u8R"(]})"
+			))
+			{
+				MessageBox(NULL, L"cache buffer error 3",
+					L"Cache error",
+					MB_OK | MB_ICONWARNING
+				);
+				assert(false);
+			}
+			std::ofstream o(CACHE_FILENAMEA);
+			if (o.good())
+			{
+				o << readBuffer;
+			}
 		}
 	}
 
@@ -1828,7 +1877,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{

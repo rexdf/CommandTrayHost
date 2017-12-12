@@ -15,8 +15,8 @@ extern bool is_cache_valid;
 
 bool is_cache_not_expired()
 {
-	PCWSTR json_filename = CONFIG_FILENAME;
-	PCWSTR cache_filename = CACHE_FILENAME;
+	PCWSTR json_filename = CONFIG_FILENAMEW;
+	PCWSTR cache_filename = CACHE_FILENAMEW;
 	if (TRUE != PathFileExists(cache_filename))
 	{
 		LOGMESSAGE(L"PathFileExists failed\n");
@@ -104,7 +104,7 @@ void initial_write_cache()
 			}
 		}
 		//}
-		std::ofstream o(CACHE_FILENAME);
+		std::ofstream o(CACHE_FILENAMEA);
 #ifdef _DEBUG
 		o << global_stat["cache"].dump(4);
 #else
@@ -130,7 +130,7 @@ void initial_read_cache()
 		}*/
 
 		auto& cache_ref = global_stat["cache"];
-		std::ifstream i(CACHE_FILENAME);
+		std::ifstream i(CACHE_FILENAMEA);
 		i >> cache_ref;
 		LOGMESSAGE(L"read cache:%s\n", utf8_to_wstring(global_stat["cache"].dump()).c_str());
 		if (false == json_object_has_member(cache_ref, "configs") ||
@@ -138,7 +138,7 @@ void initial_read_cache()
 			number_of_configs != cache_ref["configs"].size()
 			)
 		{
-			MessageBox(NULL, L"You should not manually edit " CACHE_FILENAME,
+			MessageBox(NULL, L"You should not manually edit " CACHE_FILENAMEW,
 				L"Cache error",
 				MB_OK | MB_ICONERROR
 			);

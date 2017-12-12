@@ -89,8 +89,10 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 //#define LOCK_FILE_NAME L"commandtrayhost_lock_pid.txt"
 #endif
 
-#define CACHE_FILENAME L"command_tray_host.cache"
-#define CONFIG_FILENAME L"config.json"
+#define CACHE_FILENAMEW L"command_tray_host.cache"
+#define CONFIG_FILENAMEW L"config.json"
+#define CACHE_FILENAMEA "command_tray_host.cache"
+#define CONFIG_FILENAMEA "config.json"
 
 #define VERSION_NUMS L"1.4.0"
 
