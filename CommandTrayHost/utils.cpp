@@ -89,6 +89,38 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 	return true;
 }
 
+//https://stackoverflow.com/questions/40013355/how-to-merge-two-json-file-using-rapidjson
+void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator)
+{
+	for (auto srcIt = srcObject.MemberBegin(); srcIt != srcObject.MemberEnd(); ++srcIt)
+	{
+		auto dstIt = dstObject.FindMember(srcIt->name);
+		if (dstIt != dstObject.MemberEnd())
+		{
+			assert(srcIt->value.GetType() == dstIt->value.GetType());
+			if (srcIt->value.IsArray())
+			{
+				for (auto arrayIt = srcIt->value.Begin(); arrayIt != srcIt->value.End(); ++arrayIt)
+				{
+					dstIt->value.PushBack(*arrayIt, allocator);
+				}
+			}
+			else if (srcIt->value.IsObject())
+			{
+				rapidjson_merge_object(dstIt->value, srcIt->value, allocator);
+			}
+			else
+			{
+				dstIt->value = srcIt->value;
+			}
+		}
+		else
+		{
+			dstObject.AddMember(srcIt->name, srcIt->value, allocator);
+		}
+	}
+}
+
 /*
 * when not_exist_return is true
 * return false only when exist and type not correct

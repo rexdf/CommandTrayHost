@@ -43,6 +43,8 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	return true;
 }
 
+void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator);
+
 //! Type of JSON value
 enum RapidJsonType {
 	iNullType = 0,      //!< null

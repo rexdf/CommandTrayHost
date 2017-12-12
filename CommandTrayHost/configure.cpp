@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "configure.h"
 #include "language.h"
+#include "cache.h"
 
 
 extern bool is_runas_admin;
@@ -209,7 +210,7 @@ bool initial_configure()
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
 })json";
-	std::ofstream o("config.json");
+	std::ofstream o(CONFIG_FILENAME);
 	if (o.good()) { o << config << std::endl; return true; }
 	else { return false; }
 }
@@ -220,11 +221,11 @@ typedef struct {
 	RapidJsonType type;
 	bool not_exist_ret;
 	std::function<bool(rapidjson::Value&, PCSTR)> caller;
-} RapidJsonChecker, *pRapidJsonChecker;
+} RapidJsonObjectChecker, *pRapidJsonObjectChecker;
 
 bool check_rapidjson_object(
 	rapidjson::Value& d,
-	RapidJsonChecker check_arrys[],
+	RapidJsonObjectChecker check_arrys[],
 	size_t array_size,
 	PWSTR msg_text,
 	PWSTR msg_title,
@@ -234,7 +235,7 @@ bool check_rapidjson_object(
 {
 	for (int i = 0; i < array_size; i++)
 	{
-		RapidJsonChecker& cur_Foo = check_arrys[i];
+		RapidJsonObjectChecker& cur_Foo = check_arrys[i];
 		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
 		{
 			std::wstring wname;
@@ -266,7 +267,7 @@ bool check_rapidjson_object(
  */
 int configure_reader(std::string& out)
 {
-	PCWSTR json_filename = L"config.json";
+	PCWSTR json_filename = CONFIG_FILENAME;
 	if (TRUE != PathFileExists(json_filename))
 	{
 		if (!initial_configure())
@@ -318,8 +319,7 @@ int configure_reader(std::string& out)
 	LOGMESSAGE(L"config.json encoding is: %S HasBom:%d\n", utf_type_name[eis.GetType()], eis.HasBOM());
 #endif
 	Document d;         // Document 为 GenericDocument<UTF8<> > 
-
-	Document::AllocatorType& allocator = d.GetAllocator(); // for change position/size double to in
+	auto& allocator = d.GetAllocator(); // for change position/size double to in
 
 	if (d.ParseStream<kParseCommentsFlag | kParseTrailingCommasFlag,
 		AutoUTF<unsigned>>(eis).HasParseError())
@@ -361,23 +361,26 @@ int configure_reader(std::string& out)
 		return true;
 	};
 
-	PCSTR size_postion_strs[] = {
+	/*PCSTR size_postion_strs[] = {
 		"position",
 		"size"
 	};
-	//int screen_fullx = GetSystemMetrics(SM_CXFULLSCREEN);
-	//int screen_fully = GetSystemMetrics(SM_CYFULLSCREEN);
-	int screen_full_ints[] = {
+	*/
+
+	int screen_fullx = GetSystemMetrics(SM_CXFULLSCREEN);
+	int screen_fully = GetSystemMetrics(SM_CYFULLSCREEN);
+
+	/*int screen_full_ints[] = {
 		GetSystemMetrics(SM_CXFULLSCREEN),
 		GetSystemMetrics(SM_CYFULLSCREEN)
 	};
 
 	assert(screen_full_ints[0] == GetSystemMetrics(SM_CXFULLSCREEN));
-	assert(screen_full_ints[1] == GetSystemMetrics(SM_CYFULLSCREEN));
+	assert(screen_full_ints[1] == GetSystemMetrics(SM_CYFULLSCREEN));*/
 
-	auto lambda_check_position_size = [/*&screen_fullx, &screen_fully*/](const Value& val, PCSTR name)->bool {
-		auto& ref = val[name];
-		if (ref.GetArray().Size() == 2)
+	auto lambda_check_position_size = [&screen_fullx, &screen_fully, &allocator](Value& val, PCSTR name)->bool {
+		auto ref = val[name].GetArray();
+		if (ref.Size() == 2)
 		{
 			auto& ref1 = ref[0];
 			auto& ref2 = ref[1];
@@ -386,7 +389,7 @@ int configure_reader(std::string& out)
 				double v1 = ref1.GetDouble(), v2 = ref2.GetDouble();
 				if (v1 >= 0 && v2 >= 0)
 				{
-					/*if (v1 <= 1)
+					if (v1 <= 1)
 					{
 						v1 *= screen_fullx;
 					}
@@ -394,13 +397,13 @@ int configure_reader(std::string& out)
 					{
 						v2 *= screen_fully;
 					}
-					if (Value* stars = GetValueByPointer(d, "/stars"))
-						stars->SetInt(stars->GetInt() + 1);
+					//if (Value* stars = GetValueByPointer(d, "/stars"))
+					//	stars->SetInt(stars->GetInt() + 1);
 
-					//ref.Clear();
-					//ref.PushBack(static_cast<int>(v1), allocator);
-					//ref.PushBack(static_cast<int>(v2), allocator);
-					*/
+					ref.Clear();
+					//auto& allocator = d.GetAllocator();
+					ref.PushBack(static_cast<int>(v1), allocator);
+					ref.PushBack(static_cast<int>(v2), allocator);
 
 					return true;
 				}
@@ -412,7 +415,7 @@ int configure_reader(std::string& out)
 	};
 
 	//type check for items in configs
-	RapidJsonChecker config_items[] = {
+	RapidJsonObjectChecker config_items[] = {
 		//must exist
 		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
 		{ "path", iStringType, false, nullptr },
@@ -521,7 +524,7 @@ int configure_reader(std::string& out)
 			}
 		}*/
 
-		//position update to integer
+		/*//position update to integer
 		for (int i = 0; i < ARRAYSIZE(size_postion_strs); i++)
 		{
 			PCSTR cur_name_str = size_postion_strs[i];
@@ -535,7 +538,7 @@ int configure_reader(std::string& out)
 				ref.PushBack(static_cast<int>(v1), allocator);
 				ref.PushBack(static_cast<int>(v2), allocator);
 			}
-		}
+		}*/
 		cnt++;
 	}
 
@@ -546,7 +549,7 @@ int configure_reader(std::string& out)
 	disable_cache_enabled = true;
 	disable_cache_show = true;
 	// type check for global optional items
-	RapidJsonChecker global_optional_items[] = {
+	RapidJsonObjectChecker global_optional_items[] = {
 		//global setting
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "enable_groups", iBoolType, true, [](Value& val,PCSTR name)->bool {
@@ -638,6 +641,44 @@ int configure_reader(std::string& out)
 	if (cache_cnt == 0) // if no cache options, then override the default value `"enable_cache": true,`
 	{
 		enable_cache = false;
+	}
+
+	if (enable_cache)
+	{
+		if (d.HasMember("cache"))
+		{
+			MessageBox(NULL, L"You should never put \"cache\" in " CONFIG_FILENAME
+				L"\n Cache is now removed!",
+				L"Cache error",
+				MB_OK | MB_ICONWARNING
+			);
+			d.RemoveMember("cache");
+		}
+		if (TRUE == PathFileExists(json_filename))
+		{
+			FILE* fp_cache;
+			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAME, L"rb"); // 非 Windows 平台使用 "r"
+			if (0 != err)
+			{
+				MessageBox(NULL, L"Open cache failed!", L"Error", MB_OK | MB_ICONERROR);
+				enable_cache = false;
+			}
+			if (enable_cache)
+			{
+				FileReadStream bis_cache(fp_cache, readBuffer, static_cast<size_t>(json_file_size + 5));
+				Document d_cache;
+				if(d_cache.ParseStream(bis_cache).HasParseError())
+				{
+					enable_cache = false;
+				}
+				if(enable_cache)
+				{
+					
+				}
+				fclose(fp_cache);
+			}
+			
+		}
 	}
 
 	StringBuffer sb;
@@ -901,6 +942,17 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 
 
+	}*/
+
+	//read first then write
+	/*if (enable_cache)
+	{
+		initial_read_cache();
+	}
+
+	if (enable_cache)
+	{
+		initial_write_cache();
 	}*/
 
 	return 1;
@@ -1659,7 +1711,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{
@@ -1786,7 +1838,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-}
+	}
 
 BOOL DisableStartUp()
 {

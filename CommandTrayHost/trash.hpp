@@ -1,4 +1,6 @@
-﻿/*
+﻿//Used for abandoned code
+
+/*
 * return NULL: failed
 * return others: numbers of configs
 */

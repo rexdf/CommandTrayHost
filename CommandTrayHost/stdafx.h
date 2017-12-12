@@ -50,7 +50,7 @@
 #include <rapidjson/encodings.h>
 #include <rapidjson/filereadstream.h>   // FileReadStream
 #include <rapidjson/encodedstream.h>    // AutoUTFInputStream
-#include <rapidjson/pointer.h>
+//#include <rapidjson/pointer.h>
 
 
 #ifdef _M_AMD64
@@ -88,6 +88,9 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 #define CommandTrayHost (L"Command_Tray_Host")
 //#define LOCK_FILE_NAME L"commandtrayhost_lock_pid.txt"
 #endif
+
+#define CACHE_FILENAME L"command_tray_host.cache"
+#define CONFIG_FILENAME L"config.json"
 
 #define VERSION_NUMS L"1.4.0"
 

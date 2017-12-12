@@ -44,6 +44,7 @@ bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
 bool disable_cache_show;
+bool is_cache_valid;
 int number_of_configs;
 
 TCHAR szPathToExe[MAX_PATH * 10];
