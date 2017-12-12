@@ -20,6 +20,7 @@ extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
 extern bool is_cache_valid;
+extern int cache_config_cursor;
 
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
@@ -779,7 +780,7 @@ int configure_reader(std::string& out)
 #ifdef _DEBUG
 				std::string cache_name = d_config_i_ref["name"].GetString();
 #endif
-				//generate cache configs items, and pushback to document
+				//generate cache configs items, and pushback to document d
 				{
 					Value cache_item;
 					cache_item.SetObject();
@@ -840,6 +841,7 @@ int configure_reader(std::string& out)
 			if (o.good())
 			{
 				o << readBuffer;
+				is_cache_valid = true;
 			}
 		}
 	}
@@ -1711,35 +1713,38 @@ void hideshow_all(bool is_hideall)
 {
 	for (auto& itm : global_stat["configs"])
 	{
-		bool is_show = itm["show"];
-		if (is_show == is_hideall)
+		if (itm["running"])
 		{
-			int64_t handle_int64 = itm["handle"];
-			HANDLE hProcess = (HANDLE)handle_int64;
-			WaitForInputIdle(hProcess, INFINITE);
-
-			ProcessWindowsInfo Info(GetProcessId(hProcess));
-
-			EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
-				reinterpret_cast<LPARAM>(&Info));
-
-			size_t num_of_windows = Info.Windows.size();
-			LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
-			if (num_of_windows > 0)
+			bool is_show = itm["show"];
+			if (is_show == is_hideall)
 			{
-				/*if (is_hideall && is_show)
+				int64_t handle_int64 = itm["handle"];
+				HANDLE hProcess = (HANDLE)handle_int64;
+				WaitForInputIdle(hProcess, INFINITE);
+
+				ProcessWindowsInfo Info(GetProcessId(hProcess));
+
+				EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
+					reinterpret_cast<LPARAM>(&Info));
+
+				size_t num_of_windows = Info.Windows.size();
+				LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
+				if (num_of_windows > 0)
 				{
-					ShowWindow(Info.Windows[0], SW_HIDE);
-					itm["show"] = false;
+					/*if (is_hideall && is_show)
+					{
+						ShowWindow(Info.Windows[0], SW_HIDE);
+						itm["show"] = false;
+					}
+					else if (!is_hideall && !is_show)
+					{
+						ShowWindow(Info.Windows[0], SW_SHOW);
+						itm["show"] = true;
+					}*/
+					// 本来是上面的代码，经过外层的(is_show == is_hideall)优化后，这里也可以简化
+					ShowWindow(Info.Windows[0], is_show ? SW_HIDE : SW_SHOW);
+					itm["show"] = !is_show;
 				}
-				else if (!is_hideall && !is_show)
-				{
-					ShowWindow(Info.Windows[0], SW_SHOW);
-					itm["show"] = true;
-				}*/
-				// 本来是上面的代码，经过外层的(is_show == is_hideall)优化后，这里也可以简化
-				ShowWindow(Info.Windows[0], is_show ? SW_HIDE : SW_SHOW);
-				itm["show"] = !is_show;
 			}
 		}
 	}
@@ -1877,7 +1882,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{

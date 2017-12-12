@@ -44,7 +44,11 @@ bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
 bool disable_cache_show;
+// during loading configuration file in configure_reader
+// is_cache_valid true means that content in command_tray_host.cache is valid
+// after that, its false means need to flush cache out to disk
 bool is_cache_valid;
+int cache_config_cursor;
 int number_of_configs;
 
 TCHAR szPathToExe[MAX_PATH * 10];
@@ -1024,6 +1028,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int submenu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) % 0x10;
 			LOGMESSAGE(L"%x Clicked. %d %d\n", nID, menu_idx, submenu_idx);
 			nlohmann::json& js = global_stat["configs"][menu_idx];
+			cache_config_cursor = menu_idx;
 			if (submenu_idx < 3)
 			{
 				show_hide_toggle(js);
