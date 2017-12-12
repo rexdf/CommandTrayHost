@@ -19,7 +19,7 @@ void log_message(PCSTR caller_filename, PCSTR caller_function, int line_number, 
 	// Expression: ("Buffer too small", 0)
 	const size_t len = 2048 * 16;
 	static wchar_t s_acBuf[len]; // this here is a caveat!
-	int len_caller = swprintf_s(s_acBuf, len, L"%S\n[%S]:#%d, ", caller_filename, caller_function, line_number);
+	int len_caller = swprintf_s(s_acBuf, len, L"%S(%d) : [ %S ]\n", caller_filename, line_number, caller_function);
 	if (len_caller >= 0)
 	{
 		va_list args;
