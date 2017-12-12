@@ -19,6 +19,7 @@ extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
+extern bool is_cache_valid;
 
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
@@ -260,7 +261,6 @@ bool check_rapidjson_object(
 	return true;
 }
 
-
 /*
  * return NULL: failed
  * return others: numbers of configs
@@ -413,7 +413,11 @@ int configure_reader(std::string& out)
 		}
 		return false;
 	};
-
+	auto lambda_check_alpha = [](const Value& val, PCSTR name)->bool {
+		int v = val[name].GetInt();
+		LOGMESSAGE(L"lambda! getint:%d", v);
+		return v >= 0 && v < 256;
+	};
 	//type check for items in configs
 	RapidJsonObjectChecker config_items[] = {
 		//must exist
@@ -429,7 +433,7 @@ int configure_reader(std::string& out)
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "start_show", iBoolType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
-		{ "alpha", iIntType, true, [](const Value& val, PCSTR name)->bool {int v = val[name].GetInt(); LOGMESSAGE(L"lambda! getint:%d", v); return v >= 0 && v < 256; } },
+		{ "alpha", iIntType, true,  lambda_check_alpha},
 		{ "is_topmost", iBoolType, true, nullptr },
 		{ "position", iArrayType , true, lambda_check_position_size },
 		{ "size", iArrayType, true, lambda_check_position_size },
@@ -654,7 +658,9 @@ int configure_reader(std::string& out)
 			);
 			d.RemoveMember("cache");
 		}
-		if (TRUE == PathFileExists(json_filename))
+		is_cache_valid = false;
+		//if (TRUE == PathFileExists(CACHE_FILENAME))
+		if (is_cache_not_expired())
 		{
 			FILE* fp_cache;
 			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAME, L"rb"); // 非 Windows 平台使用 "r"
@@ -665,19 +671,127 @@ int configure_reader(std::string& out)
 			}
 			if (enable_cache)
 			{
+				is_cache_valid = true;
 				FileReadStream bis_cache(fp_cache, readBuffer, static_cast<size_t>(json_file_size + 5));
-				Document d_cache;
-				if(d_cache.ParseStream(bis_cache).HasParseError())
+				Document d_cache(&allocator);
+				if (d_cache.ParseStream(bis_cache).HasParseError())
 				{
-					enable_cache = false;
+					LOGMESSAGE(L"cache parse faild!\n");
+					is_cache_valid = false;
 				}
-				if(enable_cache)
+				if (is_cache_valid)
 				{
-					
+					if (d_cache.IsObject() &&
+						d_cache.HasMember("configs") &&
+						d_cache["configs"].IsArray() &&
+						d_cache["configs"].Size() == cnt
+						)
+					{
+						RapidJsonObjectChecker cache_config_items[] = {
+							{ "alpha", iIntType, false, lambda_check_alpha },
+							{ "enabled", iBoolType, false, nullptr },
+							{ "height", iIntType, false, nullptr },
+							{ "start_show", iBoolType, false, nullptr },
+							{ "width", iIntType, false, nullptr },
+							{ "x", iIntType, false, nullptr },
+							{ "y", iIntType, false, nullptr },
+#ifdef _DEBUG
+							{ "name", iStringType, true, nullptr },
+#endif
+						};
+						for (auto& m : d_cache["configs"].GetArray())
+						{
+							if (false == check_rapidjson_object(
+								m,
+								cache_config_items,
+								ARRAYSIZE(cache_config_items),
+								L": cache has type error!\n\nYou should never edit cache!",
+								L" Cache Type Error",
+								L"cache section",
+								false)
+								)
+							{
+								is_cache_valid = false;
+								break;
+							}
+						}
+
+					}
+					else
+					{
+						is_cache_valid = false;
+					}
+					//add cache to config.json
+					if (is_cache_valid)
+					{
+						//Value cache;
+						//cache.SetObject();
+						//d.AddMember("cache", cache, allocator);
+						d.AddMember("cache", d_cache, allocator);
+						//rapidjson_merge_object(d["cache"], d_cache, allocator);
+					}
 				}
 				fclose(fp_cache);
 			}
-			
+
+		}
+
+		//generate cache
+		if (enable_cache && false == is_cache_valid)
+		{
+			auto& d_config_ref = d["configs"];
+
+			Value cache_object;
+			cache_object.SetObject();
+			d.AddMember("cache", cache_object, allocator);
+			Value cache_config_array;
+			cache_config_array.SetArray();
+			d["cache"].AddMember("configs", cache_config_array, allocator);
+			auto d_cache_config_ref = d["cache"]["configs"].GetArray();
+			int buffer_index = 0;
+			for (int i = 0; i < cnt; i++)
+			{
+				auto& d_config_i_ref = d_config_ref[i];
+				int cache_alpha = 170;
+				if (d_config_i_ref.HasMember("alpha"))
+				{
+					cache_alpha = d_config_i_ref["alpha"].GetInt();
+				}
+				bool cache_enabled = d_config_i_ref["enabled"].GetBool();
+				bool cache_start_show = false;
+				if (d_config_i_ref.HasMember("start_show"))
+				{
+					cache_start_show = d_config_i_ref["start_show"].GetBool();
+				}
+
+				//generate cache configs items, and pushback to document
+				{
+					Value cache_item;
+					cache_item.SetObject();
+					cache_item.AddMember("x", 0, allocator);
+					cache_item.AddMember("y", 0, allocator);
+					cache_item.AddMember("width", 0, allocator);
+					cache_item.AddMember("height", 0, allocator);
+					cache_item.AddMember("alpha", cache_alpha, allocator);
+					cache_item.AddMember("enabled", cache_enabled, allocator);
+					cache_item.AddMember("start_show", cache_start_show, allocator);
+					d_cache_config_ref.PushBack(cache_item, allocator);
+				}
+
+				if (FAILED(StringCchPrintfA(
+					buffer_index + readBuffer,
+					json_file_size - buffer_index,
+					u8R"(%s{"x": 0, "y": 0, "width": 0, "height": 0, "alpha": %d, "enabled": %s, "start_show": %s})",
+					i ? "," : "",
+					cache_alpha,
+					cache_enabled ? "true" : "false",
+					cache_start_show ? "true" : "false"
+				)))
+				{
+					assert(false);
+				}
+			}
+
 		}
 	}
 
@@ -1589,7 +1703,10 @@ void left_click_toggle()
 	for (auto& m : global_stat["left_click"])
 	{
 		int idx = m;
-		show_hide_toggle(jsps[idx]);
+		if (true == jsps[idx]["running"])
+		{
+			show_hide_toggle(jsps[idx]);
+		}
 	}
 }
 
@@ -1711,7 +1828,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{
@@ -1838,7 +1955,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-	}
+}
 
 BOOL DisableStartUp()
 {
