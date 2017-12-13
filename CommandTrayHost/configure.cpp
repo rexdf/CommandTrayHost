@@ -1006,6 +1006,8 @@ bool type_check_groups(const nlohmann::json& root, int deep)
  * running bool
  * handle int64_t
  * pid int64_t
+ * hwnd HWND
+ * win_num int
  * show bool
  * en_job bool
  * exe_seperator idx ".exe"
@@ -1037,6 +1039,8 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		i["running"] = false;
 		i["handle"] = 0;
 		i["pid"] = -1;
+		i["hwnd"] = 0;
+		i["win_num"] = 0;
 		i["show"] = false;
 		i["en_job"] = true;
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
@@ -1212,6 +1216,11 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	}*/
 
 	return 1;
+}
+
+inline HWND get_hwnd_from_json(const nlohmann::json& jsp)
+{
+	return reinterpret_cast<HWND>(jsp["hwnd"].get<int64_t>());
 }
 
 void start_all(HANDLE ghJob, bool force)
@@ -1615,6 +1624,8 @@ void create_process(
 
 	jsp["handle"] = 0;
 	jsp["pid"] = -1;
+	jsp["hwnd"] = 0;
+	jsp["win_num"] = 0;
 	jsp["running"] = false;
 	jsp["show"] = start_show;
 
@@ -1631,10 +1642,12 @@ void create_process(
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
+	//si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
+	si.wShowWindow = SW_HIDE;
 	si.lpTitle = nameStr;
 
-	//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
+	// GetWindowRect result is always a offset by random.
+	/*//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
 	if (json_object_has_member(jsp, "position"))
 	{
 		si.dwFlags |= STARTF_USEPOSITION;
@@ -1648,7 +1661,7 @@ void create_process(
 		si.dwXSize = jsp["size"][0];
 		si.dwYSize = jsp["size"][1];
 		LOGMESSAGE(L"%s size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
-	}
+	}*/
 
 
 	PROCESS_INFORMATION pi;
@@ -1679,32 +1692,17 @@ void create_process(
 	{
 		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
 		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
+		size_t num_of_windows = 0;
+		HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+		jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+		jsp["win_num"] = static_cast<int>(num_of_windows);
 		jsp["running"] = true;
-		update_cache_enabled_start_show(true, start_show);
-
-		/*if (enable_cache)
+		if (json_object_has_member(jsp, "alpha"))
 		{
-			if (false == disable_cache_enabled)
-			{
-				update_cache("enabled", true);
-				//auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["enabled"];
-				//if (ref != true)
-				//{
-				//	ref = true;
-				//	is_cache_valid = false;
-				//}
-			}
-			if (false == disable_cache_show)
-			{
-				update_cache("start_show", start_show);
-				//auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["start_show"];
-				//if (ref != start_show)
-				//{
-				//	ref = start_show;
-				//	is_cache_valid = false;
-				//}
-			}
-		}*/
+			set_wnd_alpha(hWnd, jsp["alpha"]);
+		}
+		if (start_show) show_hide_toggle(jsp);
+		update_cache_enabled_start_show(true, start_show);
 
 		if (ghJob)
 		{
@@ -1745,7 +1743,8 @@ void create_process(
 			shExInfo.lpFile = file_wstring.c_str();       // Application to start    
 			shExInfo.lpParameters = parameters_wstring.c_str();                  // Additional parameters
 			shExInfo.lpDirectory = working_directory;
-			shExInfo.nShow = start_show ? SW_SHOW : SW_HIDE;
+			//shExInfo.nShow = start_show ? SW_SHOW : SW_HIDE;
+			shExInfo.nShow = SW_HIDE;
 			shExInfo.hInstApp = NULL;
 
 			if (ShellExecuteEx(&shExInfo))
@@ -1764,7 +1763,12 @@ void create_process(
 					{
 						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
 						jsp["pid"] = static_cast<int64_t>(pid);
+						size_t num_of_windows = 0;
+						HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+						jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+						jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
+						if (start_show) show_hide_toggle(jsp);
 						update_cache_enabled_start_show(true, start_show);
 						/*if (enable_cache)
 						{
@@ -1816,6 +1820,8 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 		}
 		jsp["handle"] = 0;
 		jsp["pid"] = -1;
+		jsp["hwnd"] = 0;
+		jsp["win_num"] = 0;
 		jsp["running"] = false;
 		jsp["show"] = false;
 		jsp["enabled"] = false;
@@ -1827,33 +1833,9 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 	}
 }
 
-// https://stackoverflow.com/questions/3269390/how-to-get-hwnd-of-window-opened-by-shellexecuteex-hprocess
-struct ProcessWindowsInfo
-{
-	DWORD ProcessID;
-	std::vector<HWND> Windows;
-
-	ProcessWindowsInfo(DWORD const AProcessID)
-		: ProcessID(AProcessID)
-	{
-	}
-};
-
-BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
-{
-	ProcessWindowsInfo *Info = reinterpret_cast<ProcessWindowsInfo*>(lParam);
-	DWORD WindowProcessID;
-
-	GetWindowThreadProcessId(hwnd, &WindowProcessID);
-
-	if (WindowProcessID == Info->ProcessID)
-		Info->Windows.push_back(hwnd);
-
-	return true;
-}
-
 void hideshow_all(bool is_hideall)
 {
+	cache_config_cursor = 0;
 	for (auto& itm : global_stat["configs"])
 	{
 		if (itm["running"])
@@ -1861,20 +1843,23 @@ void hideshow_all(bool is_hideall)
 			bool is_show = itm["show"];
 			if (is_show == is_hideall)
 			{
-				int64_t handle_int64 = itm["handle"];
-				HANDLE hProcess = (HANDLE)handle_int64;
-				WaitForInputIdle(hProcess, INFINITE);
+				HWND hWnd = reinterpret_cast<HWND>(itm["hwnd"].get<int64_t>());
+				if (hWnd)
+				{
+					ShowWindow(hWnd, is_show ? SW_HIDE : SW_SHOW);
+					update_cache_position_size(hWnd);
+				}
+				itm["show"] = !is_show;
+				if (enable_cache && false == disable_cache_show)
+				{
+					update_cache("start_show", !is_show, 3);
+				}
 
-				ProcessWindowsInfo Info(GetProcessId(hProcess));
-
-				EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
-					reinterpret_cast<LPARAM>(&Info));
-
-				size_t num_of_windows = Info.Windows.size();
+				/*HWND hWnd = reinterpret_cast<HWND>(itm["hwnd"].get<int64_t>());
 				LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
 				if (num_of_windows > 0)
 				{
-					/*if (is_hideall && is_show)
+					*//*if (is_hideall && is_show)
 					{
 						ShowWindow(Info.Windows[0], SW_HIDE);
 						itm["show"] = false;
@@ -1883,14 +1868,15 @@ void hideshow_all(bool is_hideall)
 					{
 						ShowWindow(Info.Windows[0], SW_SHOW);
 						itm["show"] = true;
-					}*/
+					}*//*
 					// 本来是上面的代码，经过外层的(is_show == is_hideall)优化后，这里也可以简化
 					ShowWindow(Info.Windows[0], is_show ? SW_HIDE : SW_SHOW);
 					itm["show"] = !is_show;
 					update_cache_position_size(Info.Windows[0]);
-				}
+				}*/
 			}
 		}
+		cache_config_cursor++;
 	}
 	if (false == is_cache_valid)
 	{
@@ -1919,36 +1905,31 @@ void left_click_toggle()
 void show_hide_toggle(nlohmann::json& jsp)
 {
 	bool is_show = jsp["show"];
-	int64_t handle_int64 = jsp["handle"];
-	HANDLE hProcess = (HANDLE)handle_int64;
-	WaitForInputIdle(hProcess, INFINITE);
+#ifdef _DEBUG
+	int num_of_windows = jsp["win_num"].get<int>();
+	LOGMESSAGE(L"%s num_of_windows size: %d\n", utf8_to_wstring(jsp["name"]).c_str(), num_of_windows);
+#endif
+	HWND hWnd = get_hwnd_from_json(jsp);;
 
-	ProcessWindowsInfo Info(GetProcessId(hProcess));
-
-	EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
-		reinterpret_cast<LPARAM>(&Info));
-
-	size_t num_of_windows = Info.Windows.size();
-	LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
-	if (num_of_windows > 0)
+	if (hWnd != 0)
 	{
 		if (is_show)
 		{
-			ShowWindow(Info.Windows[0], SW_HIDE);
+			ShowWindow(hWnd, SW_HIDE);
 			jsp["show"] = false;
 
 #ifdef _DEBUG
 			RECT rect = { NULL };
-			GetWindowRect(Info.Windows[0], &rect);
-			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
+			GetWindowRect(hWnd, &rect);
+			LOGMESSAGE(L"%s GetWindowRect left:%d right:%d bottom:%d top:%d\n", utf8_to_wstring(jsp["name"]).c_str(), rect.left, rect.right, rect.bottom, rect.top);
 #endif
-			update_cache_position_size(Info.Windows[0]);
+			update_cache_position_size(hWnd);
 		}
 		else
 		{
 #ifdef _DEBUG
 			RECT rect = { NULL };
-			GetWindowRect(Info.Windows[0], &rect);
+			GetWindowRect(hWnd, &rect);
 			LOGMESSAGE(L"%s GetWindowRect left:%d right:%d bottom:%d top:%d\n", utf8_to_wstring(jsp["name"]).c_str(), rect.left, rect.right, rect.bottom, rect.top);
 			//extern HICON gHicon;
 			//SendMessage(Info.Windows[0], WM_SETICON, ICON_BIG, (LPARAM)gHicon);
@@ -1960,8 +1941,8 @@ void show_hide_toggle(nlohmann::json& jsp)
 			//SetLayeredWindowAttributes(Info.Windows[0], 0, 170, LWA_ALPHA);
 #endif
 
-			ShowWindow(Info.Windows[0], SW_SHOW);
-			SetForegroundWindow(Info.Windows[0]);
+			ShowWindow(hWnd, SW_SHOW);
+			SetForegroundWindow(hWnd);
 			jsp["show"] = true;
 			if (enable_cache && false == disable_cache_show)
 			{

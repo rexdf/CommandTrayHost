@@ -70,7 +70,42 @@ bool rapidjson_check_exist_type(
 
 //bool operator != (const RECT&, const RECT&);
 
+HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx = 0);
+
 BOOL get_hicon(PCWSTR, int, HICON&, bool share = false);
+
+inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
+{
+	return GetWindowRect(hWnd, &rect);
+}
+
+inline BOOL set_wnd_pos(HWND hWnd, RECT& rect)
+{
+	return SetWindowPos(hWnd,
+		HWND_NOTOPMOST,
+		rect.left,
+		rect.top,
+		rect.right - rect.left,
+		rect.bottom - rect.top,
+		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+	);
+}
+
+inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
+{
+	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+	SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
+	return TRUE;
+}
+
+inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
+{
+	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	errno_t err = GetLastError();
+	LOGMESSAGE(L"SendMessage error_code:0x%x\n", err);
+	return 0 == err;
+}
 
 #ifdef _DEBUG
 void ChangeIcon(const HICON);

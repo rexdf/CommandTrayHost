@@ -79,10 +79,10 @@ void update_cache_position_size(HWND hWnd)
 {
 	if (enable_cache)
 	{
-		if (false == disable_cache_show)
-		{
-			update_cache("start_show", false, 3);
-		}
+		//if (false == disable_cache_show)
+		//{
+		//	update_cache("start_show", false, 3);
+		//}
 		if (false == disable_cache_position || false == disable_cache_size)
 		{
 			RECT rect = {};

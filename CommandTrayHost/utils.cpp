@@ -195,38 +195,6 @@ bool rapidjson_check_exist_type(
 	return rct1.left != rct2.left || rct1.top != rct2.top || rct1.right != rct2.right || rct1.bottom != rct2.bottom;
 }*/
 
-inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
-{
-	return GetWindowRect(hWnd, &rect);
-}
-
-inline BOOL set_wnd_pos(HWND hWnd, RECT& rect)
-{
-	return SetWindowPos(hWnd,
-		HWND_NOTOPMOST,
-		rect.left,
-		rect.top,
-		rect.right - rect.left,
-		rect.bottom - rect.top,
-		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
-	);
-}
-
-inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
-{
-	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-	SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
-	return TRUE;
-}
-
-inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
-{
-	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	errno_t err = GetLastError();
-	LOGMESSAGE(L"SendMessage error_code:0x%x", err);
-	return 0 == err;
-}
 
 BOOL get_hicon(PCWSTR filename, int icon_size, HICON& hIcon, bool share)
 {
@@ -258,6 +226,51 @@ BOOL get_hicon(PCWSTR filename, int icon_size, HICON& hIcon, bool share)
 		));*/
 	}
 	return FALSE;
+}
+
+// https://stackoverflow.com/questions/3269390/how-to-get-hwnd-of-window-opened-by-shellexecuteex-hprocess
+struct ProcessWindowsInfo
+{
+	DWORD ProcessID;
+	std::vector<HWND> Windows;
+
+	ProcessWindowsInfo(DWORD const AProcessID)
+		: ProcessID(AProcessID)
+	{
+	}
+};
+
+BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	ProcessWindowsInfo *Info = reinterpret_cast<ProcessWindowsInfo*>(lParam);
+	DWORD WindowProcessID;
+
+	GetWindowThreadProcessId(hwnd, &WindowProcessID);
+
+	if (WindowProcessID == Info->ProcessID)
+		Info->Windows.push_back(hwnd);
+
+	return true;
+}
+
+HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
+{
+	WaitForInputIdle(hProcess, INFINITE);
+
+	ProcessWindowsInfo Info(GetProcessId(hProcess));
+
+	EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
+		reinterpret_cast<LPARAM>(&Info));
+	num_of_windows = Info.Windows.size();
+	LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
+	if (num_of_windows > 0)
+	{
+		return Info.Windows[idx];
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 #ifdef _DEBUG
