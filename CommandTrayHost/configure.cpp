@@ -1537,6 +1537,7 @@ void check_and_kill(HANDLE hProcess, DWORD pid)
 				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
 		}
 	}
+	update_cache("enabled", false, 2);
 }
 
 
@@ -1783,6 +1784,7 @@ void create_process(
 			}
 		}
 		jsp["enabled"] = false;
+		update_cache("enabled", false, 2);
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
 }
@@ -1928,7 +1930,7 @@ void show_hide_toggle(nlohmann::json& jsp)
 			ShowWindow(Info.Windows[0], SW_HIDE);
 			jsp["show"] = false;
 
-#ifdef _DEBUG0
+#ifdef _DEBUG
 			RECT rect = { NULL };
 			GetWindowRect(Info.Windows[0], &rect);
 			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
@@ -1960,9 +1962,9 @@ void show_hide_toggle(nlohmann::json& jsp)
 						{
 							update_cache("right", rect.right, 1);
 						}
-						if (get_cache<int>("bottom") != rect.left)
+						if (get_cache<int>("bottom") != rect.bottom)
 						{
-							update_cache("bottom", rect.left, 1);
+							update_cache("bottom", rect.bottom, 1);
 						}
 					}
 				}
@@ -1995,9 +1997,15 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 void kill_all(bool is_exit/* = true*/)
 {
+	cache_config_cursor = -1;
 	for (auto& itm : global_stat["configs"])
 	{
+		cache_config_cursor++; // for continue
 		bool is_running = itm["running"];
+		if (is_exit == true)
+		{
+			update_cache_enabled_start_show(is_running, itm["show"]);
+		}
 		if (is_running)
 		{
 			if (is_exit == false)
@@ -2032,6 +2040,7 @@ void kill_all(bool is_exit/* = true*/)
 				itm["running"] = false;
 				itm["show"] = false;
 				itm["enabled"] = false;
+				update_cache_enabled_start_show(false, false);
 			}
 		}
 	}

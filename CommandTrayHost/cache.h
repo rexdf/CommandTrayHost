@@ -38,7 +38,7 @@ void update_cache(/*int index, */PCSTR name, T value, int cnt)
 		{
 			valid_ref = valid_value | valid_mask;
 		}
-
+		LOGMESSAGE(L"cache updated! %S\n", name);
 		//flush_cache();
 	}
 }
