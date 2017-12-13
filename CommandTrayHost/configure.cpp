@@ -228,14 +228,14 @@ typedef struct {
 bool check_rapidjson_object(
 	rapidjson::Value& d,
 	RapidJsonObjectChecker check_arrys[],
-	size_t array_size,
+	int array_size,
 	PWSTR msg_text,
 	PWSTR msg_title,
 	PWSTR msg_text_header,
 	bool use_name
 )
 {
-	for (size_t i = 0; i < array_size; i++)
+	for (int i = 0; i < array_size; i++)
 	{
 		RapidJsonObjectChecker& cur_Foo = check_arrys[i];
 		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
@@ -557,7 +557,7 @@ int configure_reader(std::string& out)
 	RapidJsonObjectChecker global_optional_items[] = {
 		//global setting
 		{ "require_admin", iBoolType, true, nullptr },
-		{ "enable_groups", iBoolType, true, [](Value& val,PCSTR name)->bool {
+		{ "enable_groups", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			if (val[name].GetBool() && val.HasMember("groups"))
 			{
 				enable_groups_menu = true;
@@ -572,7 +572,7 @@ int configure_reader(std::string& out)
 		{ "groups_menu_symbol", iStringType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
 		{ "lang", iStringType, true, lambda_remove_empty_string },
-		{ "left_click", iArrayType, true, [cnt](Value& val,PCSTR name)->bool {
+		{ "left_click", iArrayType, true, [cnt](const Value& val,PCSTR name)->bool {
 			int left_click_cnt = 0;
 			for (auto& m : val[name].GetArray())
 			{
@@ -600,29 +600,36 @@ int configure_reader(std::string& out)
 			}
 			return true;
 		} },
-		{ "icon_size", iIntType, true, nullptr },
+		{ "icon_size", iIntType, true, [cnt](const Value& val,PCSTR name)->bool {
+			int icon_size = val[name].GetInt();
+			if (icon_size != 256 && icon_size != 32 && icon_size != 16)
+			{
+				return false;
+			}
+			return true;
+		} },
 
-		{ "enable_cache", iBoolType, true,[&cache_cnt](Value& val,PCSTR name)->bool {
+		{ "enable_cache", iBoolType, true,[&cache_cnt](const Value& val,PCSTR name)->bool {
 			enable_cache = val[name].GetBool();
 			cache_cnt++;
 			return true;
 		} },
-		{ "disable_cache_position", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+		{ "disable_cache_position", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
 			disable_cache_position = val[name].GetBool();
 			cache_cnt++;
 			return true;
 		} },
-		{ "disable_cache_size", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+		{ "disable_cache_size", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
 			disable_cache_size = val[name].GetBool();
 			cache_cnt++;
 			return true;
 		} },
-		{ "disable_cache_enabled", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+		{ "disable_cache_enabled", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
 			disable_cache_enabled = val[name].GetBool();
 			cache_cnt++;
 			return true;
 		} },
-		{ "disable_cache_show", iBoolType, true, [&cache_cnt](Value& val,PCSTR name)->bool {
+		{ "disable_cache_show", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
 			disable_cache_show = val[name].GetBool();
 			cache_cnt++;
 			return true;
@@ -689,13 +696,14 @@ int configure_reader(std::string& out)
 						)
 					{
 						RapidJsonObjectChecker cache_config_items[] = {
-							{ "alpha", iIntType, false, lambda_check_alpha },
+							//{ "alpha", iIntType, false, lambda_check_alpha },
 							{ "enabled", iBoolType, false, nullptr },
-							{ "height", iIntType, false, nullptr },
+							{ "left", iIntType, false, nullptr },
 							{ "start_show", iBoolType, false, nullptr },
-							{ "width", iIntType, false, nullptr },
-							{ "x", iIntType, false, nullptr },
-							{ "y", iIntType, false, nullptr },
+							{ "valid", iBoolType, false, nullptr },
+							{ "right", iIntType, false, nullptr },
+							{ "top", iIntType, false, nullptr },
+							{ "bottom", iIntType, false, nullptr },
 #ifdef _DEBUG
 							{ "name", iStringType, true, nullptr },
 #endif
@@ -766,11 +774,11 @@ int configure_reader(std::string& out)
 			for (int i = 0; i < cnt; i++)
 			{
 				auto& d_config_i_ref = d_config_ref[i];
-				int cache_alpha = 170;
-				if (d_config_i_ref.HasMember("alpha"))
-				{
-					cache_alpha = d_config_i_ref["alpha"].GetInt();
-				}
+				//int cache_alpha = 170;
+				//if (d_config_i_ref.HasMember("alpha"))
+				//{
+				//	cache_alpha = d_config_i_ref["alpha"].GetInt();
+				//}
 				bool cache_enabled = d_config_i_ref["enabled"].GetBool();
 				bool cache_start_show = false;
 				if (d_config_i_ref.HasMember("start_show"))
@@ -784,13 +792,14 @@ int configure_reader(std::string& out)
 				{
 					Value cache_item;
 					cache_item.SetObject();
-					cache_item.AddMember("x", 0, allocator);
-					cache_item.AddMember("y", 0, allocator);
-					cache_item.AddMember("width", 0, allocator);
-					cache_item.AddMember("height", 0, allocator);
-					cache_item.AddMember("alpha", cache_alpha, allocator);
+					cache_item.AddMember("left", 0, allocator);
+					cache_item.AddMember("top", 0, allocator);
+					cache_item.AddMember("right", 0, allocator);
+					cache_item.AddMember("bottom", 0, allocator);
+					//cache_item.AddMember("alpha", cache_alpha, allocator);
 					cache_item.AddMember("enabled", cache_enabled, allocator);
 					cache_item.AddMember("start_show", cache_start_show, allocator);
+					cache_item.AddMember("valid", false, allocator);
 #ifdef _DEBUG
 					Value cache_item_name;
 					cache_item_name.SetString(cache_name.c_str(), static_cast<unsigned>(cache_name.length()), allocator);
@@ -803,12 +812,12 @@ int configure_reader(std::string& out)
 					static_cast<size_t>(json_file_size),
 					buffer_index,
 #ifdef _DEBUG
-					u8R"(%s{"x": 0, "y": 0, "width": 0, "height": 0, "alpha": %d, "enabled": %s, "start_show": %s, "name": "%s"})",
+					u8R"(%s{"left": 0, "top": 0, "right": 0, "bottom": 0, "valid":false ,"enabled": %s, "start_show": %s, "name": "%s"})",
 #else
-					u8R"(%s{"x":0,"y":0,"width":0,"height":0,"alpha": %d,"enabled":%s,"start_show":%s})",
+					u8R"(%s{"left":0,"top":0,"right":0,"bottom":0,"valid":false,"enabled":%s,"start_show":%s})",
 #endif
 					i ? "," : "",
-					cache_alpha,
+					//cache_alpha,
 					cache_enabled ? "true" : "false",
 					cache_start_show ? "true" : "false"
 #ifdef _DEBUG
@@ -841,7 +850,7 @@ int configure_reader(std::string& out)
 			if (o.good())
 			{
 				o << readBuffer;
-				is_cache_valid = true;
+				//is_cache_valid = false;
 			}
 		}
 	}
@@ -1021,8 +1030,14 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		//assert(icon.empty());
 		if (icon.length())
 		{
-			int icon_size = 0;
-			if (json_object_has_member(global_stat, "icon_size"))
+			int icon_size = 256;
+#ifdef _DEBUG
+			try_read_optional_json(global_stat, icon_size, "icon_size", __FUNCTION__);
+#else
+			try_read_optional_json(global_stat, icon_size, "icon_size");
+#endif
+
+			/*if (json_object_has_member(global_stat, "icon_size"))
 			{
 				icon_size = global_stat["icon_size"];
 				int out_icon_size = 0;
@@ -1036,6 +1051,11 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 					icon_size = out_icon_size = 256;
 				}
 			}
+			else
+			{
+				icon_size = 256;
+			}*/
+
 			std::wstring icon_wfilename = utf8_to_wstring(icon);
 			if (FALSE == get_hicon(icon_wfilename.c_str(), icon_size, hIcon))
 			{
@@ -1126,15 +1146,16 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 void start_all(HANDLE ghJob, bool force)
 {
 	//int cmd_idx = 0;
+	cache_config_cursor = 0;
 	for (auto& i : global_stat["configs"])
 	{
 		if (force)
 		{
 			bool ignore_all = false;
 #ifdef _DEBUG
-			try_read_optional_json<bool>(i, ignore_all, "ignore_all", __FUNCTION__);
+			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
 #else
-			try_read_optional_json<bool>(i, ignore_all, "ignore_all");
+			try_read_optional_json(i, ignore_all, "ignore_all");
 #endif
 			if (false == ignore_all)
 			{
@@ -1147,6 +1168,11 @@ void start_all(HANDLE ghJob, bool force)
 			create_process(i, ghJob);
 		}
 		//cmd_idx++;
+		cache_config_cursor++;
+	}
+	if (false == is_cache_valid)
+	{
+		flush_cache();
 	}
 }
 
@@ -1501,11 +1527,11 @@ void create_process(
 
 	bool require_admin = false, start_show = false;
 #ifdef _DEBUG
-	try_read_optional_json<bool>(jsp, require_admin, "require_admin", __FUNCTION__);
-	try_read_optional_json<bool>(jsp, start_show, "start_show", __FUNCTION__);
+	try_read_optional_json(jsp, require_admin, "require_admin", __FUNCTION__);
+	try_read_optional_json(jsp, start_show, "start_show", __FUNCTION__);
 #else
-	try_read_optional_json<bool>(jsp, require_admin, "require_admin");
-	try_read_optional_json<bool>(jsp, start_show, "start_show");
+	try_read_optional_json(jsp, require_admin, "require_admin");
+	try_read_optional_json(jsp, start_show, "start_show");
 #endif
 
 
@@ -1576,6 +1602,29 @@ void create_process(
 		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
 		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
 		jsp["running"] = true;
+		if (enable_cache)
+		{
+			if (false == disable_cache_enabled)
+			{
+				update_cache("enabled", true);
+				/*auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["enabled"];
+				if (ref != true)
+				{
+					ref = true;
+					is_cache_valid = false;
+				}*/
+			}
+			if (false == disable_cache_show)
+			{
+				update_cache("start_show", start_show);
+				/*auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["start_show"];
+				if (ref != start_show)
+				{
+					ref = start_show;
+					is_cache_valid = false;
+				}*/
+			}
+		}
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
@@ -1635,6 +1684,17 @@ void create_process(
 						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
 						jsp["pid"] = static_cast<int64_t>(pid);
 						jsp["running"] = true;
+						if (enable_cache)
+						{
+							if (false == disable_cache_enabled)
+							{
+								update_cache("enabled", true);
+							}
+							if (false == disable_cache_show)
+							{
+								update_cache("start_show", start_show);
+							}
+						}
 					}
 				}
 				//WaitForSingleObject(shExInfo.hProcess, INFINITE);
@@ -1748,7 +1808,10 @@ void hideshow_all(bool is_hideall)
 			}
 		}
 	}
-
+	if (false == is_cache_valid)
+	{
+		flush_cache();
+	}
 }
 
 void left_click_toggle()
@@ -1759,8 +1822,13 @@ void left_click_toggle()
 		int idx = m;
 		if (true == jsps[idx]["running"])
 		{
+			cache_config_cursor = idx;
 			show_hide_toggle(jsps[idx]);
 		}
+	}
+	if (false == is_cache_valid)
+	{
+		flush_cache();
 	}
 }
 
@@ -1785,15 +1853,50 @@ void show_hide_toggle(nlohmann::json& jsp)
 			ShowWindow(Info.Windows[0], SW_HIDE);
 			jsp["show"] = false;
 
-#ifdef _DEBUG
+#ifdef _DEBUG0
 			RECT rect = { NULL };
 			GetWindowRect(Info.Windows[0], &rect);
 			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
 #endif
+			if (enable_cache)
+			{
+				if (false == disable_cache_position || false == disable_cache_size)
+				{
+					RECT rect = {};
+					GetWindowRect(Info.Windows[0], &rect);
+					if (get_cache<int>("left") != rect.left)
+					{
+						update_cache("left", rect.left);
+					}
+					if (get_cache<int>("top") != rect.top)
+					{
+						update_cache("top", rect.top);
+					}
+
+					/*if (false == disable_cache_position)
+					{
+						int left = get_cache<int>("left"), top = get_cache<int>("top");
+					}
+					*/
+
+					if (false == disable_cache_size)
+					{
+						if (get_cache<int>("right") != rect.right)
+						{
+							update_cache("right", rect.right);
+						}
+						if (get_cache<int>("bottom") != rect.left)
+						{
+							update_cache("left", rect.left);
+						}
+					}
+				}
+			}
+
 		}
 		else
 		{
-#ifdef _DEBUG
+#ifdef _DEBUG0
 			RECT rect = { NULL };
 			GetWindowRect(Info.Windows[0], &rect);
 			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
@@ -1826,9 +1929,9 @@ void kill_all(bool is_exit/* = true*/)
 			{
 				bool ignore_all = false;
 #ifdef _DEBUG
-				try_read_optional_json<bool>(itm, ignore_all, "ignore_all", __FUNCTION__);
+				try_read_optional_json(itm, ignore_all, "ignore_all", __FUNCTION__);
 #else
-				try_read_optional_json<bool>(itm, ignore_all, "ignore_all");
+				try_read_optional_json(itm, ignore_all, "ignore_all");
 #endif
 
 				if (true == ignore_all) // is_exit == false and ignore_all == true, then not kill it now
@@ -2164,9 +2267,9 @@ void check_admin(bool is_admin)
 {
 	bool require_admin = false;
 #ifdef _DEBUG
-	try_read_optional_json<bool>(global_stat, require_admin, "require_admin", __FUNCTION__);
+	try_read_optional_json(global_stat, require_admin, "require_admin", __FUNCTION__);
 #else
-	try_read_optional_json<bool>(global_stat, require_admin, "require_admin");
+	try_read_optional_json(global_stat, require_admin, "require_admin");
 #endif
 
 	if (require_admin)

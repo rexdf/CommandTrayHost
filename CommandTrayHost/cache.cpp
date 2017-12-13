@@ -63,6 +63,8 @@ bool flush_cache()
 {
 	assert(enable_cache);
 	assert(false == is_cache_valid);
+	LOGMESSAGE(L"Now flush cache\n");
+	is_cache_valid = true;
 	std::ofstream o(CACHE_FILENAMEA);
 	if (o.good())
 	{
@@ -78,3 +80,4 @@ bool flush_cache()
 		return false;
 	}
 }
+

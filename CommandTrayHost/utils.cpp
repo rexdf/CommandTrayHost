@@ -52,6 +52,7 @@ bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...
 		fmt,
 		args
 	);
+	va_end(args);
 	if (FAILED(hr))
 	{
 		LOGMESSAGE(L"StringCchVPrintfA failed\n");
@@ -188,6 +189,11 @@ bool rapidjson_check_exist_type(
 }
 
 //HWND WINAPI GetForegroundWindow(void);
+
+/*bool operator != (const RECT& rct1, const RECT& rct2)
+{
+	return rct1.left != rct2.left || rct1.top != rct2.top || rct1.right != rct2.right || rct1.bottom != rct2.bottom;
+}*/
 
 inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
 {

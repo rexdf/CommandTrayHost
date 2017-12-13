@@ -2,6 +2,7 @@
 #include "CommandTrayHost.h"
 #include "configure.h"
 #include "language.h"
+#include "cache.h"
 #include "utils.hpp"
 
 #ifndef __cplusplus
@@ -1044,6 +1045,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			else if (submenu_idx == 5)
 			{
 				disable_enable_menu(js, ghJob, true);
+			}
+			if (false == is_cache_valid)
+			{
+				flush_cache();
 			}
 		}
 		else

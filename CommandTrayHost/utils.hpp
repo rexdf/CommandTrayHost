@@ -68,6 +68,8 @@ bool rapidjson_check_exist_type(
 	std::function<bool(rapidjson::Value&, PCSTR)> func = nullptr
 );
 
+//bool operator != (const RECT&, const RECT&);
+
 BOOL get_hicon(PCWSTR, int, HICON&, bool share = false);
 
 #ifdef _DEBUG
