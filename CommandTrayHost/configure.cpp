@@ -700,7 +700,7 @@ int configure_reader(std::string& out)
 							{ "enabled", iBoolType, false, nullptr },
 							{ "left", iIntType, false, nullptr },
 							{ "start_show", iBoolType, false, nullptr },
-							{ "valid", iBoolType, false, nullptr },
+							{ "valid", iIntType, false,[](const Value& val,PCSTR name)->bool {return val[name].GetInt() >= 0; } },
 							{ "right", iIntType, false, nullptr },
 							{ "top", iIntType, false, nullptr },
 							{ "bottom", iIntType, false, nullptr },
@@ -755,10 +755,11 @@ int configure_reader(std::string& out)
 				for (int i = 0; i < cnt; i++)
 				{
 					auto& cache_config_i_ref = cache_configs_ref[i];
-					if (cache_config_i_ref["valid"].GetBool())
+					int valid_flag = cache_config_i_ref["valid"].GetInt();
+					if (valid_flag)
 					{
 						auto& d_config_i_ref = d_configs_ref[i];
-						if (!disable_cache_position)
+						if (!disable_cache_position && check_cache_valid(valid_flag, 0))
 						{
 							Value v_l(cache_config_i_ref["left"], allocator);
 							Value v_t(cache_config_i_ref["top"], allocator);
@@ -778,7 +779,7 @@ int configure_reader(std::string& out)
 								position_ref.PushBack(v_t, allocator);
 							}
 						}
-						if (!disable_cache_size)
+						if (!disable_cache_size && check_cache_valid(valid_flag, 1))
 						{
 							int w = cache_config_i_ref["right"].GetInt() - cache_config_i_ref["left"].GetInt();
 							int h = cache_config_i_ref["bottom"].GetInt() - cache_config_i_ref["top"].GetInt();
@@ -800,12 +801,12 @@ int configure_reader(std::string& out)
 								position_ref.PushBack(v_h, allocator);
 							}
 						}
-						if (!disable_cache_enabled)
+						if (!disable_cache_enabled && check_cache_valid(valid_flag, 1))
 						{
 							Value v(cache_config_i_ref["enabled"], allocator);
 							d_config_i_ref["enabled"] = v;
 						}
-						if (!disable_cache_show)
+						if (!disable_cache_show && check_cache_valid(valid_flag, 3))
 						{
 							Value v(cache_config_i_ref["start_show"], allocator);
 							d_config_i_ref["start_show"] = v;
@@ -869,7 +870,7 @@ int configure_reader(std::string& out)
 					//cache_item.AddMember("alpha", cache_alpha, allocator);
 					cache_item.AddMember("enabled", cache_enabled, allocator);
 					cache_item.AddMember("start_show", cache_start_show, allocator);
-					cache_item.AddMember("valid", false, allocator);
+					cache_item.AddMember("valid", 0, allocator);
 #ifdef _DEBUG
 					Value cache_item_name;
 					cache_item_name.SetString(cache_name.c_str(), static_cast<unsigned>(cache_name.length()), allocator);
@@ -882,9 +883,9 @@ int configure_reader(std::string& out)
 					static_cast<size_t>(json_file_size),
 					buffer_index,
 #ifdef _DEBUG
-					u8R"(%s{"left": 0, "top": 0, "right": 0, "bottom": 0, "valid":false ,"enabled": %s, "start_show": %s, "name": "%s"})",
+					u8R"(%s{"left": 0, "top": 0, "right": 0, "bottom": 0, "valid":0 ,"enabled": %s, "start_show": %s, "name": "%s"})",
 #else
-					u8R"(%s{"left":0,"top":0,"right":0,"bottom":0,"valid":false,"enabled":%s,"start_show":%s})",
+					u8R"(%s{"left":0,"top":0,"right":0,"bottom":0,"valid":0,"enabled":%s,"start_show":%s})",
 #endif
 					i ? "," : "",
 					//cache_alpha,
@@ -1672,29 +1673,32 @@ void create_process(
 		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
 		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
 		jsp["running"] = true;
-		if (enable_cache)
+		update_cache_enabled_start_show(true, start_show);
+
+		/*if (enable_cache)
 		{
 			if (false == disable_cache_enabled)
 			{
 				update_cache("enabled", true);
-				/*auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["enabled"];
-				if (ref != true)
-				{
-					ref = true;
-					is_cache_valid = false;
-				}*/
+				//auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["enabled"];
+				//if (ref != true)
+				//{
+				//	ref = true;
+				//	is_cache_valid = false;
+				//}
 			}
 			if (false == disable_cache_show)
 			{
 				update_cache("start_show", start_show);
-				/*auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["start_show"];
-				if (ref != start_show)
-				{
-					ref = start_show;
-					is_cache_valid = false;
-				}*/
+				//auto& ref = global_stat["cache"]["configs"][cache_config_cursor]["start_show"];
+				//if (ref != start_show)
+				//{
+				//	ref = start_show;
+				//	is_cache_valid = false;
+				//}
 			}
-		}
+		}*/
+
 		if (ghJob)
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
@@ -1754,7 +1758,8 @@ void create_process(
 						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
 						jsp["pid"] = static_cast<int64_t>(pid);
 						jsp["running"] = true;
-						if (enable_cache)
+						update_cache_enabled_start_show(true, start_show);
+						/*if (enable_cache)
 						{
 							if (false == disable_cache_enabled)
 							{
@@ -1764,7 +1769,7 @@ void create_process(
 							{
 								update_cache("start_show", start_show);
 							}
-						}
+						}*/
 					}
 				}
 				//WaitForSingleObject(shExInfo.hProcess, INFINITE);
@@ -1936,11 +1941,11 @@ void show_hide_toggle(nlohmann::json& jsp)
 					GetWindowRect(Info.Windows[0], &rect);
 					if (get_cache<int>("left") != rect.left)
 					{
-						update_cache("left", rect.left);
+						update_cache("left", rect.left, 0);
 					}
 					if (get_cache<int>("top") != rect.top)
 					{
-						update_cache("top", rect.top);
+						update_cache("top", rect.top, 0);
 					}
 
 					/*if (false == disable_cache_position)
@@ -1953,11 +1958,11 @@ void show_hide_toggle(nlohmann::json& jsp)
 					{
 						if (get_cache<int>("right") != rect.right)
 						{
-							update_cache("right", rect.right);
+							update_cache("right", rect.right, 1);
 						}
 						if (get_cache<int>("bottom") != rect.left)
 						{
-							update_cache("left", rect.left);
+							update_cache("bottom", rect.left, 1);
 						}
 					}
 				}
@@ -2030,7 +2035,10 @@ void kill_all(bool is_exit/* = true*/)
 			}
 		}
 	}
-
+	if (false == is_cache_valid)
+	{
+		flush_cache();
+	}
 }
 
 // https://stackoverflow.com/questions/15913202/add-application-to-startup-registry

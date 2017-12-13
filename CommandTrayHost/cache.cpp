@@ -1,4 +1,5 @@
 ﻿#include "stdafx.h"
+#include "cache.h"
 #include "language.h"
 #include "configure.h"
 #include "utils.hpp"
@@ -57,6 +58,21 @@ bool is_cache_not_expired()
 		RETURN_AND_CLOSE_CREATEFILE(false);
 	}
 	RETURN_AND_CLOSE_CREATEFILE(true);
+}
+
+void update_cache_enabled_start_show(bool enabled, bool start_show)
+{
+	if (enable_cache)
+	{
+		if (false == disable_cache_enabled)
+		{
+			update_cache("enabled", enabled, 2);
+		}
+		if (false == disable_cache_show)
+		{
+			update_cache("start_show", start_show, 3);
+		}
+	}
 }
 
 bool flush_cache()
