@@ -801,7 +801,7 @@ int configure_reader(std::string& out)
 								position_ref.PushBack(v_h, allocator);
 							}
 						}
-						if (!disable_cache_enabled && check_cache_valid(valid_flag, 1))
+						if (!disable_cache_enabled && check_cache_valid(valid_flag, 2))
 						{
 							Value v(cache_config_i_ref["enabled"], allocator);
 							d_config_i_ref["enabled"] = v;
@@ -1537,7 +1537,11 @@ void check_and_kill(HANDLE hProcess, DWORD pid)
 				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
 		}
 	}
-	update_cache("enabled", false, 2);
+
+	if (enable_cache && !disable_cache_enabled)
+	{
+		update_cache("enabled", false, 2);
+	}
 }
 
 
@@ -1636,12 +1640,14 @@ void create_process(
 		si.dwFlags |= STARTF_USEPOSITION;
 		si.dwX = jsp["position"][0];
 		si.dwY = jsp["position"][1];
+		LOGMESSAGE(L"%s position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
 	}
 	if (json_object_has_member(jsp, "size"))
 	{
 		si.dwFlags |= STARTF_USESIZE;
 		si.dwXSize = jsp["size"][0];
 		si.dwYSize = jsp["size"][1];
+		LOGMESSAGE(L"%s size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
 	}
 
 
@@ -1784,7 +1790,7 @@ void create_process(
 			}
 		}
 		jsp["enabled"] = false;
-		update_cache("enabled", false, 2);
+		if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, 2);
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
 }
@@ -1881,6 +1887,7 @@ void hideshow_all(bool is_hideall)
 					// 本来是上面的代码，经过外层的(is_show == is_hideall)优化后，这里也可以简化
 					ShowWindow(Info.Windows[0], is_show ? SW_HIDE : SW_SHOW);
 					itm["show"] = !is_show;
+					update_cache_position_size(Info.Windows[0]);
 				}
 			}
 		}
@@ -1935,61 +1942,31 @@ void show_hide_toggle(nlohmann::json& jsp)
 			GetWindowRect(Info.Windows[0], &rect);
 			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
 #endif
-			if (enable_cache)
-			{
-				if (false == disable_cache_position || false == disable_cache_size)
-				{
-					RECT rect = {};
-					GetWindowRect(Info.Windows[0], &rect);
-					if (get_cache<int>("left") != rect.left)
-					{
-						update_cache("left", rect.left, 0);
-					}
-					if (get_cache<int>("top") != rect.top)
-					{
-						update_cache("top", rect.top, 0);
-					}
-
-					/*if (false == disable_cache_position)
-					{
-						int left = get_cache<int>("left"), top = get_cache<int>("top");
-					}
-					*/
-
-					if (false == disable_cache_size)
-					{
-						if (get_cache<int>("right") != rect.right)
-						{
-							update_cache("right", rect.right, 1);
-						}
-						if (get_cache<int>("bottom") != rect.bottom)
-						{
-							update_cache("bottom", rect.bottom, 1);
-						}
-					}
-				}
-			}
-
+			update_cache_position_size(Info.Windows[0]);
 		}
 		else
 		{
-#ifdef _DEBUG0
+#ifdef _DEBUG
 			RECT rect = { NULL };
 			GetWindowRect(Info.Windows[0], &rect);
-			LOGMESSAGE(L"GetWindowRect left:%d right:%d bottom:%d top:%d\n", rect.left, rect.right, rect.bottom, rect.top);
+			LOGMESSAGE(L"%s GetWindowRect left:%d right:%d bottom:%d top:%d\n", utf8_to_wstring(jsp["name"]).c_str(), rect.left, rect.right, rect.bottom, rect.top);
 			//extern HICON gHicon;
 			//SendMessage(Info.Windows[0], WM_SETICON, ICON_BIG, (LPARAM)gHicon);
 			//SendMessage(Info.Windows[0], WM_SETICON, ICON_SMALL, (LPARAM)gHicon);
 			//SetForegroundWindow(Info.Windows[0]);
 			//SetWindowPos(Info.Windows[0], HWND_NOTOPMOST, rect.left, 500, 200, 200, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
-			SetWindowLong(Info.Windows[0], GWL_EXSTYLE,
-				GetWindowLong(Info.Windows[0], GWL_EXSTYLE) | WS_EX_LAYERED);
-			SetLayeredWindowAttributes(Info.Windows[0], 0, 170, LWA_ALPHA);
+			//SetWindowLong(Info.Windows[0], GWL_EXSTYLE,
+			//	GetWindowLong(Info.Windows[0], GWL_EXSTYLE) | WS_EX_LAYERED);
+			//SetLayeredWindowAttributes(Info.Windows[0], 0, 170, LWA_ALPHA);
 #endif
 
 			ShowWindow(Info.Windows[0], SW_SHOW);
 			SetForegroundWindow(Info.Windows[0]);
 			jsp["show"] = true;
+			if (enable_cache && false == disable_cache_show)
+			{
+				update_cache("start_show", false, 3);
+			}
 		}
 	}
 
@@ -2002,10 +1979,10 @@ void kill_all(bool is_exit/* = true*/)
 	{
 		cache_config_cursor++; // for continue
 		bool is_running = itm["running"];
-		if (is_exit == true)
+		/*if (is_exit)
 		{
 			update_cache_enabled_start_show(is_running, itm["show"]);
-		}
+		}*/
 		if (is_running)
 		{
 			if (is_exit == false)

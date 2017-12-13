@@ -75,6 +75,48 @@ void update_cache_enabled_start_show(bool enabled, bool start_show)
 	}
 }
 
+void update_cache_position_size(HWND hWnd)
+{
+	if (enable_cache)
+	{
+		if (false == disable_cache_show)
+		{
+			update_cache("start_show", false, 3);
+		}
+		if (false == disable_cache_position || false == disable_cache_size)
+		{
+			RECT rect = {};
+			GetWindowRect(hWnd, &rect);
+			if (get_cache<int>("left") != rect.left)
+			{
+				update_cache("left", rect.left, 0);
+			}
+			if (get_cache<int>("top") != rect.top)
+			{
+				update_cache("top", rect.top, 0);
+			}
+
+			/*if (false == disable_cache_position)
+			{
+			int left = get_cache<int>("left"), top = get_cache<int>("top");
+			}
+			*/
+
+			if (false == disable_cache_size)
+			{
+				if (get_cache<int>("right") != rect.right)
+				{
+					update_cache("right", rect.right, 1);
+				}
+				if (get_cache<int>("bottom") != rect.bottom)
+				{
+					update_cache("bottom", rect.bottom, 1);
+				}
+			}
+		}
+	}
+}
+
 bool flush_cache()
 {
 	assert(enable_cache);

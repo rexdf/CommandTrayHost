@@ -44,6 +44,7 @@ void update_cache(/*int index, */PCSTR name, T value, int cnt)
 }
 
 void update_cache_enabled_start_show(bool enabled, bool start_show);
+void update_cache_position_size(HWND hWnd);
 
 inline bool check_cache_valid(int valid, int cnt)
 {
