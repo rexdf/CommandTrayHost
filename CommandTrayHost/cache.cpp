@@ -125,19 +125,20 @@ bool flush_cache()
 	LOGMESSAGE(L"Now flush cache\n");
 	//return true;
 	is_cache_valid = true;
-	std::ofstream o(CACHE_FILENAMEA);
-	if (o.good())
+	if (is_cache_not_expired())
 	{
+		std::ofstream o(CACHE_FILENAMEA);
+		if (o.good())
+		{
 #ifdef _DEBUG
-		o << global_stat["cache"].dump(4);
+			o << global_stat["cache"].dump(4);
 #else
-		o << global_stat["cache"];
+			o << global_stat["cache"];
 #endif
-		return true;
+			return true;
+		}
 	}
-	else
-	{
-		return false;
-	}
+
+	return false;
 }
 
