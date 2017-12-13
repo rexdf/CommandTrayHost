@@ -77,7 +77,7 @@ void update_cache_enabled_start_show(bool enabled, bool start_show)
 
 void update_cache_position_size(HWND hWnd)
 {
-	if (enable_cache)
+	if (enable_cache && hWnd)
 	{
 		//if (false == disable_cache_show)
 		//{
@@ -87,6 +87,7 @@ void update_cache_position_size(HWND hWnd)
 		{
 			RECT rect = {};
 			GetWindowRect(hWnd, &rect);
+			LOGMESSAGE(L"left:%d top:%d right:%d bottom:%d\n", rect.left, rect.top, rect.right, rect.bottom);
 			if (get_cache<int>("left") != rect.left)
 			{
 				update_cache("left", rect.left, 0);
@@ -122,6 +123,7 @@ bool flush_cache()
 	assert(enable_cache);
 	assert(false == is_cache_valid);
 	LOGMESSAGE(L"Now flush cache\n");
+	//return true;
 	is_cache_valid = true;
 	std::ofstream o(CACHE_FILENAMEA);
 	if (o.good())

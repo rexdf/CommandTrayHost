@@ -1226,13 +1226,45 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 		size_t num_of_windows = 0;
 		HANDLE hProcess = reinterpret_cast<HANDLE>(jsp["handle"].get<int64_t>());
 		hWnd = GetHwnd(hProcess, num_of_windows);
-		jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
-		jsp["win_num"] = static_cast<int>(num_of_windows);
-		if (json_object_has_member(jsp, "alpha"))
+		if (num_of_windows)
 		{
-			set_wnd_alpha(hWnd, jsp["alpha"]);
+			jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+			jsp["win_num"] = static_cast<int>(num_of_windows);
+			if (json_object_has_member(jsp, "alpha"))
+			{
+				set_wnd_alpha(hWnd, jsp["alpha"]);
+			}
+			bool is_topmost = false;
+			bool use_pos = json_object_has_member(jsp, "position");
+			bool use_size = json_object_has_member(jsp, "size");
+			int x = 0, y = 0, cx = 0, cy = 0;
+			if (json_object_has_member(jsp, "is_topmost"))
+			{
+				is_topmost = jsp["is_topmost"];
+			}
+			if (use_pos)
+			{
+				auto& ref = jsp["position"];
+				x = ref[0]; y = ref[1];
+			}
+			if (use_size)
+			{
+				auto& ref = jsp["size"];
+				cx = ref[0]; cy = ref[1];
+			}
+			if (0 == set_wnd_pos(hWnd, x, y, cx, cy, is_topmost, use_pos, use_size))
+			{
+				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
+			}
+			if (json_object_has_member(jsp, "icon"))
+			{
+				HICON config_icon;
+				if (get_hicon(utf8_to_wstring(jsp["icon"]).c_str(), 0, config_icon, true))
+				{
+					set_wnd_icon(hWnd, config_icon);
+				}
+			}
 		}
-
 	}
 	return hWnd;
 }
@@ -1685,12 +1717,15 @@ void create_process(
 	}
 	if (json_object_has_member(jsp, "size"))
 	{
-		si.dwFlags |= STARTF_USESIZE;
-		si.dwXSize = jsp["size"][0];
-		si.dwYSize = jsp["size"][1];
-		LOGMESSAGE(L"%s size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
+		int width = jsp["size"][0], height = jsp["size"][1];
+		if (width || height)
+		{
+			si.dwFlags |= STARTF_USESIZE;
+			si.dwXSize = width;
+			si.dwYSize = height;
+			LOGMESSAGE(L"%s size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
+		}
 	}
-
 
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));

@@ -79,15 +79,28 @@ inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
 	return GetWindowRect(hWnd, &rect);
 }
 
-inline BOOL set_wnd_pos(HWND hWnd, RECT& rect)
+inline BOOL set_wnd_pos(
+	HWND hWnd,
+	int x, int y, int cx, int cy
+	, bool top_most
+	, bool use_pos
+	, bool use_size
+	//, bool is_show
+)
 {
+	UINT uFlags = SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS;
+	if (!use_pos)uFlags |= SWP_NOMOVE;
+	if (!use_size)uFlags |= SWP_NOSIZE;
+	//if (is_show)uFlags |= SWP_SHOWWINDOW;
+	//else uFlags |= SWP_HIDEWINDOW;
+	if (!top_most)uFlags |= SWP_NOZORDER;
 	return SetWindowPos(hWnd,
-		HWND_NOTOPMOST,
-		rect.left,
-		rect.top,
-		rect.right - rect.left,
-		rect.bottom - rect.top,
-		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+		top_most ? HWND_TOPMOST : HWND_NOTOPMOST,
+		x,
+		y,
+		cx,
+		cy,
+		uFlags
 	);
 }
 
@@ -95,6 +108,7 @@ inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
 {
 	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
+	SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 	return TRUE;
 }
 
