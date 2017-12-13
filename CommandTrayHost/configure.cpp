@@ -1268,6 +1268,18 @@ void start_all(HANDLE ghJob, bool force)
 	{
 		flush_cache();
 	}
+	/*// not even work here, hwnd is still 0.
+	if (!force)
+	{
+		for (auto& i : global_stat["configs"])
+		{
+			if (json_object_has_member(i, "start_show") && i["start_show"] == true)
+			{
+				LOGMESSAGE(L"%s start all false==force\n", utf8_to_wstring(i["name"]).c_str());
+				show_hide_toggle(i);
+			}
+		}
+	}*/
 }
 
 wchar_t const* level_menu_symbol_p;
@@ -1658,12 +1670,12 @@ void create_process(
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	//si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
-	si.wShowWindow = SW_HIDE;
+	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
+	//si.wShowWindow = SW_HIDE;
 	si.lpTitle = nameStr;
 
 	// GetWindowRect result is always a offset by random.
-	/*//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
+	//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
 	if (json_object_has_member(jsp, "position"))
 	{
 		si.dwFlags |= STARTF_USEPOSITION;
@@ -1677,7 +1689,7 @@ void create_process(
 		si.dwXSize = jsp["size"][0];
 		si.dwYSize = jsp["size"][1];
 		LOGMESSAGE(L"%s size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
-	}*/
+	}
 
 
 	PROCESS_INFORMATION pi;
@@ -1718,7 +1730,7 @@ void create_process(
 		//{
 		//	set_wnd_alpha(hWnd, jsp["alpha"]);
 		//}
-		if (start_show) show_hide_toggle(jsp);
+		//if (start_show) show_hide_toggle(jsp); //hwnd is still 0
 		update_cache_enabled_start_show(true, start_show);
 
 		if (ghJob)
@@ -1760,8 +1772,8 @@ void create_process(
 			shExInfo.lpFile = file_wstring.c_str();       // Application to start    
 			shExInfo.lpParameters = parameters_wstring.c_str();                  // Additional parameters
 			shExInfo.lpDirectory = working_directory;
-			//shExInfo.nShow = start_show ? SW_SHOW : SW_HIDE;
-			shExInfo.nShow = SW_HIDE;
+			shExInfo.nShow = start_show ? SW_SHOW : SW_HIDE;
+			//shExInfo.nShow = SW_HIDE;
 			shExInfo.hInstApp = NULL;
 
 			if (ShellExecuteEx(&shExInfo))
@@ -1780,12 +1792,13 @@ void create_process(
 					{
 						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
 						jsp["pid"] = static_cast<int64_t>(pid);
-						size_t num_of_windows = 0;
-						HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
-						jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
-						jsp["win_num"] = static_cast<int>(num_of_windows);
+						// current hWnd is always 0. We should call GetHwnd later
+						//size_t num_of_windows = 0;
+						//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+						//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+						//jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
-						if (start_show) show_hide_toggle(jsp);
+						//if (start_show) show_hide_toggle(jsp);
 						update_cache_enabled_start_show(true, start_show);
 						/*if (enable_cache)
 						{
@@ -2051,7 +2064,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{
