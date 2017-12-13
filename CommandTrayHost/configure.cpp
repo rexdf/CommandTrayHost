@@ -745,6 +745,76 @@ int configure_reader(std::string& out)
 
 		}
 
+		//sync cache to configs, override setting in config.json
+		if (enable_cache && is_cache_valid)
+		{
+			if (!disable_cache_position || !disable_cache_size || !disable_cache_enabled || !disable_cache_show)
+			{
+				auto& d_configs_ref = d["configs"];
+				auto& cache_configs_ref = d["cache"]["configs"];
+				for (int i = 0; i < cnt; i++)
+				{
+					auto& cache_config_i_ref = cache_configs_ref[i];
+					if (cache_config_i_ref["valid"].GetBool())
+					{
+						auto& d_config_i_ref = d_configs_ref[i];
+						if (!disable_cache_position)
+						{
+							Value v_l(cache_config_i_ref["left"], allocator);
+							Value v_t(cache_config_i_ref["top"], allocator);
+							if (!d_config_i_ref.HasMember("position"))
+							{
+								Value v;
+								v.SetArray();
+								v.PushBack(v_l, allocator);
+								v.PushBack(v_t, allocator);
+								d_config_i_ref.AddMember("position", v, allocator);
+							}
+							else
+							{
+								auto& position_ref = d_config_i_ref["position"];
+								position_ref.Clear();
+								position_ref.PushBack(v_l, allocator);
+								position_ref.PushBack(v_t, allocator);
+							}
+						}
+						if (!disable_cache_size)
+						{
+							int w = cache_config_i_ref["right"].GetInt() - cache_config_i_ref["left"].GetInt();
+							int h = cache_config_i_ref["bottom"].GetInt() - cache_config_i_ref["top"].GetInt();
+							Value v_w(w);
+							Value v_h(h);
+							if (!d_config_i_ref.HasMember("size"))
+							{
+								Value v;
+								v.SetArray();
+								v.PushBack(v_w, allocator);
+								v.PushBack(v_h, allocator);
+								d_config_i_ref.AddMember("size", v, allocator);
+							}
+							else
+							{
+								auto& position_ref = d_config_i_ref["size"];
+								position_ref.Clear();
+								position_ref.PushBack(v_w, allocator);
+								position_ref.PushBack(v_h, allocator);
+							}
+						}
+						if (!disable_cache_enabled)
+						{
+							Value v(cache_config_i_ref["enabled"], allocator);
+							d_config_i_ref["enabled"] = v;
+						}
+						if (!disable_cache_show)
+						{
+							Value v(cache_config_i_ref["start_show"], allocator);
+							d_config_i_ref["start_show"] = v;
+						}
+					}
+				}
+			}
+		}
+
 		//generate cache
 		if (enable_cache && false == is_cache_valid)
 		{
