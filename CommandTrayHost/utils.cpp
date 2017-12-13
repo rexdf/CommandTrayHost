@@ -259,10 +259,16 @@ HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 
 	ProcessWindowsInfo Info(GetProcessId(hProcess));
 
-	EnumWindows((WNDENUMPROC)EnumProcessWindowsProc,
-		reinterpret_cast<LPARAM>(&Info));
+	if (!EnumWindows((WNDENUMPROC)EnumProcessWindowsProc, reinterpret_cast<LPARAM>(&Info)))
+	{
+		LOGMESSAGE(L"GetLastError:0x%x\n", GetLastError());
+	}
 	num_of_windows = Info.Windows.size();
-	LOGMESSAGE(L"num_of_windows size: %d\n", num_of_windows);
+	LOGMESSAGE(L"hProcess:0x%x GetProcessId:%d num_of_windows size: %d\n",
+		reinterpret_cast<int64_t>(hProcess),
+		GetProcessId(hProcess),
+		num_of_windows
+	);
 	if (num_of_windows > 0)
 	{
 		return Info.Windows[idx];

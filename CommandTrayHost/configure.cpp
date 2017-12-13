@@ -1218,9 +1218,23 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	return 1;
 }
 
-inline HWND get_hwnd_from_json(const nlohmann::json& jsp)
+inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 {
-	return reinterpret_cast<HWND>(jsp["hwnd"].get<int64_t>());
+	HWND hWnd = reinterpret_cast<HWND>(jsp["hwnd"].get<int64_t>());
+	if (0 == hWnd)
+	{
+		size_t num_of_windows = 0;
+		HANDLE hProcess = reinterpret_cast<HANDLE>(jsp["handle"].get<int64_t>());
+		hWnd = GetHwnd(hProcess, num_of_windows);
+		jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+		jsp["win_num"] = static_cast<int>(num_of_windows);
+		if (json_object_has_member(jsp, "alpha"))
+		{
+			set_wnd_alpha(hWnd, jsp["alpha"]);
+		}
+
+	}
+	return hWnd;
 }
 
 void start_all(HANDLE ghJob, bool force)
@@ -1350,6 +1364,8 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 				itm["running"] = false;
 				itm["handle"] = 0;
 				itm["pid"] = -1;
+				itm["hwnd"] = 0;
+				itm["win_num"] = 0;
 				itm["show"] = false;
 				itm["enabled"] = false;
 
@@ -1692,15 +1708,16 @@ void create_process(
 	{
 		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
 		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
-		size_t num_of_windows = 0;
-		HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
-		jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
-		jsp["win_num"] = static_cast<int>(num_of_windows);
+		// current hWnd is always 0. We should call GetHwnd later
+		//size_t num_of_windows = 0;
+		//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+		//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+		//jsp["win_num"] = static_cast<int>(num_of_windows);
 		jsp["running"] = true;
-		if (json_object_has_member(jsp, "alpha"))
-		{
-			set_wnd_alpha(hWnd, jsp["alpha"]);
-		}
+		//if (json_object_has_member(jsp, "alpha"))
+		//{
+		//	set_wnd_alpha(hWnd, jsp["alpha"]);
+		//}
 		if (start_show) show_hide_toggle(jsp);
 		update_cache_enabled_start_show(true, start_show);
 
@@ -1843,8 +1860,8 @@ void hideshow_all(bool is_hideall)
 			bool is_show = itm["show"];
 			if (is_show == is_hideall)
 			{
-				HWND hWnd = reinterpret_cast<HWND>(itm["hwnd"].get<int64_t>());
-				if (hWnd)
+				HWND hWnd = get_hwnd_from_json(itm);
+				if (hWnd != 0)
 				{
 					ShowWindow(hWnd, is_show ? SW_HIDE : SW_SHOW);
 					update_cache_position_size(hWnd);
@@ -1906,8 +1923,12 @@ void show_hide_toggle(nlohmann::json& jsp)
 {
 	bool is_show = jsp["show"];
 #ifdef _DEBUG
-	int num_of_windows = jsp["win_num"].get<int>();
-	LOGMESSAGE(L"%s num_of_windows size: %d\n", utf8_to_wstring(jsp["name"]).c_str(), num_of_windows);
+	size_t num_of_windows = static_cast<size_t>(jsp["win_num"].get<int>());
+	LOGMESSAGE(L"%s num_of_windows size: %d GetHwnd:0xx\n",
+		utf8_to_wstring(jsp["name"]).c_str(),
+		num_of_windows
+		//,GetHwnd(reinterpret_cast<HANDLE>(jsp["handle"].get<int64_t>()),num_of_windows)
+	);
 #endif
 	HWND hWnd = get_hwnd_from_json(jsp);;
 
@@ -2030,7 +2051,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{
