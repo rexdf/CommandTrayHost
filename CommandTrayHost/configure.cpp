@@ -1318,7 +1318,7 @@ void start_all(HANDLE ghJob, bool force)
 		//cmd_idx++;
 		cache_config_cursor++;
 	}
-	if (false == is_cache_valid)
+	if (enable_cache && false == is_cache_valid)
 	{
 		flush_cache();
 	}
@@ -1965,7 +1965,7 @@ void hideshow_all(bool is_hideall)
 		}
 		cache_config_cursor++;
 	}
-	if (false == is_cache_valid)
+	if (enable_cache && false == is_cache_valid)
 	{
 		flush_cache();
 	}
@@ -1983,7 +1983,7 @@ void left_click_toggle()
 			show_hide_toggle(jsps[idx]);
 		}
 	}
-	if (false == is_cache_valid)
+	if (enable_cache && false == is_cache_valid)
 	{
 		flush_cache();
 	}
@@ -2093,7 +2093,7 @@ void kill_all(bool is_exit/* = true*/)
 			}
 		}
 	}
-	if (false == is_cache_valid)
+	if (enable_cache &&  false == is_cache_valid)
 	{
 		flush_cache();
 	}
