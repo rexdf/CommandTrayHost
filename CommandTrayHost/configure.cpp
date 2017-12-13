@@ -48,6 +48,11 @@ bool initial_configure()
      * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
      *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
      * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响
+     * 6. 如果改成 "enable_cache": true ，则会将用户操作缓存到command_tray_host.cache
+     *    可以缓存用户的启用停用状态，窗口的位置大小，以及显示隐藏状态。作用下次启动
+     *    CommandTrayHost.exe时，会忽略config.json里面的值。
+     *    缓存失效判定是与config.json之间的时间戳先后对比。缓存写入磁盘只会在全部操作(全部启用
+     *    全部禁用，全部显示隐藏)，以及退出时发现缓存发生有效更改时才会写入磁盘。
      */
     "configs": [
         {
@@ -73,6 +78,9 @@ bool initial_configure()
                 0.5, // STARTUPINFO.dwXSize,  同上
                 0.5 // STARTUPINFO.dwYSize, 同上
             ],
+            "icon": "", // 命令行窗口的图标
+            "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
+            "topmost": false, // 命令行窗口置顶
         },
         {
             "name": "cmd例子2",
@@ -127,6 +135,11 @@ bool initial_configure()
         0,
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
+    "enable_cache": false, // 启用cache
+    "disable_cache_position": false, // 禁止缓存窗口位置
+    "disable_cache_size": false, // 禁止缓存窗口大小
+    "disable_cache_enabled": true, // 禁止缓存启用禁用状态
+    "disable_cache_show": true, // 禁止缓存显示隐藏状态
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -134,6 +147,7 @@ bool initial_configure()
      * 3. You can use Notepad from "Start Menu\Programs\Accessories" and save with Unicode or UTF-8.
      * 4. Relative path base is where CommandTrayHost.exe is started.
      * 5. CommandTrayHost.exe in different directories can run at same time.
+     * 6. set "enable_cache": true to enable cache.
      */
     "configs": [
         {
@@ -157,6 +171,9 @@ bool initial_configure()
                 0.5, // STARTUPINFO.dwXSize, as above
                 0.5 // STARTUPINFO.dwYSize, as above
             ],
+            "icon": "", // icon for console windows
+            "alpha": 170, // alpha for console windows, 0-255 integer
+            "topmost": false, // topmost for console windows
         },
         {
             "name": "cmd example 2",
@@ -211,6 +228,11 @@ bool initial_configure()
         0,
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
+    "enable_cache": false,
+    "disable_cache_position": false, // enable cache console windows position
+    "disable_cache_size": false, // enable cache console windows size
+    "disable_cache_enabled": true, // disable cache enable/disable status of command line
+    "disable_cache_show": true, // disable cache hide/show status
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -435,7 +457,7 @@ int configure_reader(std::string& out)
 		{ "start_show", iBoolType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
 		{ "alpha", iIntType, true,  lambda_check_alpha},
-		{ "is_topmost", iBoolType, true, nullptr },
+		{ "topmost", iBoolType, true, nullptr },
 		{ "position", iArrayType , true, lambda_check_position_size },
 		{ "size", iArrayType, true, lambda_check_position_size },
 		{ "ignore_all", iBoolType, true, nullptr }
@@ -502,7 +524,7 @@ int configure_reader(std::string& out)
 			config_items,
 			ARRAYSIZE(config_items),
 			L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
-			L" is_topmost(bool) icon(str) alpha(0-255)",
+			L" topmost(bool) icon(str) alpha(0-255)",
 			L" Type Error",
 			NULL,
 			true)
@@ -520,7 +542,7 @@ int configure_reader(std::string& out)
 					utf8_to_wstring(m["name"].GetString()) //other error
 					: L"configs name error "; // name field error
 				MessageBox(NULL, (wname + L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
-					L" is_topmost(bool) icon(str) alpha(0-255)"
+					L" topmost(bool) icon(str) alpha(0-255)"
 					L" has a type error!").c_str(),
 					(utf8_to_wstring(cur_Foo.name) + L"Type Error").c_str(),
 					MB_OK | MB_ICONERROR
@@ -1234,13 +1256,13 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 			{
 				set_wnd_alpha(hWnd, jsp["alpha"]);
 			}
-			bool is_topmost = false;
+			bool topmost = false;
 			bool use_pos = json_object_has_member(jsp, "position");
 			bool use_size = json_object_has_member(jsp, "size");
 			int x = 0, y = 0, cx = 0, cy = 0;
-			if (json_object_has_member(jsp, "is_topmost"))
+			if (json_object_has_member(jsp, "topmost"))
 			{
-				is_topmost = jsp["is_topmost"];
+				topmost = jsp["topmost"];
 			}
 			if (use_pos)
 			{
@@ -1252,7 +1274,7 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 				auto& ref = jsp["size"];
 				cx = ref[0]; cy = ref[1];
 			}
-			if (0 == set_wnd_pos(hWnd, x, y, cx, cy, is_topmost, use_pos, use_size))
+			if (0 == set_wnd_pos(hWnd, x, y, cx, cy, topmost, use_pos, use_size))
 			{
 				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
 			}
