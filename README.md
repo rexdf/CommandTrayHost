@@ -167,8 +167,8 @@ example configure
         "hide_show_all": "Alt+Win+Shit+H",
         "left_click": "Alt+Win+Shit+L",
         "elevate": "Alt+Win+Shit+A",
-        "add_alpha":Alt+Win+Shit++",  // work for any program of current user
-        "minus_alpha":Alt+Win+Shit+-",
+        "add_alpha": "Alt+Win+Shit++",  // work for any program of current user
+        "minus_alpha": "Alt+Win+Shit+-",
     },
 }
 ```
