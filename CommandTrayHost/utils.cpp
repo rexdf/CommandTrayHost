@@ -186,7 +186,7 @@ bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
 		if (show_error)
 		{
 			MessageBox(NULL,
-				msg,
+				(msg + std::wstring(L" string parse error!")).c_str(),
 				L"Hotkey String Error",
 				MB_OK | MB_ICONWARNING
 			);
@@ -196,11 +196,12 @@ bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
 	LOGMESSAGE(L"%s hWnd:0x%x id:0x%x fsModifiers:0x%x vk:0x%x\n", msg, hWnd, id, fsModifiers, vk);
 	if (0 == RegisterHotKey(hWnd, id, fsModifiers, vk))
 	{
-		LOGMESSAGE(L"error_code:0x%x\n", GetLastError());
+		errno_t error_code = GetLastError();
+		LOGMESSAGE(L"error_code:0x%x\n", error_code);
 		if (show_error)
 		{
 			MessageBox(NULL,
-				msg,
+				(msg + (L"\n Error code:" + std::to_wstring(error_code))).c_str(),
 				L"Hotkey Register HotKey Error",
 				MB_OK | MB_ICONWARNING
 			);

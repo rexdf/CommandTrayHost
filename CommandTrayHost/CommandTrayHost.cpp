@@ -1063,6 +1063,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE <= nID && nID <= WM_APP_END)
 		{
+			LOGMESSAGE(L"nId:0x%x\n", nID);
 			SendMessage(hWnd, WM_COMMAND, nID, NULL);
 		}
 		else if (WM_HOTKEY_ADD_ALPHA <= nID && nID <= WM_HOTKEY_TOPMOST)

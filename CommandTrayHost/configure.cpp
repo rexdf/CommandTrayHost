@@ -57,7 +57,7 @@ bool initial_configure()
      *    CommandTrayHost.exe时，会忽略config.json里面的值。
      *    缓存失效判定是与config.json之间的时间戳先后对比。缓存写入磁盘只会在全部操作(全部启用
      *    全部禁用，全部显示隐藏)，以及退出时发现缓存发生有效更改时才会写入磁盘。
-     * 7. 全局热键格式： 可以使用的有alt win shit ctrl的任意个组合加上一个按键
+     * 7. 全局热键格式： 可以使用alt win shit ctrl的任意个组合加上一个按键
      *    加上的按键支持0-9的数字 A-Z的字母，其他特殊按钮，鼠标左右键，滚轮，甚至手柄按钮也是可以的.比如上方向键0x26
      *    键盘码参考这里 https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
      *    大小写无关，顺序无关，如果多个非修饰符的按钮，最后的那个按钮会起作用。
@@ -506,7 +506,7 @@ int configure_reader(std::string& out)
 	int config_hotkey_items_idx;
 
 	auto lambda_config_hotkey = [&cnt, &config_hotkey_items_idx](Value& val, PCSTR name)->bool {
-		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * config_hotkey_items_idx;
+		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
 		if (0 == config_hotkey_items_idx)
 		{
 			id += 1;
@@ -526,7 +526,7 @@ int configure_reader(std::string& out)
 		bool ret = registry_hotkey(
 			val[name].GetString(),
 			id,
-			(utf8_to_wstring(name) + L" hotkey setting error!").c_str()
+			(L"configs idx:" + std::to_wstring(cnt) + L" " + utf8_to_wstring(name) + L" hotkey setting error!").c_str()
 		);
 		LOGMESSAGE(L"%s config_hotkey_items_idx:%d ret:%d\n",
 			utf8_to_wstring(val[name].GetString()).c_str(),
@@ -953,7 +953,7 @@ int configure_reader(std::string& out)
 		}
 		else
 		{
-			
+
 		}
 
 		//sync cache to configs, override setting in config.json
