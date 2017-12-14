@@ -121,6 +121,8 @@ inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
 	return 0 == err;
 }
 
+bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error = true);
+
 #ifdef _DEBUG
 void ChangeIcon(const HICON);
 #endif

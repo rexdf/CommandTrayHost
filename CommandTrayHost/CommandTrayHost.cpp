@@ -13,24 +13,6 @@ extern WINBASEAPI HWND WINAPI GetConsoleWindow();
 extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 #endif
 
-#define NID_UID 123
-#define WM_TASKBARNOTIFY WM_USER+20
-#define WM_TASKBARNOTIFY_MENUITEM_SHOW (WM_USER + 21)
-#define WM_TASKBARNOTIFY_MENUITEM_HIDE (WM_USER + 22)
-#define WM_TASKBARNOTIFY_MENUITEM_RELOAD (WM_USER + 23)
-#define WM_TASKBARNOTIFY_MENUITEM_ABOUT (WM_USER + 24)
-#define WM_TASKBARNOTIFY_MENUITEM_EXIT (WM_USER + 25)
-#define WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE (WM_USER + 26)
-
-#define WM_TASKBARNOTIFY_MENUITEM_STARTUP (WM_USER + 10)
-#define WM_TASKBARNOTIFY_MENUITEM_OPENURL (WM_USER + 11)
-#define WM_TASKBARNOTIFY_MENUITEM_ELEVATE (WM_USER + 12)
-#define WM_TASKBARNOTIFY_MENUITEM_HIDEALL (WM_USER + 13)
-#define WM_TASKBARNOTIFY_MENUITEM_DISABLEALL (WM_USER + 14)
-#define WM_TASKBARNOTIFY_MENUITEM_ENABLEALL (WM_USER + 15)
-#define WM_TASKBARNOTIFY_MENUITEM_SHOWALL (WM_USER + 16)
-
-
 nlohmann::json global_stat;
 HANDLE ghJob;
 HANDLE ghMutex;
@@ -457,6 +439,7 @@ BOOL ShowPopupMenuJson3()
 	GetCursorPos(&pt);
 	TrackPopupMenu(vctHmenu[0], TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
 	PostMessage(hWnd, WM_NULL, 0, 0);
+	LOGMESSAGE(L"hWnd:0x%x\n", hWnd);
 
 	for (auto it : vctHmenu)
 	{
@@ -1058,6 +1041,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			LOGMESSAGE(L"%x Clicked\n", nID);
 		}
 		break;
+	case WM_HOTKEY:
+		//SendMessageCallback(hWnd,)
+		nID = LOWORD(wParam);
+		if (nID == WM_HOTKEY_LEFT_CLICK)
+		{
+			SendMessage(hWnd, WM_TASKBARNOTIFY, NULL, WM_LBUTTONUP);
+		}
+		else if (nID == WM_HOTKEY_RIGHT_CLICK)
+		{
+			SendMessage(hWnd, WM_TASKBARNOTIFY, NULL, WM_RBUTTONUP);
+		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
+		{
+			PostMessage(hConsole, WM_CLOSE, 0, 0);
+		}
+		else if (WM_TASKBARNOTIFY_MENUITEM_ELEVATE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_SHOWALL)
+		{
+			SendMessage(hWnd, WM_COMMAND, nID, NULL);
+		}
+		else if (WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE <= nID && nID <= WM_APP_END)
+		{
+			SendMessage(hWnd, WM_COMMAND, nID, NULL);
+		}
+		else if (WM_HOTKEY_ADD_ALPHA <= nID && nID <= WM_HOTKEY_TOPMOST)
+		{
+			HWND cur_hwnd = GetForegroundWindow();
+			if (nID == WM_HOTKEY_ADD_ALPHA)
+			{
+			}
+			else if (nID == WM_HOTKEY_MINUS_ALPHA)
+			{
+			}
+			else if (nID == WM_HOTKEY_TOPMOST)
+			{
+				set_wnd_pos(cur_hwnd, 0, 0, 0, 0, true, false, false);
+			}
+		}
+		else
+		{
+			LOGMESSAGE(L"unkown key pressed, id:%d=0x%x\n", nID, nID);
+		}
+
+		break;
 	case WM_CLOSE:
 		/*delete_lockfile();
 		kill_all(global_stat);
@@ -1154,6 +1180,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	makeSingleInstance3();
 	SetEenvironment();
 	ParseProxyList();
+
+	MyRegisterClass(hInstance);
+	if (!InitInstance(hInstance, SW_HIDE))
+	{
+		return FALSE;
+	}
+
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
 	if (NULL == init_global(ghJob, gHicon))
 	{
@@ -1162,11 +1195,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	}
 	check_admin(is_runas_admin);
 	initialize_local();
-	MyRegisterClass(hInstance);
-	if (!InitInstance(hInstance, SW_HIDE))
-	{
-		return FALSE;
-	}
+	//
 	start_all(ghJob);
 	CreateConsole();
 	ExecCmdline();

@@ -56,9 +56,10 @@ example configure
             // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             "hotkey": { // you don't nedd to set up all
-                "disable_enable": "Alt+Win+D", // disable/enable toggle
-                "hide_show": "Alt+Win+H", // hide/show toggle
-                "elevate": "Alt+Win+A", // elevate
+                "disable_enable": "Shift+Win+D", // disable/enable toggle
+                "hide_show": "Shift+Win+H", // hide/show toggle
+                "restart": "Shift+Win+R", // restart app
+                "elevate": "Shift+Win+A", // elevate
             },
         },
         {
@@ -166,16 +167,20 @@ example configure
     // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
-        "disable_all": "Alt+Win+Shit+D",
-        "enable_all": "Alt+Win+Shit+E",
-        "hide_show_all": "Alt+Win+Shit+H",
-        "left_click": "Alt+Win+Shit+L",
-        "elevate": "Alt+Win+Shit+A",
+        "disable_all": "Alt+Win+Shift+D",
+        "enable_all": "Alt Win + Shift +E",
+        "hide_all": "Alt+WIN+Shift+H",
+        "show_all": "AlT Win Shift    s",
+        "elevate": "Alt+wIn+Shift+A",
+        "exit": "Alt+Win+Shift+X",
+        "left_click": "Alt+Win+Shift+L",
+        "right_click": "Alt+Win+Shift+R",
         "add_alpha": "Alt+Win+Ctrl++", // work for any program of current user
         "minus_alpha": "Alt+Win+Ctrl+-", // as above
         "topmost": "Alt+Win+Ctrl+T", // as above
     },
     "repeat_mod_hotkey": false,
+    "enable_hotkey": true,
 }
 ```
 

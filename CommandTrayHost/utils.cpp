@@ -81,7 +81,7 @@ char ascii_toupper_char(const char c) {
 
 int str_icmp(const char*s1, const char*s2)
 {
-	for (int i = 0; s1[i] != 0 && s2[i] != 0; i++)
+	for (int i = 0; /*s1[i] != 0 &&*/ s2[i] != 0; i++)
 	{
 		char c1 = ascii_toupper_char(s1[i]), c2 = ascii_toupper_char(s2[i]);
 		if (c1 != c2)return c1 - c2;
@@ -170,6 +170,42 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 		{
 			return false;
 		}
+	}
+	return true;
+}
+
+bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
+{
+	extern HWND hWnd;
+	//LOGMESSAGE(L"hWnd:0x%x\n", hWnd);
+	//assert(hWnd);
+	UINT fsModifiers, vk;
+	bool success = get_vk_from_string(s, fsModifiers, vk);
+	if (!success)
+	{
+		if (show_error)
+		{
+			MessageBox(NULL,
+				msg,
+				L"Hotkey String Error",
+				MB_OK | MB_ICONWARNING
+			);
+		}
+		return false;
+	}
+	LOGMESSAGE(L"%s hWnd:0x%x id:0x%x fsModifiers:0x%x vk:0x%x\n", msg, hWnd, id, fsModifiers, vk);
+	if (0 == RegisterHotKey(hWnd, id, fsModifiers, vk))
+	{
+		LOGMESSAGE(L"error_code:0x%x\n", GetLastError());
+		if (show_error)
+		{
+			MessageBox(NULL,
+				msg,
+				L"Hotkey Register HotKey Error",
+				MB_OK | MB_ICONWARNING
+			);
+		}
+		return false;
 	}
 	return true;
 }

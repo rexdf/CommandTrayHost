@@ -3,6 +3,7 @@
 #include "configure.h"
 #include "language.h"
 #include "cache.h"
+#include "CommandTrayHost.h"
 
 
 extern bool is_runas_admin;
@@ -21,6 +22,8 @@ extern bool disable_cache_enabled;
 extern bool disable_cache_show;
 extern bool is_cache_valid;
 extern int cache_config_cursor;
+
+extern bool repeat_mod_hotkey;
 
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
@@ -251,9 +254,9 @@ bool check_rapidjson_object(
 	rapidjson::Value& d,
 	RapidJsonObjectChecker check_arrys[],
 	int array_size,
-	PWSTR msg_text,
-	PWSTR msg_title,
-	PWSTR msg_text_header,
+	PCWSTR msg_text,
+	PCWSTR msg_title,
+	PCWSTR msg_text_header,
 	bool use_name
 )
 {
@@ -441,6 +444,50 @@ int configure_reader(std::string& out)
 		LOGMESSAGE(L"lambda! getint:%d", v);
 		return v >= 0 && v < 256;
 	};
+
+	int cnt = 0;
+
+	int config_hotkey_items_idx;
+
+	auto lambda_config_hotkey = [&cnt, &config_hotkey_items_idx](Value& val, PCSTR name)->bool {
+		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * config_hotkey_items_idx;
+		if (0 == config_hotkey_items_idx)
+		{
+			id += 1;
+		}
+		else if (1 == config_hotkey_items_idx)
+		{
+			id += 3;
+		}
+		else if (2 == config_hotkey_items_idx)
+		{
+			id += 4;
+		}
+		else if (3 == config_hotkey_items_idx)
+		{
+			id += 5;
+		}
+		bool ret = registry_hotkey(
+			val[name].GetString(),
+			id,
+			(utf8_to_wstring(name) + L" hotkey setting error!").c_str()
+		);
+		LOGMESSAGE(L"%s config_hotkey_items_idx:%d ret:%d\n",
+			utf8_to_wstring(val[name].GetString()).c_str(),
+			config_hotkey_items_idx,
+			ret
+		);
+		config_hotkey_items_idx++;
+		return true;
+	};
+
+	RapidJsonObjectChecker config_hotkey_items[] = {
+		{ "hide_show", iStringType, true, lambda_config_hotkey },
+		{ "disable_enable", iStringType, true, lambda_config_hotkey }, //must be zero index in config_items[]
+		{ "restart", iStringType, true, lambda_config_hotkey },
+		{ "elevate", iStringType, true, lambda_config_hotkey },
+	};
+
 	//type check for items in configs
 	RapidJsonObjectChecker config_items[] = {
 		//must exist
@@ -460,10 +507,19 @@ int configure_reader(std::string& out)
 		{ "topmost", iBoolType, true, nullptr },
 		{ "position", iArrayType , true, lambda_check_position_size },
 		{ "size", iArrayType, true, lambda_check_position_size },
-		{ "ignore_all", iBoolType, true, nullptr }
+		{ "ignore_all", iBoolType, true, nullptr },
+		{ "hotkey", iObjectType, true, [&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
+			config_hotkey_items_idx = 0;
+			return check_rapidjson_object(
+				val[name],
+				config_hotkey_items,
+				ARRAYSIZE(config_hotkey_items),
+				L": One of configs section hotkey setting error!",
+				(utf8_to_wstring(name) + L"Hotkey Type Error").c_str(),
+				(utf8_to_wstring(val["name"].GetString()) + L" config section").c_str(),
+				false);
+		} },
 	};
-
-	int cnt = 0;
 
 	for (auto& m : d["configs"].GetArray())
 	{
@@ -569,12 +625,53 @@ int configure_reader(std::string& out)
 		cnt++;
 	}
 
+	int global_hotkey_idx = -1;
+	auto lambda_global_hotkey = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
+		global_hotkey_idx++;
+		const int global_hotkey_idxs[] = {
+			WM_TASKBARNOTIFY_MENUITEM_DISABLEALL ,
+			WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
+			WM_TASKBARNOTIFY_MENUITEM_HIDEALL,
+			WM_TASKBARNOTIFY_MENUITEM_SHOWALL,
+			WM_TASKBARNOTIFY_MENUITEM_ELEVATE,
+			WM_TASKBARNOTIFY_MENUITEM_EXIT,
+			WM_HOTKEY_LEFT_CLICK, //left click
+			WM_HOTKEY_RIGHT_CLICK, //right click
+			WM_HOTKEY_ADD_ALPHA,
+			WM_HOTKEY_MINUS_ALPHA,
+			WM_HOTKEY_TOPMOST,
+		};
+		bool ret = registry_hotkey(
+			val[name].GetString(),
+			global_hotkey_idxs[global_hotkey_idx],
+			(utf8_to_wstring(name) + L" hotkey setting error!").c_str()
+		);
+		LOGMESSAGE(L"%s ret:%d\n", utf8_to_wstring(val[name].GetString()).c_str(), ret);
+		return true;
+	};
+
+	RapidJsonObjectChecker global_hotkey_itms[] = {
+		{ "disable_all", iStringType, true, lambda_global_hotkey },
+		{ "enable_all", iStringType, true, lambda_global_hotkey },
+		{ "hide_all", iStringType, true, lambda_global_hotkey },
+		{ "show_all", iStringType, true, lambda_global_hotkey },
+		{ "elevate", iStringType, true, lambda_global_hotkey },
+		{ "exit", iStringType, true, lambda_global_hotkey },
+		{ "left_click", iStringType, true, lambda_global_hotkey },
+		{ "right_click", iStringType, true, lambda_global_hotkey },
+		{ "add_alpha", iStringType, true, lambda_global_hotkey },
+		{ "minus_alpha", iStringType, true, lambda_global_hotkey },
+		{ "topmost", iStringType, true, lambda_global_hotkey },
+	};
+
 	int cache_cnt = 0;
 	enable_cache = true;
 	disable_cache_position = false;
 	disable_cache_size = false;
 	disable_cache_enabled = true;
 	disable_cache_show = true;
+	repeat_mod_hotkey = false;
+	bool enable_hotkey = true;
 	// type check for global optional items
 	RapidJsonObjectChecker global_optional_items[] = {
 		//global setting
@@ -594,7 +691,7 @@ int configure_reader(std::string& out)
 		{ "groups_menu_symbol", iStringType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
 		{ "lang", iStringType, true, lambda_remove_empty_string },
-		{ "left_click", iArrayType, true, [cnt](const Value& val,PCSTR name)->bool {
+		{ "left_click", iArrayType, true, [&cnt](const Value& val,PCSTR name)->bool {
 			int left_click_cnt = 0;
 			for (auto& m : val[name].GetArray())
 			{
@@ -622,7 +719,7 @@ int configure_reader(std::string& out)
 			}
 			return true;
 		} },
-		{ "icon_size", iIntType, true, [cnt](const Value& val,PCSTR name)->bool {
+		{ "icon_size", iIntType, true, [](const Value& val,PCSTR name)->bool {
 			int icon_size = val[name].GetInt();
 			if (icon_size != 256 && icon_size != 32 && icon_size != 16)
 			{
@@ -656,6 +753,32 @@ int configure_reader(std::string& out)
 			cache_cnt++;
 			return true;
 		} },
+
+		{ "repeat_mod_hotkey", iBoolType, true, [](const Value& val,PCSTR name)->bool {
+			repeat_mod_hotkey = val[name].GetBool();
+			return true;
+		}},
+		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
+			enable_hotkey = val[name].GetBool();
+			return true;
+		} },
+		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms](Value& val,PCSTR name)->bool {
+			if (enable_hotkey)
+			{
+				return check_rapidjson_object(
+					val[name],
+					global_hotkey_itms,
+					ARRAYSIZE(global_hotkey_itms),
+					L": One of global section hotkey setting error!",
+					L"Hotkey Type Error",
+					L"global section",
+					false);
+			}
+			else
+			{
+				return true;
+			}
+		}},
 	};
 
 	if (false == check_rapidjson_object(

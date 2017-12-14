@@ -58,10 +58,11 @@ Windows命令行程序系统托盘管理工具
             // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
             // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
-            "hotkey": { // 下面三个并不需要都出现，可以只设置部分
-                "disable_enable": "Alt+Win+D", // 启用/禁用切换
-                "hide_show": "Alt+Win+H", // 显示/隐藏切换
-                "elevate": "Alt+Win+A", // 以管理员运行本程序
+            "hotkey": { // 下面并不需要都出现，可以只设置部分
+                "disable_enable": "Shift+Win+D", // 启用/禁用切换
+                "hide_show": "Shift+Win+H", // 显示/隐藏切换
+                "restart": "Shift+Win+R", // 重启程序
+                "elevate": "Shift+Win+A", // 以管理员运行本程序
             },
         },
         {
@@ -169,16 +170,20 @@ Windows命令行程序系统托盘管理工具
     // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
-        "disable_all": "Alt+Win+Shit+D",
-        "enable_all": "Alt+Win+Shit+E",
-        "hide_show_all": "Alt+Win+Shit+H",
-        "left_click": "Alt+Win+Shit+L",
-        "elevate": "Alt+Win+Shit+A",
+        "disable_all": "Alt+Win+Shift+D",
+        "enable_all": "Alt Win + Shift +E",
+        "hide_all": "Alt+WIN+Shift+H",
+        "show_all": "AlT Win Shift    s",
+        "elevate": "Alt+wIn+Shift+a",
+        "exit": "Alt+Win+Shift+X",
+        "left_click": "Alt+Win+Shift+L",
+        "right_click": "Alt+Win+Shift+R",
         "add_alpha": "Alt+Win+Ctrl++", // 修改当前窗口透明度，不仅仅只对本程序托管的有效，其他程序也行
         "minus_alpha": "Alt+Win+Ctrl+-",
         "topmost": "Alt+Win+Ctrl+T", // 同样对任意程序都有效
     },
     "repeat_mod_hotkey": false,
+    "enable_hotkey": true,
 }
 ```
 
