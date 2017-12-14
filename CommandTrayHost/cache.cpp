@@ -8,11 +8,14 @@ extern nlohmann::json global_stat;
 extern int number_of_configs;
 
 extern bool enable_cache;
+extern bool conform_cache_expire;
 extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
 extern bool is_cache_valid;
+
+//extern BOOL isZHCN;
 
 bool is_cache_not_expired()
 {
@@ -55,7 +58,27 @@ bool is_cache_not_expired()
 	if (CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0)
 	{
 		LOGMESSAGE(L"json_write_timestamp is later than cache_write_timestamp\n");
-		RETURN_AND_CLOSE_CREATEFILE(false);
+		bool return_val = false;
+		if (conform_cache_expire)
+		{
+			bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
+			const int result = MessageBox(NULL,
+				isZHCN ? L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
+				L"\n\n选择 否 则保留缓存数据"
+				:
+				/*translate_w2w*/(L"You just edit config.json!\n\nChoose Yes to clear"
+					L" cache\n\nChoose No to keep expired cache.")/*.c_str()*/,
+				isZHCN ? L"是否要清空缓存？" : /*translate_w2w*/(L"Clear cache?")/*.c_str()*/,
+				MB_YESNO
+			);
+			if (IDNO == result)
+			{
+				std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
+				o_cache << std::endl;
+				return_val = true;
+			}
+		}
+		RETURN_AND_CLOSE_CREATEFILE(return_val);
 	}
 	RETURN_AND_CLOSE_CREATEFILE(true);
 }

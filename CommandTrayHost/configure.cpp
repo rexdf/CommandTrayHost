@@ -16,6 +16,7 @@ extern int number_of_configs;
 extern HANDLE ghMutex;
 
 extern bool enable_cache;
+extern bool conform_cache_expire;
 extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
@@ -56,6 +57,11 @@ bool initial_configure()
      *    CommandTrayHost.exe时，会忽略config.json里面的值。
      *    缓存失效判定是与config.json之间的时间戳先后对比。缓存写入磁盘只会在全部操作(全部启用
      *    全部禁用，全部显示隐藏)，以及退出时发现缓存发生有效更改时才会写入磁盘。
+     * 7. 全局热键格式： 可以使用的有alt win shit ctrl的任意个组合加上一个按键
+     *    加上的按键支持0-9的数字 A-Z的字母，其他特殊按钮，鼠标左右键，滚轮，甚至手柄按钮也是可以的.比如上方向键0x26
+     *    键盘码参考这里 https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+     *    大小写无关，顺序无关，如果多个非修饰符的按钮，最后的那个按钮会起作用。
+     *    热键注册失败，一般是与系统中存在的冲突了，换一个再试
      */
     "configs": [
         {
@@ -84,6 +90,13 @@ bool initial_configure()
             "icon": "", // 命令行窗口的图标
             "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
             "topmost": false, // 命令行窗口置顶
+            // 具体说明参考顶部注释7
+            "hotkey": { // 下面并不需要都出现，可以只设置部分
+                "disable_enable": "Shift+Win+D", // 启用/禁用切换
+                "hide_show": "Shift+Win+H", // 显示/隐藏切换
+                "restart": "Shift+Win+R", // 重启程序
+                "elevate": "Shift+Win+A", // 以管理员运行本程序
+            },
         },
         {
             "name": "cmd例子2",
@@ -138,11 +151,28 @@ bool initial_configure()
         0,
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
-    "enable_cache": false, // 启用cache
+    "enable_cache": true, // 启用cache
+    "conform_cache_expire": true, // 是否弹窗让用户确认是否清空缓存
     "disable_cache_position": false, // 禁止缓存窗口位置
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
     "disable_cache_show": true, // 禁止缓存显示隐藏状态
+    // 具体说明参考顶部注释7
+    "hotkey": { // 并不要求全部配置，可以只配置需要的
+        "disable_all": "Alt+Win+Shift+D",
+        "enable_all": "Alt Win + Shift +E", // 空格或者+号都可以
+        "hide_all": "Alt+WIN+Shift+H", // 大小写无关的
+        "show_all": "AlT Win Shift    s", // 甚至这种都可以识别
+        "elevate": "Alt+wIn+Shift+a",
+        "exit": "Alt+Win+Shift+X", // 但是比较推荐这种格式
+        "left_click": "Alt+Win+Shift+L",
+        "right_click": "Alt+Win+Shift+R",
+        "add_alpha": "Alt+Ctrl+Win+0x26", // 修改当前激活的任何窗口(要可能)透明度，不仅仅只对本程序托管的有效，其他程序也行
+        "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里0x26 0x28代表方向键上下键 Ctrl+Win+↑↓
+        "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
+    },
+    "repeat_mod_hotkey": false,
+    "enable_hotkey": true,
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -151,6 +181,8 @@ bool initial_configure()
      * 4. Relative path base is where CommandTrayHost.exe is started.
      * 5. CommandTrayHost.exe in different directories can run at same time.
      * 6. set "enable_cache": true to enable cache.
+     * 7. alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
+     *    https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
      */
     "configs": [
         {
@@ -177,6 +209,13 @@ bool initial_configure()
             "icon": "", // icon for console windows
             "alpha": 170, // alpha for console windows, 0-255 integer
             "topmost": false, // topmost for console windows
+            // see comment 7 on top
+            "hotkey": { // you don't nedd to set up all
+                "disable_enable": "Shift+Win+D", // disable/enable toggle
+                "hide_show": "Shift+Win+H", // hide/show toggle
+                "restart": "Shift+Win+R", // restart app
+                "elevate": "Shift+Win+A", // elevate
+            },
         },
         {
             "name": "cmd example 2",
@@ -231,11 +270,28 @@ bool initial_configure()
         0,
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
-    "enable_cache": false,
+    "enable_cache": true,
+    "conform_cache_expire": true,
     "disable_cache_position": false, // enable cache console windows position
     "disable_cache_size": false, // enable cache console windows size
     "disable_cache_enabled": true, // disable cache enable/disable status of command line
     "disable_cache_show": true, // disable cache hide/show status
+    // see comment 7 on top
+    "hotkey": {
+        "disable_all": "Alt+Win+Shift+D",
+        "enable_all": "Alt Win + Shift +E",
+        "hide_all": "Alt+WIN+Shift+H",
+        "show_all": "AlT Win Shift    s", // this can work too
+        "elevate": "Alt+wIn+Shift+A",
+        "exit": "Alt+Win+Shift+X",
+        "left_click": "Alt+Win+Shift+L",
+        "right_click": "Alt+Win+Shift+R",
+        "add_alpha": "Alt+Ctrl+Win+0x26", // work for any program of current user
+        "minus_alpha": "Alt+Ctrl+Win+0x28", // Ctrl+Win+↑↓
+        "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
+    },
+    "repeat_mod_hotkey": false,
+    "enable_hotkey": true,
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -666,6 +722,7 @@ int configure_reader(std::string& out)
 
 	int cache_cnt = 0;
 	enable_cache = true;
+	conform_cache_expire = true;
 	disable_cache_position = false;
 	disable_cache_size = false;
 	disable_cache_enabled = true;
@@ -730,6 +787,11 @@ int configure_reader(std::string& out)
 
 		{ "enable_cache", iBoolType, true,[&cache_cnt](const Value& val,PCSTR name)->bool {
 			enable_cache = val[name].GetBool();
+			cache_cnt++;
+			return true;
+		} },
+		{ "conform_cache_expire", iBoolType, true,[&cache_cnt](const Value& val,PCSTR name)->bool {
+			conform_cache_expire = val[name].GetBool();
 			cache_cnt++;
 			return true;
 		} },
@@ -888,6 +950,10 @@ int configure_reader(std::string& out)
 				fclose(fp_cache);
 			}
 
+		}
+		else
+		{
+			
 		}
 
 		//sync cache to configs, override setting in config.json

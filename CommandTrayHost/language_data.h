@@ -31,7 +31,9 @@ const nlohmann::json language_data = u8R"json({
         "Disable": "Disable",
         "Restart Command": "Restart Command",
         "Run As Administrator": "Run As Administrator",
-        "CommandTrayHost Started，Click Tray icon to Hide/Show Console.": "CommandTrayHost Started，Click Tray icon to Hide/Show Console."
+        "CommandTrayHost Started，Click Tray icon to Hide/Show Console.": "CommandTrayHost Started，Click Tray icon to Hide/Show Console.",
+        "Clear cache?": "Clear cache?",
+        "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.": "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache."
     }
 })json"_json;
 

@@ -160,6 +160,7 @@ example configure
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost
     "enable_cache": true,
+    "conform_cache_expire": true,
     "disable_cache_position": false,
     "disable_cache_size": false,
     "disable_cache_enabled": true,
@@ -175,9 +176,9 @@ example configure
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
-        "add_alpha": "Alt+Win+Ctrl++", // work for any program of current user
-        "minus_alpha": "Alt+Win+Ctrl+-", // as above
-        "topmost": "Alt+Win+Ctrl+T", // as above
+        "add_alpha": "Ctrl+Win+0x26", // work for any program of current user
+        "minus_alpha": "Ctrl+Win+0x28", // Ctrl+Win+↑↓
+        "topmost": "Ctrl+Win+T", // as above work for any program,toggle topmost status
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,

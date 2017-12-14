@@ -162,6 +162,7 @@ Windows命令行程序系统托盘管理工具
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
     "enable_cache": true, // 启用cache
+    "conform_cache_expire": true, // 是否弹窗让用户确认是否清空缓存
     "disable_cache_position": false, // 禁止缓存窗口位置
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
@@ -178,9 +179,9 @@ Windows命令行程序系统托盘管理工具
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
-        "add_alpha": "Alt+Win+Ctrl++", // 修改当前窗口透明度，不仅仅只对本程序托管的有效，其他程序也行
-        "minus_alpha": "Alt+Win+Ctrl+-",
-        "topmost": "Alt+Win+Ctrl+T", // 同样对任意程序都有效
+        "add_alpha": "Ctrl+Win+0x26", // 修改当前激活的任何窗口(要可能)透明度，不仅仅只对本程序托管的有效，其他程序也行
+        "minus_alpha": "Ctrl+Win+0x28", //上面上箭头 这里下箭头 Ctrl+Win+↑↓
+        "topmost": "Ctrl+Winl+T", // 同样对任意程序都有效
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,

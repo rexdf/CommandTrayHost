@@ -23,6 +23,7 @@ bool is_runas_admin;
 bool enable_groups_menu;
 bool enable_left_click;
 bool enable_cache;
+bool conform_cache_expire;
 bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
@@ -1067,16 +1068,52 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (WM_HOTKEY_ADD_ALPHA <= nID && nID <= WM_HOTKEY_TOPMOST)
 		{
 			HWND cur_hwnd = GetForegroundWindow();
-			if (nID == WM_HOTKEY_ADD_ALPHA)
+			LOGMESSAGE(L"cur_hwnd:0x%x\n", cur_hwnd);
+			if (cur_hwnd)
 			{
+				DWORD dwExStyle = GetWindowLong(cur_hwnd, GWL_EXSTYLE);
+				LOGMESSAGE(L"dwExStyle:0x%x\n", dwExStyle);
+				if (nID == WM_HOTKEY_ADD_ALPHA || nID == WM_HOTKEY_MINUS_ALPHA) {
+					BYTE alpha;
+					SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
+					if (GetLayeredWindowAttributes(cur_hwnd, NULL, &alpha, NULL))
+					{
+						if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;
+						if (nID == WM_HOTKEY_ADD_ALPHA)
+						{
+							if (alpha < 250)alpha += 5;
+							else alpha = 255;
+						}
+						else if (nID == WM_HOTKEY_MINUS_ALPHA)
+						{
+							if (alpha > 5)alpha -= 5;
+							else alpha = 0;
+						}
+						LOGMESSAGE(L"alpha:%d\n", alpha);
+						//SetLayeredWindowAttributes(hWnd, 0, alpha, LWA_ALPHA);
+						set_wnd_alpha(cur_hwnd, alpha);
+					}
+				}
+				else if (nID == WM_HOTKEY_TOPMOST)
+				{
+					LOGMESSAGE(L"(dwExStyle & WS_EX_TOPMOST):%d\n", (dwExStyle & WS_EX_TOPMOST));
+					//set_wnd_pos(cur_hwnd, 0, 0, 0, 0, WS_EX_TOPMOST != (dwExStyle & WS_EX_TOPMOST), false, false);
+					/*SetWindowLong(
+						cur_hwnd,
+						GWL_EXSTYLE,
+						(dwExStyle & WS_EX_TOPMOST) ? (dwExStyle - WS_EX_LAYERED) : (dwExStyle | WS_EX_LAYERED)
+					);*/
+					SetWindowPos(cur_hwnd,
+						(dwExStyle & WS_EX_TOPMOST) ? HWND_NOTOPMOST : HWND_TOPMOST,
+						0,
+						0,
+						0,
+						0,
+						SWP_NOSIZE | SWP_NOMOVE | SWP_ASYNCWINDOWPOS
+					);
+				}
 			}
-			else if (nID == WM_HOTKEY_MINUS_ALPHA)
-			{
-			}
-			else if (nID == WM_HOTKEY_TOPMOST)
-			{
-				set_wnd_pos(cur_hwnd, 0, 0, 0, 0, true, false, false);
-			}
+
 		}
 		else
 		{
