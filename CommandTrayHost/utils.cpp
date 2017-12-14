@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "utils.hpp"
 
+#ifdef _DEBUG
 std::wstring get_utf16(const std::string& str, int codepage)
 {
 	if (str.empty()) return std::wstring();
@@ -26,7 +27,7 @@ std::wstring s2ws(const std::string& s)
 	delete[] buf;
 	return r;
 }
-
+#endif
 
 // convert UTF-8 string to wstring
 std::wstring utf8_to_wstring(const std::string& str)
@@ -278,6 +279,8 @@ HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 		return NULL;
 	}
 }
+
+
 
 #ifdef _DEBUG
 //only work for current process

@@ -166,7 +166,10 @@ Windows命令行程序系统托盘管理工具
         "disable_all": "Alt+Win+Shit+D",
         "enable_all": "Alt+Win+Shit+E",
         "hide_show_all": "Alt+Win+Shit+H",
+        "left_click": "Alt+Win+Shit+L",
         "elevate": "Alt+Win+Shit+A",
+        "add_alpha":Alt+Win+Shit++",  // 修改当前窗口透明度，不仅仅只对本程序托管的有效，其他程序也行
+        "minus_alpha":Alt+Win+Shit+-",
     },
 }
 ```
