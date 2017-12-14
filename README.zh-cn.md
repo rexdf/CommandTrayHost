@@ -55,6 +55,9 @@ Windows命令行程序系统托盘管理工具
             "icon": "", // 命令行窗口的图标
             "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
             "topmost": false, // 命令行窗口置顶
+            // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
+            // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             "hotkey": { // 下面三个并不需要都出现，可以只设置部分
                 "disable_enable": "Alt+Win+D", // 启用/禁用切换
                 "hide_show": "Alt+Win+H", // 显示/隐藏切换
@@ -157,20 +160,25 @@ Windows命令行程序系统托盘管理工具
         0,
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
-    "enable_cache": true, //启用cache
-    "disable_cache_position": false, //禁止缓存窗口位置
-    "disable_cache_size": false, //禁止缓存窗口大小
-    "disable_cache_enabled": true, //禁止缓存启用禁用状态
-    "disable_cache_show": true, //禁止缓存显示隐藏状态
+    "enable_cache": true, // 启用cache
+    "disable_cache_position": false, // 禁止缓存窗口位置
+    "disable_cache_size": false, // 禁止缓存窗口大小
+    "disable_cache_enabled": true, // 禁止缓存启用禁用状态
+    "disable_cache_show": true, // 禁止缓存显示隐藏状态
+    // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
+    // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
         "disable_all": "Alt+Win+Shit+D",
         "enable_all": "Alt+Win+Shit+E",
         "hide_show_all": "Alt+Win+Shit+H",
         "left_click": "Alt+Win+Shit+L",
         "elevate": "Alt+Win+Shit+A",
-        "add_alpha": "Alt+Win+Shit++",  // 修改当前窗口透明度，不仅仅只对本程序托管的有效，其他程序也行
-        "minus_alpha": "Alt+Win+Shit+-",
+        "add_alpha": "Alt+Win+Ctrl++", // 修改当前窗口透明度，不仅仅只对本程序托管的有效，其他程序也行
+        "minus_alpha": "Alt+Win+Ctrl+-",
+        "topmost": "Alt+Win+Ctrl+T", // 同样对任意程序都有效
     },
+    "repeat_mod_hotkey": false,
 }
 ```
 

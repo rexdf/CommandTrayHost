@@ -70,6 +70,110 @@ bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...
 	return true;
 }
 
+//https://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+//char ascii_tolower_char(const char c) {
+//	return ('A' <= c && c <= 'Z') ? c ^ 0x20 : c;    // ^ autovectorizes to PXOR: runs on more ports than paddb
+//}
+
+char ascii_toupper_char(const char c) {
+	return ('a' <= c && c <= 'z') ? c ^ 0x20 : c;    // ^ autovectorizes to PXOR: runs on more ports than paddb
+}
+
+int str_icmp(const char*s1, const char*s2)
+{
+	for (int i = 0; s1[i] != 0 && s2[i] != 0; i++)
+	{
+		char c1 = ascii_toupper_char(s1[i]), c2 = ascii_toupper_char(s2[i]);
+		if (c1 != c2)return c1 - c2;
+	}
+	return 0;
+}
+
+bool is_valid_vk(char c)
+{
+	if ('0' <= c && c <= '9')return true;
+	if ('A' <= c && c <= 'Z')return true;
+	return false;
+}
+
+bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
+{
+	if (!s)return false;
+	extern bool repeat_mod_hotkey;
+	fsModifiers = repeat_mod_hotkey ? NULL : MOD_NOREPEAT;
+	int idx = 0;
+	while (s[idx])
+	{
+		if (0 == str_icmp(s + idx, "alt"))
+		{
+			idx += 3;
+			fsModifiers |= MOD_ALT;
+		}
+		else if (0 == str_icmp(s + idx, "ctrl"))
+		{
+			idx += 4;
+			fsModifiers |= MOD_CONTROL;
+		}
+		else if (0 == str_icmp(s + idx, "shift"))
+		{
+			idx += 5;
+			fsModifiers |= MOD_SHIFT;
+		}
+		else if (0 == str_icmp(s + idx, "win"))
+		{
+			idx += 3;
+			fsModifiers |= MOD_WIN;
+		}
+		//https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+		else if (0 == str_icmp(s + idx, "0x")) // support 0x12
+		{
+			idx += 2;
+			char c1 = s[idx], c2 = s[idx + 1];
+			if ('0' <= c1 && c1 <= '9' && '0' <= c2 && c2 <= '9')
+			{
+				vk = 0x10 * (c1 - '0') + (c2 - '0');
+				idx += 2;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (0 == str_icmp(s + idx, "++"))
+		{
+			vk = VK_OEM_PLUS;
+			idx += 2;
+		}
+		else if (0 == str_icmp(s + idx, "+-"))
+		{
+			vk = VK_OEM_MINUS;
+			idx += 2;
+		}
+		else if (s[idx] == ' ' && s[idx + 1] == 0x0)
+		{
+			if (idx && s[idx - 1] == '+')
+			{
+				vk = VK_SPACE;
+			}
+			idx++;
+		}
+		else if (is_valid_vk(ascii_toupper_char(s[idx])))
+		{
+			vk = ascii_toupper_char(s[idx]);
+			idx++;
+		}
+		else if (s[idx] == ' ' || s[idx] == '+')
+		{
+			idx++;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 // https://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
 int64_t FileSize(PCWSTR name)
 {

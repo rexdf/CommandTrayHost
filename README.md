@@ -53,6 +53,8 @@ example configure
             "icon": "", // icon for console windows
             "alpha": 170, // alpha for console windows, 0-255 integer
             "topmost": false, // topmost for console windows
+            // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
+            // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             "hotkey": { // you don't nedd to set up all
                 "disable_enable": "Alt+Win+D", // disable/enable toggle
                 "hide_show": "Alt+Win+H", // hide/show toggle
@@ -161,15 +163,19 @@ example configure
     "disable_cache_size": false,
     "disable_cache_enabled": true,
     "disable_cache_show": true,
+    // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
         "disable_all": "Alt+Win+Shit+D",
         "enable_all": "Alt+Win+Shit+E",
         "hide_show_all": "Alt+Win+Shit+H",
         "left_click": "Alt+Win+Shit+L",
         "elevate": "Alt+Win+Shit+A",
-        "add_alpha": "Alt+Win+Shit++",  // work for any program of current user
-        "minus_alpha": "Alt+Win+Shit+-",
+        "add_alpha": "Alt+Win+Ctrl++", // work for any program of current user
+        "minus_alpha": "Alt+Win+Ctrl+-", // as above
+        "topmost": "Alt+Win+Ctrl+T", // as above
     },
+    "repeat_mod_hotkey": false,
 }
 ```
 

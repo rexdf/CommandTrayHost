@@ -52,6 +52,8 @@ bool is_cache_valid;
 int cache_config_cursor;
 int number_of_configs;
 
+bool repeat_mod_hotkey;
+
 TCHAR szPathToExe[MAX_PATH * 10];
 TCHAR szPathToExeToken[MAX_PATH * 10];
 
