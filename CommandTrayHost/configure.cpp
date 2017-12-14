@@ -2034,6 +2034,17 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 			ShowWindow(hWnd, SW_SHOW);
 			SetForegroundWindow(hWnd);
+			bool topmost = false;
+#ifdef _DEBUG
+			try_read_optional_json(jsp, topmost, "topmost", __FUNCTION__);
+#else
+			try_read_optional_json(jsp, topmost, "topmost");
+#endif
+
+			if (topmost && 0 == set_wnd_pos(hWnd, 0, 0, 0, 0, topmost, false, false))
+			{
+				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
+			}
 			jsp["show"] = true;
 			if (enable_cache && false == disable_cache_show)
 			{
@@ -2093,7 +2104,7 @@ void kill_all(bool is_exit/* = true*/)
 			}
 		}
 	}
-	if (enable_cache &&  false == is_cache_valid)
+	if (enable_cache && false == is_cache_valid)
 	{
 		flush_cache();
 	}
