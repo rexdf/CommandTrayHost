@@ -421,6 +421,17 @@ HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 	}
 }
 
+#ifdef _DEBUG
+//https://stackoverflow.com/questions/5058543/sendmessagecallback-usage-example
+VOID CALLBACK IconSendAsyncProc(__in  HWND hwnd,
+	__in  UINT uMsg,
+	__in  ULONG_PTR dwData,  // This is *the* 0
+	__in  LRESULT lResult)   // The result from the callee
+{
+	// Whohoo! It called me back!
+	DestroyIcon(reinterpret_cast<HICON>(dwData));
+}
+#endif
 
 
 #ifdef _DEBUG

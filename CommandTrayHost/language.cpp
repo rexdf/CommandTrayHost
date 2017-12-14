@@ -5,7 +5,7 @@
 #include "utils.hpp"
 
 
-extern nlohmann::json global_stat;
+//extern nlohmann::json global_stat;
 extern CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 extern BOOL isZHCN, isENUS;
 
@@ -112,14 +112,16 @@ void update_locale_name_by_system()
 #endif
 }
 
-void initialize_local()
+void initialize_local(bool has_lang, PCSTR lang_str)
 {
 	LOGMESSAGE(L"GetUserDefaultUILanguage: 0x%x GetSystemDefaultUILanguage: 0x%0x GetACP: %d\n",
 		GetUserDefaultUILanguage(),
 		GetSystemDefaultUILanguage(),
 		GetACP()
 	);
-	if (false == json_object_has_member(global_stat, "lang") || global_stat["lang"] == "auto")
+	LOGMESSAGE(L"has_lang:%d lang_str:%S\n", has_lang, lang_str);
+	//if (false == json_object_has_member(global_stat, "lang") || global_stat["lang"] == "auto")
+	if (false == has_lang || 0 == strcmp(lang_str, "auto"))
 	{
 		update_locale_name_by_system();
 		update_locale_name_by_alias();
@@ -127,10 +129,11 @@ void initialize_local()
 	}
 	else
 	{
-		assert(json_object_has_member(global_stat, "lang"));
+		//assert(json_object_has_member(global_stat, "lang"));
+		assert(lang_str);
 		//if (json_object_has_member(global_stat, "lang"))  // it must be sure
 		{
-			std::string local = global_stat["lang"];
+			std::string local = lang_str;
 			// strcpy_s(locale_name, LOCALE_NAME_MAX_LENGTH, local.c_str());
 			if (FAILED(StringCchCopyA(locale_name, ARRAYSIZE(locale_name), local.c_str())))
 			{

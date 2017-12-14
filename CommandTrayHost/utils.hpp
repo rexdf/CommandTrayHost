@@ -112,10 +112,18 @@ inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
 	return TRUE;
 }
 
+#ifdef _DEBUG
+VOID CALLBACK IconSendAsyncProc(__in  HWND hwnd,
+	__in  UINT uMsg,
+	__in  ULONG_PTR dwData,
+	__in  LRESULT lResult);
+#endif
+
 inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
 {
 	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	//SendMessageCallback(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon, IconSendAsyncProc, reinterpret_cast<ULONG_PTR>(hIcon));
 	errno_t err = GetLastError();
 	LOGMESSAGE(L"SendMessage error_code:0x%x\n", err);
 	return 0 == err;

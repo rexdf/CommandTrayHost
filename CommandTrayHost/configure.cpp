@@ -504,6 +504,7 @@ int configure_reader(std::string& out)
 	int cnt = 0;
 
 	int config_hotkey_items_idx;
+	bool enable_hotkey = true;
 
 	auto lambda_config_hotkey = [&cnt, &config_hotkey_items_idx](Value& val, PCSTR name)->bool {
 		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
@@ -564,20 +565,24 @@ int configure_reader(std::string& out)
 		{ "position", iArrayType , true, lambda_check_position_size },
 		{ "size", iArrayType, true, lambda_check_position_size },
 		{ "ignore_all", iBoolType, true, nullptr },
-		{ "hotkey", iObjectType, true, [&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
-			config_hotkey_items_idx = 0;
-			return check_rapidjson_object(
-				val[name],
-				config_hotkey_items,
-				ARRAYSIZE(config_hotkey_items),
-				L": One of configs section hotkey setting error!",
-				(utf8_to_wstring(name) + L"Hotkey Type Error").c_str(),
-				(utf8_to_wstring(val["name"].GetString()) + L" config section").c_str(),
-				false);
+		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
+			if (enable_hotkey)
+			{
+				config_hotkey_items_idx = 0;
+				return check_rapidjson_object(
+					val[name],
+					config_hotkey_items,
+					ARRAYSIZE(config_hotkey_items),
+					L": One of configs section hotkey setting error!",
+					(utf8_to_wstring(name) + L"Hotkey Type Error").c_str(),
+					(utf8_to_wstring(val["name"].GetString()) + L" config section").c_str(),
+					false);
+			}
+			return true;
 		} },
 	};
 
-	for (auto& m : d["configs"].GetArray())
+	/*for (auto& m : d["configs"].GetArray())
 	{
 
 #ifdef _DEBUG
@@ -646,7 +651,7 @@ int configure_reader(std::string& out)
 		}
 
 		cnt++;
-	}
+	}*/
 
 	int global_hotkey_idx = -1;
 	auto lambda_global_hotkey = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
@@ -695,10 +700,95 @@ int configure_reader(std::string& out)
 	disable_cache_enabled = true;
 	disable_cache_show = true;
 	repeat_mod_hotkey = false;
-	bool enable_hotkey = true;
+
 	// type check for global optional items
 	RapidJsonObjectChecker global_optional_items[] = {
-		//global setting
+		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
+			enable_hotkey = val[name].GetBool();
+			return true;
+		} },
+		{ "lang", iStringType, true, lambda_remove_empty_string },
+		{ "global", iTrueType, false, [](Value& val, PCSTR name)->bool { // place hold for execute some code
+			bool has_lang = val.HasMember("lang");
+			initialize_local(has_lang, has_lang ? val["lang"].GetString() : NULL);
+			return true;
+		}},
+		{"configs", iArrayType, false, [&cnt,&config_items](Value& val,PCSTR name)->bool
+		{
+			for (auto& m : val[name].GetArray())
+			{
+
+#ifdef _DEBUG
+				StringBuffer sb;
+				Writer<StringBuffer> writer(sb);
+				m.Accept(writer);
+				std::string ss = sb.GetString();
+				LOGMESSAGE(L"Type of member %s is %S\n",
+					//ss.c_str(),
+					utf8_to_wstring(ss).c_str(),
+					kTypeNames[m.GetType()]);
+				//LOGMESSAGE(L"Type of member %S is %S\n",
+				//m.GetString(), kTypeNames[m.GetType()]);
+#endif
+				//assert
+				{
+					assert(m.IsObject());
+
+					assert(m.HasMember("name"));
+					assert(m["name"].IsString());
+
+					assert(m.HasMember("path"));
+					assert(m["path"].IsString());
+
+					assert(m.HasMember("cmd"));
+					assert(m["cmd"].IsString());
+
+					assert(m.HasMember("working_directory"));
+					assert(m["working_directory"].IsString());
+
+					assert(m.HasMember("addition_env_path"));
+					assert(m["addition_env_path"].IsString());
+
+					assert(m.HasMember("use_builtin_console"));
+					assert(m["use_builtin_console"].IsBool());
+
+					assert(m.HasMember("is_gui"));
+					assert(m["is_gui"].IsBool());
+
+					assert(m.HasMember("enabled"));
+					assert(m["enabled"].IsBool());
+				}
+
+				if (!m.IsObject())
+				{
+					MessageBox(NULL, L"configs must be object",
+						L"config Type error",
+						MB_OK | MB_ICONERROR
+					);
+					return false;
+					//SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+				}
+
+				//check for config item
+				if (false == check_rapidjson_object(
+					m,
+					config_items,
+					ARRAYSIZE(config_items),
+					L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
+					L" topmost(bool) icon(str) alpha(0-255)",
+					L" Type Error",
+					NULL,
+					true)
+					)
+				{
+					//SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
+					return false;
+				}
+
+				cnt++;
+			}
+			return true;
+		}},
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "enable_groups", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			if (val[name].GetBool() && val.HasMember("groups"))
@@ -714,7 +804,6 @@ int configure_reader(std::string& out)
 		}},
 		{ "groups_menu_symbol", iStringType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
-		{ "lang", iStringType, true, lambda_remove_empty_string },
 		{ "left_click", iArrayType, true, [&cnt](const Value& val,PCSTR name)->bool {
 			int left_click_cnt = 0;
 			for (auto& m : val[name].GetArray())
@@ -787,10 +876,7 @@ int configure_reader(std::string& out)
 			repeat_mod_hotkey = val[name].GetBool();
 			return true;
 		}},
-		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
-			enable_hotkey = val[name].GetBool();
-			return true;
-		} },
+
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms](Value& val,PCSTR name)->bool {
 			if (enable_hotkey)
 			{

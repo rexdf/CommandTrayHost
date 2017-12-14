@@ -15,7 +15,7 @@ extern bool disable_cache_enabled;
 extern bool disable_cache_show;
 extern bool is_cache_valid;
 
-//extern BOOL isZHCN;
+extern BOOL isZHCN, isENUS;
 
 bool is_cache_not_expired()
 {
@@ -61,14 +61,15 @@ bool is_cache_not_expired()
 		bool return_val = false;
 		if (conform_cache_expire)
 		{
-			bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
+			//bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
+			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
 			const int result = MessageBox(NULL,
 				isZHCN ? L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
 				L"\n\n选择 否 则保留缓存数据"
 				:
-				/*translate_w2w*/(L"You just edit config.json!\n\nChoose Yes to clear"
-					L" cache\n\nChoose No to keep expired cache.")/*.c_str()*/,
-				isZHCN ? L"是否要清空缓存？" : /*translate_w2w*/(L"Clear cache?")/*.c_str()*/,
+				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
+					L" cache\n\nChoose No to keep expired cache.").c_str(),
+				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
 				MB_YESNO
 			);
 			if (IDNO == result)

@@ -1232,7 +1232,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return -1;
 	}
 	check_admin(is_runas_admin);
-	initialize_local();
+	//initialize_local();
 	//
 	start_all(ghJob);
 	CreateConsole();
