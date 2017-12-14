@@ -645,39 +645,6 @@ int configure_reader(std::string& out)
 			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 		}
 
-		/*for (int i = 0; i < ARRAYSIZE(config_items); i++)
-		{
-			Foo& cur_Foo = config_items[i];
-			if (!rapidjson_check_exist_type(m, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
-			{
-				std::wstring wname = i ?
-					utf8_to_wstring(m["name"].GetString()) //other error
-					: L"configs name error "; // name field error
-				MessageBox(NULL, (wname + L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
-					L" topmost(bool) icon(str) alpha(0-255)"
-					L" has a type error!").c_str(),
-					(utf8_to_wstring(cur_Foo.name) + L"Type Error").c_str(),
-					MB_OK | MB_ICONERROR
-				);
-				SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-			}
-		}*/
-
-		/*//position update to integer
-		for (int i = 0; i < ARRAYSIZE(size_postion_strs); i++)
-		{
-			PCSTR cur_name_str = size_postion_strs[i];
-			if (m.HasMember(cur_name_str))
-			{
-				auto& ref = m[cur_name_str];
-				double v1 = ref[0].GetDouble(), v2 = ref[1].GetDouble();
-				if (v1 <= 1)v1 *= screen_full_ints[0];
-				if (v2 <= 1)v2 *= screen_full_ints[1];
-				ref.Clear();
-				ref.PushBack(static_cast<int>(v1), allocator);
-				ref.PushBack(static_cast<int>(v2), allocator);
-			}
-		}*/
 		cnt++;
 	}
 
