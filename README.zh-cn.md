@@ -55,6 +55,11 @@ Windows命令行程序系统托盘管理工具
             "icon": "", // 命令行窗口的图标
             "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
             "topmost": false, // 命令行窗口置顶
+            "hotkey": { // 下面三个并不需要都出现，可以只设置部分
+                "disable_enable": "Alt+Win+D", // 启用/禁用切换
+                "hide_show": "Alt+Win+H", // 显示/隐藏切换
+                "elevate": "Alt+Win+A", // 以管理员运行本程序
+            },
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -157,6 +162,12 @@ Windows命令行程序系统托盘管理工具
     "disable_cache_size": false, //禁止缓存窗口大小
     "disable_cache_enabled": true, //禁止缓存启用禁用状态
     "disable_cache_show": true, //禁止缓存显示隐藏状态
+    "hotkey": {
+        "disable_all": "Alt+Win+Shit+D",
+        "enable_all": "Alt+Win+Shit+E",
+        "hide_show_all": "Alt+Win+Shit+H",
+        "elevate": "Alt+Win+Shit+A",
+    },
 }
 ```
 

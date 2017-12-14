@@ -50,9 +50,14 @@ example configure
                 0.5, // STARTUPINFO.dwXSize, as above
                 0.5 // STARTUPINFO.dwYSize, as above
             ],
-            "icon": "",  // icon for console windows
+            "icon": "", // icon for console windows
             "alpha": 170, // alpha for console windows, 0-255 integer
             "topmost": false, // topmost for console windows
+            "hotkey": { // you don't nedd to set up all
+                "disable_enable": "Alt+Win+D", // disable/enable toggle
+                "hide_show": "Alt+Win+H", // hide/show toggle
+                "elevate": "Alt+Win+A", // elevate
+            },
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -156,6 +161,12 @@ example configure
     "disable_cache_size": false,
     "disable_cache_enabled": true,
     "disable_cache_show": true,
+    "hotkey": {
+        "disable_all": "Alt+Win+Shit+D",
+        "enable_all": "Alt+Win+Shit+E",
+        "hide_show_all": "Alt+Win+Shit+H",
+        "elevate": "Alt+Win+Shit+A",
+    },
 }
 ```
 
