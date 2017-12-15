@@ -13,10 +13,11 @@ A Command Line program systray for Windows
 - show/hide enable/disable daemon
 - multiple command line programs
 - when CommandTrayHost quits, all child processes will be killed.
-- Customize systray icon
+- Customize systray icon & console icon
 - i18n
 - Menu level limit is 40
 - Multiple instance of startup and running
+- Hotkey
 
 # Usage
 
