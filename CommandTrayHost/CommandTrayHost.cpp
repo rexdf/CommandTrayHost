@@ -1037,7 +1037,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				disable_enable_menu(js, ghJob, true);
 			}
-			if (false == is_cache_valid)
+			if (enable_cache && false == is_cache_valid)
 			{
 				flush_cache();
 			}
