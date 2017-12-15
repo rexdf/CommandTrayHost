@@ -1944,6 +1944,7 @@ void create_process(
 		if (is_runas_admin == false) //current is not administrator
 		{
 			require_admin = true;
+			start_show = true;
 		}
 	}
 
@@ -2026,7 +2027,7 @@ void create_process(
 					{
 						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
 						// prompt when no privileged to run a executable file with UAC requirement manifest
-						MessageBox(NULL, L"Could not AssignProcessToObject, You need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
+						MessageBox(NULL, L"Could not AssignProcessToObject, if not show up, You maybe need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
 					}
 					else
 					{
