@@ -1600,7 +1600,7 @@ void restart_all(HANDLE ghJob)
 #else
 				try_read_optional_json(i, require_admin, "require_admin");
 #endif
-				create_process(i, ghJob);
+				create_process(i, ghJob, require_admin);
 			}
 
 		}
