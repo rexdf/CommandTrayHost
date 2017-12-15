@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "utils.hpp"
+#include "cache.h"
 
 #ifdef _DEBUG
 std::wstring get_utf16(const std::string& str, int codepage)
@@ -420,6 +421,121 @@ HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 		return NULL;
 	}
 }
+
+#define TA_FAILED 0
+#define TA_SUCCESS_CLEAN 1
+#define TA_SUCCESS_KILL 2
+#define TA_SUCCESS_16 3
+
+BOOL CALLBACK TerminateAppEnum(HWND hwnd, LPARAM lParam)
+{
+	DWORD dwID;
+
+	GetWindowThreadProcessId(hwnd, &dwID);
+
+	if (dwID == (DWORD)lParam)
+	{
+		PostMessage(hwnd, WM_CLOSE, 0, 0);
+	}
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------
+DWORD WINAPI TerminateApp( DWORD dwPID, DWORD dwTimeout )
+
+Purpose:
+Shut down a 32-Bit Process (or 16-bit process under Windows 95)
+
+Parameters:
+dwPID
+Process ID of the process to shut down.
+
+dwTimeout
+Wait time in milliseconds before shutting down the process.
+
+Return Value:
+TA_FAILED - If the shutdown failed.
+TA_SUCCESS_CLEAN - If the process was shutdown using WM_CLOSE.
+TA_SUCCESS_KILL - if the process was shut down with
+TerminateProcess().
+NOTE:  See header for these defines.
+----------------------------------------------------------------*/
+DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
+{
+	HANDLE hProc;
+	DWORD dwRet;
+
+	// If we can't open the process with PROCESS_TERMINATE rights,
+	// then we give up immediately.
+	hProc = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE,
+		dwPID);
+
+	if (hProc == NULL)
+	{
+		return TA_FAILED;
+	}
+
+	// TerminateAppEnum() posts WM_CLOSE to all windows whose PID
+	// matches your process's.
+	EnumWindows((WNDENUMPROC)TerminateAppEnum, (LPARAM)dwPID);
+
+	// Wait on the handle. If it signals, great. If it times out,
+	// then you kill it.
+	if (WaitForSingleObject(hProc, dwTimeout) != WAIT_OBJECT_0)
+		dwRet = (TerminateProcess(hProc, 0) ? TA_SUCCESS_KILL : TA_FAILED);
+	else
+		dwRet = TA_SUCCESS_CLEAN;
+
+	CloseHandle(hProc);
+
+	return dwRet;
+}
+
+extern nlohmann::json global_stat;
+//extern int number_of_configs;
+
+extern bool enable_cache;
+//extern bool conform_cache_expire;
+//extern bool disable_cache_position;
+//extern bool disable_cache_size;
+extern bool disable_cache_enabled;
+//extern bool disable_cache_show;
+extern bool is_cache_valid;
+
+//extern BOOL isZHCN, isENUS;
+
+#ifdef _DEBUG
+void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cache)
+#else
+void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache)
+#endif
+{
+	assert(GetProcessId(hProcess) == pid);
+	if (GetProcessId(hProcess) == pid)
+	{
+		if (TA_FAILED == TerminateApp(pid, 200))
+		{
+			LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+				name, pid,
+				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+			TerminateProcess(hProcess, 0);
+			CloseHandle(hProcess);
+		}
+		else
+		{
+			LOGMESSAGE(L"TerminateApp %S pid: %d successed.  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+				name, pid,
+				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+		}
+	}
+
+	if (is_update_cache && enable_cache && !disable_cache_enabled)
+	{
+		update_cache("enabled", false, 2);
+	}
+}
+
 
 #ifdef _DEBUG
 //https://stackoverflow.com/questions/5058543/sendmessagecallback-usage-example

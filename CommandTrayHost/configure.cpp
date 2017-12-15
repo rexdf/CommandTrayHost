@@ -48,7 +48,7 @@ bool initial_configure()
      * 3. 所有的路径都可以是相对路径，比如 ..\..\icons\icon.ico这种形式。
      *    但是参考各有不同：
      *    cmd里面的子程序工作路径由working_directory指定
-     *    其他路径则是CommandTrayHost.exe所在
+     *    其他路径则是CommandTrayHost.exe所在目录指定
      * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
      *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
      * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响
@@ -156,13 +156,14 @@ bool initial_configure()
     "disable_cache_position": false, // 禁止缓存窗口位置
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
-    "disable_cache_show": true, // 禁止缓存显示隐藏状态
+    "disable_cache_show": false, // 禁止缓存显示隐藏状态
     // 具体说明参考顶部注释7
     "hotkey": { // 并不要求全部配置，可以只配置需要的
         "disable_all": "Alt+Win+Shift+D",
         "enable_all": "Alt Win + Shift +E", // 空格或者+号都可以
         "hide_all": "Alt+WIN+Shift+H", // 大小写无关的
         "show_all": "AlT Win Shift    s", // 甚至这种都可以识别
+        "restart_all": "ALT+Win+Shift+U",
         "elevate": "Alt+wIn+Shift+a",
         "exit": "Alt+Win+Shift+X", // 但是比较推荐这种格式
         "left_click": "Alt+Win+Shift+L",
@@ -275,13 +276,14 @@ bool initial_configure()
     "disable_cache_position": false, // enable cache console windows position
     "disable_cache_size": false, // enable cache console windows size
     "disable_cache_enabled": true, // disable cache enable/disable status of command line
-    "disable_cache_show": true, // disable cache hide/show status
+    "disable_cache_show": false, // disable cache hide/show status
     // see comment 7 on top
     "hotkey": {
         "disable_all": "Alt+Win+Shift+D",
         "enable_all": "Alt Win + Shift +E",
         "hide_all": "Alt+WIN+Shift+H",
         "show_all": "AlT Win Shift    s", // this can work too
+        "restart_all": "ALT+Win+Shift+U",
         "elevate": "Alt+wIn+Shift+A",
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
@@ -308,7 +310,7 @@ typedef struct {
 
 bool check_rapidjson_object(
 	rapidjson::Value& d,
-	RapidJsonObjectChecker check_arrys[],
+	const RapidJsonObjectChecker check_arrys[],
 	int array_size,
 	PCWSTR msg_text,
 	PCWSTR msg_title,
@@ -318,7 +320,7 @@ bool check_rapidjson_object(
 {
 	for (int i = 0; i < array_size; i++)
 	{
-		RapidJsonObjectChecker& cur_Foo = check_arrys[i];
+		const RapidJsonObjectChecker& cur_Foo = check_arrys[i];
 		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
 		{
 			std::wstring wname;
@@ -538,7 +540,7 @@ int configure_reader(std::string& out)
 		return true;
 	};
 
-	RapidJsonObjectChecker config_hotkey_items[] = {
+	const RapidJsonObjectChecker config_hotkey_items[] = {
 		{ "hide_show", iStringType, true, lambda_config_hotkey },
 		{ "disable_enable", iStringType, true, lambda_config_hotkey }, //must be zero index in config_items[]
 		{ "restart", iStringType, true, lambda_config_hotkey },
@@ -546,7 +548,7 @@ int configure_reader(std::string& out)
 	};
 
 	//type check for items in configs
-	RapidJsonObjectChecker config_items[] = {
+	const RapidJsonObjectChecker config_items[] = {
 		//must exist
 		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
 		{ "path", iStringType, false, nullptr },
@@ -661,6 +663,7 @@ int configure_reader(std::string& out)
 			WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
 			WM_TASKBARNOTIFY_MENUITEM_HIDEALL,
 			WM_TASKBARNOTIFY_MENUITEM_SHOWALL,
+			WM_TASKBARNOTIFY_MENUITEM_RESTARTALL,
 			WM_TASKBARNOTIFY_MENUITEM_ELEVATE,
 			WM_TASKBARNOTIFY_MENUITEM_EXIT,
 			WM_HOTKEY_LEFT_CLICK, //left click
@@ -678,11 +681,12 @@ int configure_reader(std::string& out)
 		return true;
 	};
 
-	RapidJsonObjectChecker global_hotkey_itms[] = {
+	const RapidJsonObjectChecker global_hotkey_itms[] = {
 		{ "disable_all", iStringType, true, lambda_global_hotkey },
 		{ "enable_all", iStringType, true, lambda_global_hotkey },
 		{ "hide_all", iStringType, true, lambda_global_hotkey },
 		{ "show_all", iStringType, true, lambda_global_hotkey },
+		{ "restart_all", iStringType, true, lambda_global_hotkey },
 		{ "elevate", iStringType, true, lambda_global_hotkey },
 		{ "exit", iStringType, true, lambda_global_hotkey },
 		{ "left_click", iStringType, true, lambda_global_hotkey },
@@ -698,11 +702,28 @@ int configure_reader(std::string& out)
 	disable_cache_position = false;
 	disable_cache_size = false;
 	disable_cache_enabled = true;
-	disable_cache_show = true;
+	disable_cache_show = false;
 	repeat_mod_hotkey = false;
 
+	int cache_option_pointer_idx = 0;
+	bool* const cache_option_value_pointer[] = {
+		&enable_cache,
+		&conform_cache_expire,
+		&disable_cache_position,
+		&disable_cache_size,
+		&disable_cache_enabled,
+		&disable_cache_show
+	};
+
+	auto lambda_cache_option = [&cache_cnt, &cache_option_value_pointer, &cache_option_pointer_idx](const Value& val, PCSTR name)->bool {
+		*cache_option_value_pointer[cache_option_pointer_idx] = val[name].GetBool();
+		cache_cnt++;
+		cache_option_pointer_idx++;
+		return true;
+	};
+
 	// type check for global optional items
-	RapidJsonObjectChecker global_optional_items[] = {
+	const RapidJsonObjectChecker global_optional_items[] = {
 		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
 			enable_hotkey = val[name].GetBool();
 			return true;
@@ -841,36 +862,12 @@ int configure_reader(std::string& out)
 			return true;
 		} },
 
-		{ "enable_cache", iBoolType, true,[&cache_cnt](const Value& val,PCSTR name)->bool {
-			enable_cache = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
-		{ "conform_cache_expire", iBoolType, true,[&cache_cnt](const Value& val,PCSTR name)->bool {
-			conform_cache_expire = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
-		{ "disable_cache_position", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
-			disable_cache_position = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
-		{ "disable_cache_size", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
-			disable_cache_size = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
-		{ "disable_cache_enabled", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
-			disable_cache_enabled = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
-		{ "disable_cache_show", iBoolType, true, [&cache_cnt](const Value& val,PCSTR name)->bool {
-			disable_cache_show = val[name].GetBool();
-			cache_cnt++;
-			return true;
-		} },
+		{ "enable_cache", iBoolType, true, lambda_cache_option },
+		{ "conform_cache_expire", iBoolType, true, lambda_cache_option },
+		{ "disable_cache_position", iBoolType, true, lambda_cache_option },
+		{ "disable_cache_size", iBoolType, true, lambda_cache_option },
+		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option },
+		{ "disable_cache_show", iBoolType, true, lambda_cache_option },
 
 		{ "repeat_mod_hotkey", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			repeat_mod_hotkey = val[name].GetBool();
@@ -1004,10 +1001,6 @@ int configure_reader(std::string& out)
 			}
 
 		}
-		else
-		{
-
-		}
 
 		//sync cache to configs, override setting in config.json
 		if (enable_cache && is_cache_valid)
@@ -1072,8 +1065,16 @@ int configure_reader(std::string& out)
 						}
 						if (!disable_cache_show && check_cache_valid(valid_flag, 3))
 						{
+							//assert(cache_config_i_ref.HasMember("start_show"));
 							Value v(cache_config_i_ref["start_show"], allocator);
-							d_config_i_ref["start_show"] = v;
+							if (d_config_i_ref.HasMember("start_show"))
+							{
+								d_config_i_ref["start_show"] = v;
+							}
+							else
+							{
+								d_config_i_ref.AddMember("start_show", v, allocator);
+							}
 						}
 					}
 				}
@@ -1578,6 +1579,40 @@ void start_all(HANDLE ghJob, bool force)
 	}*/
 }
 
+void restart_all(HANDLE ghJob)
+{
+	//int cmd_idx = 0;
+	cache_config_cursor = 0;
+	for (auto& i : global_stat["configs"])
+	{
+		if (i["running"] == true)
+		{
+			bool ignore_all = false, require_admin = false;
+#ifdef _DEBUG
+			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
+#else
+			try_read_optional_json(i, ignore_all, "ignore_all");
+#endif
+			if (false == ignore_all)
+			{
+#ifdef _DEBUG
+				try_read_optional_json(i, require_admin, "require_admin", __FUNCTION__);
+#else
+				try_read_optional_json(i, require_admin, "require_admin");
+#endif
+				create_process(i, ghJob);
+			}
+
+		}
+		//cmd_idx++;
+		cache_config_cursor++;
+	}
+	/*if (enable_cache && false == is_cache_valid)
+	{
+		flush_cache();
+	}*/
+}
+
 wchar_t const* level_menu_symbol_p;
 std::vector<HMENU>* vector_hemnu_p;
 
@@ -1618,6 +1653,7 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 		}
 	}
 }
+
 
 void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 {
@@ -1776,108 +1812,6 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 	//return vctHmenu;
 }
 
-#define TA_FAILED 0
-#define TA_SUCCESS_CLEAN 1
-#define TA_SUCCESS_KILL 2
-#define TA_SUCCESS_16 3
-
-BOOL CALLBACK TerminateAppEnum(HWND hwnd, LPARAM lParam)
-{
-	DWORD dwID;
-
-	GetWindowThreadProcessId(hwnd, &dwID);
-
-	if (dwID == (DWORD)lParam)
-	{
-		PostMessage(hwnd, WM_CLOSE, 0, 0);
-	}
-
-	return TRUE;
-}
-
-/*----------------------------------------------------------------
-DWORD WINAPI TerminateApp( DWORD dwPID, DWORD dwTimeout )
-
-Purpose:
-Shut down a 32-Bit Process (or 16-bit process under Windows 95)
-
-Parameters:
-dwPID
-Process ID of the process to shut down.
-
-dwTimeout
-Wait time in milliseconds before shutting down the process.
-
-Return Value:
-TA_FAILED - If the shutdown failed.
-TA_SUCCESS_CLEAN - If the process was shutdown using WM_CLOSE.
-TA_SUCCESS_KILL - if the process was shut down with
-TerminateProcess().
-NOTE:  See header for these defines.
-----------------------------------------------------------------*/
-DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
-{
-	HANDLE hProc;
-	DWORD dwRet;
-
-	// If we can't open the process with PROCESS_TERMINATE rights,
-	// then we give up immediately.
-	hProc = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE,
-		dwPID);
-
-	if (hProc == NULL)
-	{
-		return TA_FAILED;
-	}
-
-	// TerminateAppEnum() posts WM_CLOSE to all windows whose PID
-	// matches your process's.
-	EnumWindows((WNDENUMPROC)TerminateAppEnum, (LPARAM)dwPID);
-
-	// Wait on the handle. If it signals, great. If it times out,
-	// then you kill it.
-	if (WaitForSingleObject(hProc, dwTimeout) != WAIT_OBJECT_0)
-		dwRet = (TerminateProcess(hProc, 0) ? TA_SUCCESS_KILL : TA_FAILED);
-	else
-		dwRet = TA_SUCCESS_CLEAN;
-
-	CloseHandle(hProc);
-
-	return dwRet;
-}
-
-#ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name)
-#else
-void check_and_kill(HANDLE hProcess, DWORD pid)
-#endif
-{
-	assert(GetProcessId(hProcess) == pid);
-	if (GetProcessId(hProcess) == pid)
-	{
-		if (TA_FAILED == TerminateApp(pid, 200))
-		{
-			LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
-				name, pid,
-				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
-			TerminateProcess(hProcess, 0);
-			CloseHandle(hProcess);
-		}
-		else
-		{
-			LOGMESSAGE(L"TerminateApp %S pid: %d successed.  File = %S Line = %d Func=%S Date=%S Time=%S\n",
-				name, pid,
-				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
-		}
-	}
-
-	if (enable_cache && !disable_cache_enabled)
-	{
-		update_cache("enabled", false, 2);
-	}
-}
-
-
 /* nlohmann::json& js		global internel state
  * int cmd_idx				index
  * const HANDLE& ghJob		global job object handle
@@ -1928,9 +1862,9 @@ void create_process(
 
 #ifdef _DEBUG
 		std::string name = jsp["name"];
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str(), false);
 #else
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
 #endif
 	}
 
@@ -2021,7 +1955,9 @@ void create_process(
 		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
 		// current hWnd is always 0. We should call GetHwnd later
 		//size_t num_of_windows = 0;
+		//Sleep(1000);
 		//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+		//LOGMESSAGE(L"%s hWnd:0x%x\n", utf8_to_wstring(jsp["name"]).c_str(), hWnd);
 		//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 		//jsp["win_num"] = static_cast<int>(num_of_windows);
 		jsp["running"] = true;
@@ -2075,6 +2011,11 @@ void create_process(
 			//shExInfo.nShow = SW_HIDE;
 			shExInfo.hInstApp = NULL;
 
+			if (start_show)
+			{
+				shExInfo.fMask |= SEE_MASK_NOASYNC;
+			}
+
 			if (ShellExecuteEx(&shExInfo))
 			{
 				DWORD pid = GetProcessId(shExInfo.hProcess);
@@ -2094,6 +2035,7 @@ void create_process(
 						// current hWnd is always 0. We should call GetHwnd later
 						//size_t num_of_windows = 0;
 						//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+						//LOGMESSAGE(L"%s hWnd:0x%x\n", utf8_to_wstring(jsp["name"]).c_str(), hWnd);
 						//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 						//jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
@@ -2131,7 +2073,7 @@ void create_process(
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
 	bool is_enabled = jsp["enabled"];
-	if (is_enabled) {
+	if (false == runas_admin && is_enabled) {
 		bool is_running = jsp["running"];
 		if (is_running)
 		{
@@ -2331,9 +2273,9 @@ void kill_all(bool is_exit/* = true*/)
 
 #ifdef _DEBUG
 			std::string name = itm["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str(), !is_exit);
 #else
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), !is_exit);
 #endif
 			if (is_exit == false)
 			{

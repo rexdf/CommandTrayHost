@@ -23,6 +23,25 @@ bool is_cache_not_expired()
 	PCWSTR cache_filename = CACHE_FILENAMEW;
 	if (TRUE != PathFileExists(cache_filename))
 	{
+		if (global_stat != nullptr)
+		{
+			if (conform_cache_expire)
+			{
+				const int result = MessageBox(NULL,
+					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则清空缓存"
+					L"\n\n选择 否 则保留缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 缓存可能会错位"
+					:
+					translate_w2w(L"You just Delete " CONFIG_FILENAMEW L"\n\nChoose Yes to clear"
+						L" cache\n\nChoose No to keep expired cache.").c_str(),
+					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					MB_YESNO
+				);
+				if (IDNO == result)
+				{
+					return true;
+				}
+			}
+		}
 		LOGMESSAGE(L"PathFileExists failed\n");
 		return false;
 	}
@@ -74,9 +93,12 @@ bool is_cache_not_expired()
 			);
 			if (IDNO == result)
 			{
-				std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
-				o_cache << std::endl;
 				return_val = true;
+				if (global_stat == nullptr)
+				{
+					std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
+					o_cache << std::endl;
+				}
 			}
 		}
 		RETURN_AND_CLOSE_CREATEFILE(return_val);

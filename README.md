@@ -164,7 +164,7 @@ example configure
     "disable_cache_position": false,
     "disable_cache_size": false,
     "disable_cache_enabled": true,
-    "disable_cache_show": true,
+    "disable_cache_show": false,
     // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
@@ -172,13 +172,14 @@ example configure
         "enable_all": "Alt Win + Shift +E",
         "hide_all": "Alt+WIN+Shift+H",
         "show_all": "AlT Win Shift    s",
+        "restart_all": "ALT+Win+Shift+U",
         "elevate": "Alt+wIn+Shift+A",
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
-        "add_alpha": "Ctrl+Win+0x26", // work for any program of current user
-        "minus_alpha": "Ctrl+Win+0x28", // Ctrl+Win+↑↓
-        "topmost": "Ctrl+Win+T", // as above work for any program,toggle topmost status
+        "add_alpha": "Alt+Ctrl+Win+0x26", // work for any program of current user
+        "minus_alpha": "Alt+Ctrl+Win+0x28", // Alt+Ctrl+Win+↑↓
+        "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,

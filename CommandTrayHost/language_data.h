@@ -14,6 +14,7 @@ const nlohmann::json language_data = u8R"json({
         "Disable All": "Disable All",
         "Enable All": "Enable All",
         "Show All": "Show All",
+        "Restart All":"Restart All",
         "All": "All",
         "Start on Boot": "Start on Boot",
         "Elevate": "Elevate",

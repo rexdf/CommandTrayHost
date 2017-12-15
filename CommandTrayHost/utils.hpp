@@ -72,12 +72,20 @@ bool rapidjson_check_exist_type(
 
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx = 0);
 
+#ifdef _DEBUG
+void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cache = true);
+#else
+void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache = true);
+#endif
+
 BOOL get_hicon(PCWSTR, int, HICON&, bool share = false);
 
+#ifdef _DEBUG
 inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
 {
 	return GetWindowRect(hWnd, &rect);
 }
+#endif
 
 inline BOOL set_wnd_pos(
 	HWND hWnd,

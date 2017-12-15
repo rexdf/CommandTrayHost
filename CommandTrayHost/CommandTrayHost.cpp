@@ -408,6 +408,7 @@ BOOL ShowPopupMenuJson3()
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RESTARTALL, (isZHCN ? L"全部重启" : translate_w2w(L"Restart All").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All").c_str()));
 	vctHmenu.push_back(hSubMenu);
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
@@ -993,6 +994,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			hideshow_all(false);
 		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_RESTARTALL)
+		{
+			restart_all(ghJob);
+		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{
 			/*kill_all(global_stat);
@@ -1057,7 +1062,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			PostMessage(hConsole, WM_CLOSE, 0, 0);
 		}
-		else if (WM_TASKBARNOTIFY_MENUITEM_ELEVATE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_SHOWALL)
+		else if (WM_TASKBARNOTIFY_MENUITEM_ELEVATE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_RESTARTALL)
 		{
 			SendMessage(hWnd, WM_COMMAND, nID, NULL);
 		}
