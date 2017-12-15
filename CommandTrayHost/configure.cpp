@@ -2023,13 +2023,7 @@ void create_process(
 				LOGMESSAGE(L"ShellExecuteEx success! pid:%d\n", pid);
 				if (ghJob)
 				{
-					if (0 == AssignProcessToJobObject(ghJob, shExInfo.hProcess))
-					{
-						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
-						// prompt when no privileged to run a executable file with UAC requirement manifest
-						MessageBox(NULL, L"Could not AssignProcessToObject, if not show up, You maybe need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
-					}
-					else
+					//else
 					{
 						jsp["handle"] = reinterpret_cast<int64_t>(shExInfo.hProcess);
 						jsp["pid"] = static_cast<int64_t>(pid);
@@ -2053,6 +2047,12 @@ void create_process(
 								update_cache("start_show", start_show);
 							}
 						}*/
+					}
+					if (0 == AssignProcessToJobObject(ghJob, shExInfo.hProcess))
+					{
+						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
+						// prompt when no privileged to run a executable file with UAC requirement manifest
+						MessageBox(NULL, L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
 					}
 				}
 				//WaitForSingleObject(shExInfo.hProcess, INFINITE);
