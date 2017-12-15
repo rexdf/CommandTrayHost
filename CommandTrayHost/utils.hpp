@@ -87,55 +87,18 @@ inline BOOL get_wnd_rect(HWND hWnd, RECT& rect)
 }
 #endif
 
-inline BOOL set_wnd_pos(
+BOOL set_wnd_pos(
 	HWND hWnd,
 	int x, int y, int cx, int cy
 	, bool top_most
 	, bool use_pos
 	, bool use_size
 	//, bool is_show
-)
-{
-	UINT uFlags = SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS;
-	if (!use_pos)uFlags |= SWP_NOMOVE;
-	if (!use_size)uFlags |= SWP_NOSIZE;
-	//if (is_show)uFlags |= SWP_SHOWWINDOW;
-	//else uFlags |= SWP_HIDEWINDOW;
-	if (!top_most)uFlags |= SWP_NOZORDER;
-	return SetWindowPos(hWnd,
-		top_most ? HWND_TOPMOST : HWND_NOTOPMOST,
-		x,
-		y,
-		cx,
-		cy,
-		uFlags
-	);
-}
+);
 
-inline BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha)
-{
-	SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-	SetLayeredWindowAttributes(hWnd, 0, bAlpha, LWA_ALPHA);
-	SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-	return TRUE;
-}
+BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha);
 
-#ifdef _DEBUG
-VOID CALLBACK IconSendAsyncProc(__in  HWND hwnd,
-	__in  UINT uMsg,
-	__in  ULONG_PTR dwData,
-	__in  LRESULT lResult);
-#endif
-
-inline BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
-{
-	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-	//SendMessageCallback(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon, IconSendAsyncProc, reinterpret_cast<ULONG_PTR>(hIcon));
-	errno_t err = GetLastError();
-	LOGMESSAGE(L"SendMessage error_code:0x%x\n", err);
-	return 0 == err;
-}
+BOOL set_wnd_icon(HWND hWnd, HICON hIcon);
 
 bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error = true);
 
