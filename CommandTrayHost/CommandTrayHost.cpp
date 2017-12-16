@@ -748,7 +748,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ReloadCmdline();
 		}
-		else */if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
+		else */
+		if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
 		{
 			if (IsMyProgramRegisteredForStartup(szPathToExeToken))
 			{
