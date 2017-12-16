@@ -99,6 +99,7 @@ bool initial_configure()
                 "restart": "Shift+Win+R", // 重启程序
                 "elevate": "Shift+Win+A", // 以管理员运行本程序
             },
+            "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
         },
         {
             "name": "cmd例子2",
@@ -220,6 +221,7 @@ bool initial_configure()
                 "restart": "Shift+Win+R", // restart app
                 "elevate": "Shift+Win+A", // elevate
             },
+            "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
         },
         {
             "name": "cmd example 2",
@@ -560,22 +562,22 @@ int configure_reader(std::string& out)
 	const RapidJsonObjectChecker config_items[] = {
 		//must exist
 		{ "name", iStringType, false, nullptr, nullptr }, //must be zero index in config_items[]
-		{ "path", iStringType, false, nullptr, nullptr },
-		{ "cmd", iStringType, false, nullptr, nullptr },
-		{ "working_directory", iStringType, false, nullptr, nullptr },
-		{ "addition_env_path", iStringType, false, nullptr, nullptr },
-		{ "use_builtin_console", iBoolType, false, nullptr, nullptr },
-		{ "is_gui", iBoolType, false, nullptr, nullptr },
-		{ "enabled", iBoolType, false, nullptr, nullptr },
+		{ "path", iStringType, false, nullptr },
+		{ "cmd", iStringType, false, nullptr },
+		{ "working_directory", iStringType, false, nullptr },
+		{ "addition_env_path", iStringType, false, nullptr },
+		{ "use_builtin_console", iBoolType, false, nullptr },
+		{ "is_gui", iBoolType, false, nullptr },
+		{ "enabled", iBoolType, false, nullptr },
 		//optional
-		{ "require_admin", iBoolType, true, nullptr, nullptr },
-		{ "start_show", iBoolType, true, nullptr, nullptr },
-		{ "icon", iStringType, true, lambda_remove_empty_string, nullptr },
-		{ "alpha", iIntType, true,  lambda_check_alpha, nullptr },
-		{ "topmost", iBoolType, true, nullptr, nullptr },
-		{ "position", iArrayType , true, lambda_check_position_size, nullptr },
-		{ "size", iArrayType, true, lambda_check_position_size, nullptr },
-		{ "ignore_all", iBoolType, true, nullptr, nullptr },
+		{ "require_admin", iBoolType, true, nullptr },
+		{ "start_show", iBoolType, true, nullptr },
+		{ "icon", iStringType, true, lambda_remove_empty_string },
+		{ "alpha", iIntType, true,  lambda_check_alpha },
+		{ "topmost", iBoolType, true, nullptr },
+		{ "position", iArrayType , true, lambda_check_position_size },
+		{ "size", iArrayType, true, lambda_check_position_size },
+		{ "ignore_all", iBoolType, true, nullptr },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
 			if (enable_hotkey)
 			{
@@ -590,7 +592,8 @@ int configure_reader(std::string& out)
 					false);
 			}
 			return true;
-		} , nullptr },
+		} },
+		{ "not_host_by_commandtrayhost", iBoolType, true, nullptr },
 	};
 
 	/*for (auto& m : d["configs"].GetArray())
@@ -1937,12 +1940,19 @@ void create_process(
 #endif
 	}
 
+	bool not_host_by_commandtrayhost = false;
+
 	bool require_admin = false, start_show = false;
+
 #ifdef _DEBUG
 	try_read_optional_json(jsp, require_admin, "require_admin", __FUNCTION__);
+	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost", __FUNCTION__);
+	if (not_host_by_commandtrayhost)start_show = true;
 	try_read_optional_json(jsp, start_show, "start_show", __FUNCTION__);
 #else
 	try_read_optional_json(jsp, require_admin, "require_admin");
+	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost");
+	if (not_host_by_commandtrayhost)start_show = true;
 	try_read_optional_json(jsp, start_show, "start_show");
 #endif
 
@@ -1957,13 +1967,15 @@ void create_process(
 			LOGMESSAGE(L"start_show cache hit!");
 		}
 	}
-
-	jsp["handle"] = 0;
-	jsp["pid"] = -1;
-	jsp["hwnd"] = 0;
-	jsp["win_num"] = 0;
-	jsp["running"] = false;
-	jsp["show"] = start_show;
+	if (false == not_host_by_commandtrayhost)
+	{
+		jsp["handle"] = 0;
+		jsp["pid"] = -1;
+		jsp["hwnd"] = 0;
+		jsp["win_num"] = 0;
+		jsp["running"] = false;
+		jsp["show"] = start_show;
+	}
 
 	std::wstring name = utf8_to_wstring(jsp["name"]);
 	TCHAR nameStr[256];
@@ -1978,11 +1990,19 @@ void create_process(
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = (!start_show_slient && start_show) ? SW_SHOW : SW_HIDE;
+	if (not_host_by_commandtrayhost) // not hosted by commandtrayhost
+	{
+		si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
+	}
+	else
+	{
+		si.wShowWindow = (!start_show_slient && start_show) ? SW_SHOW : SW_HIDE;
+	}
+
 	//si.wShowWindow = SW_HIDE;
 	si.lpTitle = nameStr;
 
-	if (enable_cache && !disable_cache_position)
+	if (!not_host_by_commandtrayhost && enable_cache && !disable_cache_position)
 	{
 		if (!start_show_slient)
 		{
@@ -2005,7 +2025,7 @@ void create_process(
 		si.dwY = jsp["position"][1];
 		LOGMESSAGE(L"%s position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
 	}
-	if (enable_cache && !disable_cache_position)
+	if (!not_host_by_commandtrayhost && enable_cache && !disable_cache_position)
 	{
 		if (!start_show_slient)
 		{
@@ -2060,42 +2080,49 @@ void create_process(
 	// Launch child process - example is notepad.exe
 	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB, NULL, working_directory, &si, &pi))
 	{
-		jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
-		jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
-		// current hWnd is always 0. We should call GetHwnd later
-		//size_t num_of_windows = 0;
-		//Sleep(1000);
-		//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
-		//LOGMESSAGE(L"%s hWnd:0x%x\n", name.c_str(), hWnd);
-		//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
-		//jsp["win_num"] = static_cast<int>(num_of_windows);
-		jsp["running"] = true;
-		//if (json_object_has_member(jsp, "alpha"))
-		//{
-		//	set_wnd_alpha(hWnd, jsp["alpha"]);
-		//}
-		//if (start_show) show_hide_toggle(jsp); //hwnd is still 0
-		update_cache_enabled_start_show(true, start_show);
-
-		if (ghJob)
+		if (!not_host_by_commandtrayhost)
 		{
-			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
-			{
-				jsp["en_job"] = false;
-				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
-			}
-			else
-			{
-				jsp["en_job"] = true;
-				if (start_show)
-				{
-					extern HWND hWnd;
-					LOGMESSAGE(L"HWND hWnd:%d\n", hWnd);
-					start_show_timer_tick_cnt = 0;
-					SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 200, NULL);
-				}
+			jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
+			jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
+			// current hWnd is always 0. We should call GetHwnd later
+			//size_t num_of_windows = 0;
+			//Sleep(1000);
+			//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
+			//LOGMESSAGE(L"%s hWnd:0x%x\n", name.c_str(), hWnd);
+			//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+			//jsp["win_num"] = static_cast<int>(num_of_windows);
+			jsp["running"] = true;
+			//if (json_object_has_member(jsp, "alpha"))
+			//{
+			//	set_wnd_alpha(hWnd, jsp["alpha"]);
+			//}
+			//if (start_show) show_hide_toggle(jsp); //hwnd is still 0
+			update_cache_enabled_start_show(true, start_show);
 
+			if (ghJob)
+			{
+				if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
+				{
+					jsp["en_job"] = false;
+					MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+				}
+				else
+				{
+					jsp["en_job"] = true;
+					if (start_show)
+					{
+						extern HWND hWnd;
+						LOGMESSAGE(L"HWND hWnd:%d\n", hWnd);
+						start_show_timer_tick_cnt = 0;
+						SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 200, NULL);
+					}
+
+				}
 			}
+		}
+		else
+		{
+			CloseHandle(pi.hProcess);
 		}
 		// Can we free handles now? Not sure about this.
 		//CloseHandle(pi.hProcess); // Now I save all hProcess, so we don't need to close it now.
@@ -2135,6 +2162,11 @@ void create_process(
 
 			if (ShellExecuteEx(&shExInfo))
 			{
+				if (not_host_by_commandtrayhost)
+				{
+					jsp["enabled"] = false;
+					return;
+				}
 				DWORD pid = GetProcessId(shExInfo.hProcess);
 				LOGMESSAGE(L"ShellExecuteEx success! pid:%d\n", pid);
 				if (ghJob)
@@ -2176,7 +2208,7 @@ void create_process(
 						);*/
 						ShowTrayIcon(
 							isZHCN ? (name + L"\n因UIDP限制，AssignProcessToObject失败，程序现在不受CommandTrayHost控制，你需要手动关掉它。").c_str()
-							: (name+L"\n"+translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.")).c_str()
+							: (name + L"\n" + translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.")).c_str()
 							, NIM_MODIFY
 						);
 					}
@@ -2191,9 +2223,16 @@ void create_process(
 				LOGMESSAGE(L"User rejected UAC prompt.\n");
 			}
 		}
-		jsp["enabled"] = false;
-		if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, cEnabled);
+		if (!not_host_by_commandtrayhost)
+		{
+			jsp["enabled"] = false;
+			if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, cEnabled);
+		}
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
+	}
+	if (not_host_by_commandtrayhost)
+	{
+		jsp["enabled"] = false;
 	}
 }
 
@@ -2303,6 +2342,7 @@ void left_click_toggle()
 
 void show_hide_toggle(nlohmann::json& jsp)
 {
+	if (jsp["running"] == false)return;
 	bool is_show = jsp["show"];
 	bool is_en_job = jsp["en_job"];
 #ifdef _DEBUG

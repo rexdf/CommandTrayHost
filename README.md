@@ -62,6 +62,7 @@ example configure
                 "restart": "Shift+Win+R", // restart app
                 "elevate": "Shift+Win+A", // elevate
             },
+            "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",

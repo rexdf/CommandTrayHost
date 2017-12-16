@@ -65,6 +65,7 @@ Windows命令行程序系统托盘管理工具
                 "restart": "Shift+Win+R", // 重启程序
                 "elevate": "Shift+Win+A", // 以管理员运行本程序
             },
+            "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
