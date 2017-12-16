@@ -32,7 +32,7 @@ bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
 bool disable_cache_show;
-bool start_show_slient;
+bool start_show_silent;
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
 // after that, its false means need to flush cache out to disk

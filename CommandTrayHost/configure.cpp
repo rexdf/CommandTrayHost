@@ -26,7 +26,7 @@ extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
-extern bool start_show_slient;
+extern bool start_show_silent;
 extern bool is_cache_valid;
 extern int cache_config_cursor;
 
@@ -181,7 +181,7 @@ bool initial_configure()
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "enable_hotkey": true,
-    "start_show_slient": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
+    "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -303,7 +303,7 @@ bool initial_configure()
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,
-    "start_show_slient": true,
+    "start_show_silent": true,
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -723,7 +723,7 @@ int configure_reader(std::string& out)
 	disable_cache_enabled = true;
 	disable_cache_show = false;
 	repeat_mod_hotkey = false;
-	start_show_slient = true;
+	start_show_silent = true;
 
 	int cache_option_pointer_idx = 0;
 	bool* const cache_option_value_pointer[] = {
@@ -893,8 +893,8 @@ int configure_reader(std::string& out)
 		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option },
 		{ "disable_cache_show", iBoolType, true, lambda_cache_option },
 
-		{ "start_show_slient", iBoolType, true, [](const Value& val,PCSTR name)->bool {
-			start_show_slient = val[name].GetBool();
+		{ "start_show_silent", iBoolType, true, [](const Value& val,PCSTR name)->bool {
+			start_show_silent = val[name].GetBool();
 			return true;
 		} },
 		{ "repeat_mod_hotkey", iBoolType, true, [](const Value& val,PCSTR name)->bool {
@@ -1598,7 +1598,7 @@ void update_hwnd_all()
 			}
 			else
 			{
-				if (start_show_slient && i["show"] == true)
+				if (start_show_silent && i["show"] == true)
 				{
 					ShowWindow(hWnd, SW_SHOW);
 					SetForegroundWindow(hWnd);
@@ -2014,7 +2014,7 @@ void create_process(
 	}
 	else
 	{
-		si.wShowWindow = (!start_show_slient && start_show) ? SW_SHOW : SW_HIDE;
+		si.wShowWindow = (!start_show_silent && start_show) ? SW_SHOW : SW_HIDE;
 	}
 
 	//si.wShowWindow = SW_HIDE;
@@ -2022,7 +2022,7 @@ void create_process(
 
 	if (!not_host_by_commandtrayhost && enable_cache && !disable_cache_position)
 	{
-		if (!start_show_slient)
+		if (!start_show_silent)
 		{
 			auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cPosition))
@@ -2045,7 +2045,7 @@ void create_process(
 	}
 	if (!not_host_by_commandtrayhost && enable_cache && !disable_cache_position)
 	{
-		if (!start_show_slient)
+		if (!start_show_silent)
 		{
 			auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cSize))

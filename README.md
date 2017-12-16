@@ -185,7 +185,7 @@ example configure
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,
-    "start_show_slient": true,
+    "start_show_silent": true,
 }
 ```
 
