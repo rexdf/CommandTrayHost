@@ -104,6 +104,7 @@ bool initial_configure()
                 "elevate": "Shift+Win+A", // 以管理员运行本程序
             },
             "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
+            "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
         },
         {
             "name": "cmd例子2",
@@ -226,6 +227,7 @@ bool initial_configure()
                 "elevate": "Shift+Win+A", // elevate
             },
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
+            "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
         },
         {
             "name": "cmd example 2",
@@ -598,6 +600,20 @@ int configure_reader(std::string& out)
 			return true;
 		} },
 		{ "not_host_by_commandtrayhost", iBoolType, true, nullptr },
+		{ "not_monitor_by_commandtrayhost", iBoolType, true, [&allocator](Value& val, PCSTR name)->bool {
+			if (val[name] == true)
+			{
+				if (val.HasMember("not_host_by_commandtrayhost"))
+				{
+					val["not_host_by_commandtrayhost"] = true;
+				}
+				else
+				{
+					val.AddMember("not_host_by_commandtrayhost", true, allocator);
+				}
+			}
+			return true;
+		}},
 	};
 
 	/*for (auto& m : d["configs"].GetArray())
@@ -1971,7 +1987,7 @@ void create_process(
 #endif
 	}
 
-	bool not_host_by_commandtrayhost = false;
+	bool not_host_by_commandtrayhost = false, not_monitor_by_commandtrayhost = false;
 
 	bool require_admin = false, start_show = false;
 
@@ -1980,11 +1996,13 @@ void create_process(
 	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost", __FUNCTION__);
 	if (not_host_by_commandtrayhost)start_show = true;
 	try_read_optional_json(jsp, start_show, "start_show", __FUNCTION__);
+	try_read_optional_json(jsp, not_monitor_by_commandtrayhost, "not_monitor_by_commandtrayhost", __FUNCTION__);
 #else
 	try_read_optional_json(jsp, require_admin, "require_admin");
 	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost");
 	if (not_host_by_commandtrayhost)start_show = true;
 	try_read_optional_json(jsp, start_show, "start_show");
+	try_read_optional_json(jsp, not_monitor_by_commandtrayhost, "not_monitor_by_commandtrayhost");
 #endif
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
@@ -2153,6 +2171,13 @@ void create_process(
 		}
 		else
 		{
+			if (not_monitor_by_commandtrayhost)
+			{
+				if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
+				{
+					MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+				}
+			}
 			CloseHandle(pi.hProcess);
 		}
 		// Can we free handles now? Not sure about this.

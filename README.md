@@ -63,6 +63,7 @@ example configure
                 "elevate": "Shift+Win+A", // elevate
             },
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
+            "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
