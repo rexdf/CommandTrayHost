@@ -27,9 +27,6 @@ void ElevateNow();
 //void delete_lockfile();
 void makeSingleInstance3();
 
-
-BOOL DeleteTrayIcon();
-
 #define CLEAN_MUTEX() { \
 	LOGMESSAGE(L"CLEAN_MUTEX ghMutex:0x%x\n",ghMutex); \
 	if(ghMutex)ReleaseMutex(ghMutex); \

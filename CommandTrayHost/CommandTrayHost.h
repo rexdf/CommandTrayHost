@@ -2,6 +2,7 @@
 
 #include "resource.h"
 
+BOOL DeleteTrayIcon();
 BOOL ShowTrayIcon(LPCWSTR lpszProxy, DWORD dwMessage);
 
 #define NID_UID 666
