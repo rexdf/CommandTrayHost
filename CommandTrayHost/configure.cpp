@@ -305,7 +305,8 @@ typedef struct {
 	PCSTR name;
 	RapidJsonType type;
 	bool not_exist_ret;
-	std::function<bool(rapidjson::Value&, PCSTR)> caller;
+	std::function<bool(rapidjson::Value&, PCSTR)> success_caller;
+	std::function<bool(rapidjson::Value&, PCSTR)> post_caller;
 } RapidJsonObjectChecker, *pRapidJsonObjectChecker;
 
 bool check_rapidjson_object(
@@ -321,7 +322,7 @@ bool check_rapidjson_object(
 	for (int i = 0; i < array_size; i++)
 	{
 		const RapidJsonObjectChecker& cur_Foo = check_arrys[i];
-		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.caller))
+		if (!rapidjson_check_exist_type(d, cur_Foo.name, cur_Foo.type, cur_Foo.not_exist_ret, cur_Foo.success_caller, cur_Foo.post_caller))
 		{
 			std::wstring wname;
 			if (use_name)
@@ -508,6 +509,10 @@ int configure_reader(std::string& out)
 	int config_hotkey_items_idx;
 	bool enable_hotkey = true;
 
+	auto lambda_config_hotkey_items_idx = [&config_hotkey_items_idx](const Value& val, PCSTR name)->bool {
+		config_hotkey_items_idx++;
+		return true;
+	};
 	auto lambda_config_hotkey = [&cnt, &config_hotkey_items_idx](Value& val, PCSTR name)->bool {
 		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
 		if (0 == config_hotkey_items_idx)
@@ -536,37 +541,37 @@ int configure_reader(std::string& out)
 			config_hotkey_items_idx,
 			ret
 		);
-		config_hotkey_items_idx++;
+		//config_hotkey_items_idx++;
 		return true;
 	};
 
 	const RapidJsonObjectChecker config_hotkey_items[] = {
-		{ "hide_show", iStringType, true, lambda_config_hotkey },
-		{ "disable_enable", iStringType, true, lambda_config_hotkey }, //must be zero index in config_items[]
-		{ "restart", iStringType, true, lambda_config_hotkey },
-		{ "elevate", iStringType, true, lambda_config_hotkey },
+		{ "hide_show", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx },
+		{ "disable_enable", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx }, //must be zero index in config_items[]
+		{ "restart", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx },
+		{ "elevate", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx },
 	};
 
 	//type check for items in configs
 	const RapidJsonObjectChecker config_items[] = {
 		//must exist
-		{ "name", iStringType, false, nullptr }, //must be zero index in config_items[]
-		{ "path", iStringType, false, nullptr },
-		{ "cmd", iStringType, false, nullptr },
-		{ "working_directory", iStringType, false, nullptr },
-		{ "addition_env_path", iStringType, false, nullptr },
-		{ "use_builtin_console", iBoolType, false, nullptr },
-		{ "is_gui", iBoolType, false, nullptr },
-		{ "enabled", iBoolType, false, nullptr },
+		{ "name", iStringType, false, nullptr, nullptr }, //must be zero index in config_items[]
+		{ "path", iStringType, false, nullptr, nullptr },
+		{ "cmd", iStringType, false, nullptr, nullptr },
+		{ "working_directory", iStringType, false, nullptr, nullptr },
+		{ "addition_env_path", iStringType, false, nullptr, nullptr },
+		{ "use_builtin_console", iBoolType, false, nullptr, nullptr },
+		{ "is_gui", iBoolType, false, nullptr, nullptr },
+		{ "enabled", iBoolType, false, nullptr, nullptr },
 		//optional
-		{ "require_admin", iBoolType, true, nullptr },
-		{ "start_show", iBoolType, true, nullptr },
-		{ "icon", iStringType, true, lambda_remove_empty_string },
-		{ "alpha", iIntType, true,  lambda_check_alpha},
-		{ "topmost", iBoolType, true, nullptr },
-		{ "position", iArrayType , true, lambda_check_position_size },
-		{ "size", iArrayType, true, lambda_check_position_size },
-		{ "ignore_all", iBoolType, true, nullptr },
+		{ "require_admin", iBoolType, true, nullptr, nullptr },
+		{ "start_show", iBoolType, true, nullptr, nullptr },
+		{ "icon", iStringType, true, lambda_remove_empty_string, nullptr },
+		{ "alpha", iIntType, true,  lambda_check_alpha, nullptr },
+		{ "topmost", iBoolType, true, nullptr, nullptr },
+		{ "position", iArrayType , true, lambda_check_position_size, nullptr },
+		{ "size", iArrayType, true, lambda_check_position_size, nullptr },
+		{ "ignore_all", iBoolType, true, nullptr, nullptr },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
 			if (enable_hotkey)
 			{
@@ -581,7 +586,7 @@ int configure_reader(std::string& out)
 					false);
 			}
 			return true;
-		} },
+		} , nullptr },
 	};
 
 	/*for (auto& m : d["configs"].GetArray())
@@ -655,9 +660,12 @@ int configure_reader(std::string& out)
 		cnt++;
 	}*/
 
-	int global_hotkey_idx = -1;
-	auto lambda_global_hotkey = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
+	int global_hotkey_idx = 0;
+	auto lambda_global_hotkey_idx = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
 		global_hotkey_idx++;
+		return true;
+	};
+	auto lambda_global_hotkey = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
 		const int global_hotkey_idxs[] = {
 			WM_TASKBARNOTIFY_MENUITEM_DISABLEALL ,
 			WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
@@ -682,18 +690,18 @@ int configure_reader(std::string& out)
 	};
 
 	const RapidJsonObjectChecker global_hotkey_itms[] = {
-		{ "disable_all", iStringType, true, lambda_global_hotkey },
-		{ "enable_all", iStringType, true, lambda_global_hotkey },
-		{ "hide_all", iStringType, true, lambda_global_hotkey },
-		{ "show_all", iStringType, true, lambda_global_hotkey },
-		{ "restart_all", iStringType, true, lambda_global_hotkey },
-		{ "elevate", iStringType, true, lambda_global_hotkey },
-		{ "exit", iStringType, true, lambda_global_hotkey },
-		{ "left_click", iStringType, true, lambda_global_hotkey },
-		{ "right_click", iStringType, true, lambda_global_hotkey },
-		{ "add_alpha", iStringType, true, lambda_global_hotkey },
-		{ "minus_alpha", iStringType, true, lambda_global_hotkey },
-		{ "topmost", iStringType, true, lambda_global_hotkey },
+		{ "disable_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "enable_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "hide_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "show_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "restart_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "elevate", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "exit", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "left_click", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "right_click", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "add_alpha", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "minus_alpha", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "topmost", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 	};
 
 	int cache_cnt = 0;
@@ -874,10 +882,13 @@ int configure_reader(std::string& out)
 			return true;
 		}},
 
-		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms](Value& val,PCSTR name)->bool {
+		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms,&allocator](Value& val,PCSTR name)->bool {
+			bool ret = true;
 			if (enable_hotkey)
 			{
-				return check_rapidjson_object(
+				//Value v(true, allocator);
+				val[name].AddMember("a", true, allocator);
+				ret = check_rapidjson_object(
 					val[name],
 					global_hotkey_itms,
 					ARRAYSIZE(global_hotkey_itms),
@@ -885,11 +896,13 @@ int configure_reader(std::string& out)
 					L"Hotkey Type Error",
 					L"global section",
 					false);
+				val[name].RemoveMember("a");
 			}
 			else
 			{
-				return true;
+				ret = true;
 			}
+			return ret;
 		}},
 	};
 
@@ -2317,7 +2330,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{

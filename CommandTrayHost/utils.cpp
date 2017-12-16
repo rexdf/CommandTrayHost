@@ -300,13 +300,15 @@ bool rapidjson_check_exist_type(
 	PCSTR name,
 	RapidJsonType type,
 	bool not_exist_return,
-	std::function<bool(rapidjson::Value&, PCSTR)> func
+	std::function<bool(rapidjson::Value&, PCSTR)> success_func,
+	std::function<bool(rapidjson::Value&, PCSTR)> post_func
 )
 {
+	bool ret;
 	if (val.HasMember(name))
 	{
 		rapidjson::Value& ref = val[name];
-		bool ret;
+		//bool ret;
 		if (type == iBoolType)
 		{
 			int val_type = ref.GetType();
@@ -320,15 +322,23 @@ bool rapidjson_check_exist_type(
 		{
 			ret = ref.GetType() == type;
 		}
-		if (ret && func != nullptr)
+		if (ret && success_func != nullptr)
 		{
-			ret = func(val, name);
+			ret = success_func(val, name);
 		}
 		LOGMESSAGE(L"%S ret:%d type:%d GetType:%d\n", name, ret, type, ref.GetType());
-		return ret;
+		//return ret;
+	}
+	else
+	{
+		ret = not_exist_return;
 	}
 	LOGMESSAGE(L"%S not exist: ret:%d \n", name, not_exist_return);
-	return not_exist_return;
+	if (post_func != nullptr)
+	{
+		post_func(val, name);
+	}
+	return ret;
 }
 
 //HWND WINAPI GetForegroundWindow(void);

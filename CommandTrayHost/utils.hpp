@@ -65,7 +65,8 @@ bool rapidjson_check_exist_type(
 	PCSTR,
 	RapidJsonType,
 	bool not_exist_return = true,
-	std::function<bool(rapidjson::Value&, PCSTR)> func = nullptr
+	std::function<bool(rapidjson::Value&, PCSTR)> success_func = nullptr,
+	std::function<bool(rapidjson::Value&, PCSTR)> post_func = nullptr
 );
 
 //bool operator != (const RECT&, const RECT&);
