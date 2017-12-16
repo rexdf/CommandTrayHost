@@ -738,6 +738,10 @@ int configure_reader(std::string& out)
 	auto lambda_cache_option = [&cache_cnt, &cache_option_value_pointer, &cache_option_pointer_idx](const Value& val, PCSTR name)->bool {
 		*cache_option_value_pointer[cache_option_pointer_idx] = val[name].GetBool();
 		cache_cnt++;
+		//cache_option_pointer_idx++;
+		return true;
+	};
+	auto lambda_cache_option_value_pointer_idx = [&cache_option_pointer_idx](const Value& val, PCSTR name)->bool {
 		cache_option_pointer_idx++;
 		return true;
 	};
@@ -886,12 +890,12 @@ int configure_reader(std::string& out)
 			return true;
 		} },
 
-		{ "enable_cache", iBoolType, true, lambda_cache_option },
-		{ "conform_cache_expire", iBoolType, true, lambda_cache_option },
-		{ "disable_cache_position", iBoolType, true, lambda_cache_option },
-		{ "disable_cache_size", iBoolType, true, lambda_cache_option },
-		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option },
-		{ "disable_cache_show", iBoolType, true, lambda_cache_option },
+		{ "enable_cache", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "conform_cache_expire", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "disable_cache_position", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "disable_cache_size", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "disable_cache_show", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
 		{ "start_show_silent", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			start_show_silent = val[name].GetBool();
