@@ -55,9 +55,9 @@ WCHAR szCommandLine[1024] = L"";
 WCHAR szTooltip[512] = L"";
 WCHAR szBalloon[512] = L"";
 WCHAR szEnvironment[1024] = L"";
-WCHAR szProxyString[2048] = L"";
-CHAR szRasPbk[4096] = "";
-WCHAR* lpProxyList[8] = { 0 };
+//WCHAR szProxyString[2048] = L"";
+//CHAR szRasPbk[4096] = "";
+//WCHAR* lpProxyList[8] = { 0 };
 volatile DWORD dwChildrenPid;
 
 // I don't know why this. There is a API.
@@ -104,7 +104,7 @@ static DWORD MyGetProcessId(HANDLE hProcess)
 }
 #endif
 
-
+#ifdef _DEBUG2
 static BOOL MyEndTask(DWORD pid)
 {
 	return _wsystem((L"taskkill /f /pid " + std::to_wstring(pid)).c_str());
@@ -113,9 +113,9 @@ static BOOL MyEndTask(DWORD pid)
 	//wsprintf(szCmd, L"taskkill /f /pid %d", pid);
 	return _wsystem(szCmd) == 0;*/
 }
+#endif
 
-
-BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
+BOOL ShowTrayIcon(LPCWSTR lpszProxy, DWORD dwMessage)
 {
 	NOTIFYICONDATA nid;
 	ZeroMemory(&nid, sizeof(NOTIFYICONDATA));
@@ -213,7 +213,7 @@ BOOL DeleteTrayIcon()
 	return TRUE;
 }
 
-
+#ifdef _DEBUG2
 LPCTSTR GetWindowsProxy()
 {
 	static WCHAR szProxy[1024] = { 0 };
@@ -349,6 +349,7 @@ BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 	return TRUE;
 }
 //#pragma warning( pop )
+#endif
 
 BOOL ShowPopupMenuJson3()
 {
@@ -412,6 +413,7 @@ BOOL ShowPopupMenuJson3()
 	return TRUE;
 }
 
+#ifdef _DEBUG2
 //#pragma warning( push )
 //#pragma warning( disable : 4996)
 BOOL ParseProxyList()
@@ -446,6 +448,7 @@ BOOL ParseProxyList()
 	return TRUE;
 }
 //#pragma warning( pop )
+#endif
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
@@ -462,6 +465,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	return TRUE;
 }
+
 
 BOOL CDCurrentDirectory()
 {
@@ -480,6 +484,7 @@ BOOL CDCurrentDirectory()
 	return TRUE;
 }
 
+
 //#pragma warning( push )
 //#pragma warning( disable : 4996)
 BOOL SetEenvironment()
@@ -491,8 +496,8 @@ BOOL SetEenvironment()
 
 	LoadString(hInst, IDS_CMDLINE, szCommandLine, ARRAYSIZE(szCommandLine) - 1);
 	LoadString(hInst, IDS_ENVIRONMENT, szEnvironment, ARRAYSIZE(szEnvironment) - 1);
-	LoadString(hInst, IDS_PROXYLIST, szProxyString, ARRAYSIZE(szProxyString) - 1);
-	LoadStringA(hInst, IDS_RASPBK, szRasPbk, ARRAYSIZE(szRasPbk) - 1);
+	//LoadString(hInst, IDS_PROXYLIST, szProxyString, ARRAYSIZE(szProxyString) - 1);
+	//LoadStringA(hInst, IDS_RASPBK, szRasPbk, ARRAYSIZE(szRasPbk) - 1);
 
 	const wchar_t* sep = L"\n";
 	wchar_t* pos = NULL;
@@ -504,7 +509,7 @@ BOOL SetEenvironment()
 		if ((pos = wcschr(token, L'=')) != NULL)
 		{
 			*pos = 0;
-			SetEnvironmentVariableW(token, pos + 1);
+			SetEnvironmentVariable(token, pos + 1);
 			//wprintf(L"[%s] = [%s]\n", token, pos+1);
 			LOGMESSAGE(L"[%s] = [%s]\n", token, pos + 1);
 		}
@@ -518,14 +523,15 @@ BOOL SetEenvironment()
 	//GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, sizeof(szTooltip) / sizeof(szTooltip[0]) - 1);
 	//GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, sizeof(szBalloon) / sizeof(szBalloon[0]) - 1);
 
-	GetEnvironmentVariableW(L"TASKBAR_TITLE", szTitle, ARRAYSIZE(szTitle) - 1);
-	GetEnvironmentVariableW(L"TASKBAR_TOOLTIP", szTooltip, ARRAYSIZE(szTooltip) - 1);
-	GetEnvironmentVariableW(L"TASKBAR_BALLOON", szBalloon, ARRAYSIZE(szBalloon) - 1);
+	GetEnvironmentVariable(L"TASKBAR_TITLE", szTitle, ARRAYSIZE(szTitle) - 1);
+	GetEnvironmentVariable(L"TASKBAR_TOOLTIP", szTooltip, ARRAYSIZE(szTooltip) - 1);
+	GetEnvironmentVariable(L"TASKBAR_BALLOON", szBalloon, ARRAYSIZE(szBalloon) - 1);
 
 	return TRUE;
 }
 //#pragma warning( pop )
 
+#ifdef _DEBUG2
 BOOL WINAPI ConsoleHandler(DWORD CEvent)
 {
 	switch (CEvent)
@@ -693,6 +699,8 @@ BOOL ReloadCmdline()
 	return TRUE;
 }
 
+#endif
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static UINT WM_TASKBARCREATED = 0;
@@ -735,10 +743,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ShowWindow(hConsole, SW_HIDE);
 		}
-		else if (nID == WM_TASKBARNOTIFY_MENUITEM_RELOAD)
+		/*else if (nID == WM_TASKBARNOTIFY_MENUITEM_RELOAD)
 		{
 			ReloadCmdline();
-		}
+		}*/
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
 		{
 			if (IsMyProgramRegisteredForStartup(szPathToExeToken))
@@ -795,14 +803,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//PostMessage(hConsole, WM_CLOSE, 0, 0);
 			PostMessage(hWnd, WM_CLOSE, 0, 0);
 		}
-		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + ARRAYSIZE(
+		/*else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + ARRAYSIZE(
 			lpProxyList))
 		{
 			WCHAR* szProxy = lpProxyList[nID - WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE];
 			SetWindowsProxy(szProxy, NULL);
 			SetWindowsProxyForAllRasConnections(szProxy);
 			ShowTrayIcon(szProxy, NIM_MODIFY);
-		}
+		}*/
 		else if (WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE <= nID && nID < WM_APP_END)
 		{
 			int menu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) / 0x10;
@@ -923,8 +931,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case VM_TIMER_CREATEPROCESS_SHOW:
 			update_hwnd_all();
 			break;
-		//default:
-			//LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
+			//default:
+				//LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
 		}
 		break;
 	case WM_CLOSE:
@@ -1022,7 +1030,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	CDCurrentDirectory();
 	makeSingleInstance3();
 	SetEenvironment();
-	ParseProxyList();
+	//ParseProxyList();
 
 	MyRegisterClass(hInstance);
 	if (!InitInstance(hInstance, SW_HIDE))
@@ -1042,7 +1050,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	start_all(ghJob);
 	//CreateConsole();
 	//ExecCmdline();
-	ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
+	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
+	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();
 
 	while (GetMessage(&msg, NULL, 0, 0))

@@ -13,6 +13,7 @@ extern BOOL isZHCN;
 extern bool enable_groups_menu;
 extern bool enable_left_click;
 extern int number_of_configs;
+extern int start_show_timer_tick_cnt;
 extern HANDLE ghMutex;
 
 extern bool enable_cache;
@@ -1557,7 +1558,6 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 
 void update_hwnd_all()
 {
-	extern int start_show_timer_tick_cnt;
 	cache_config_cursor = 0;
 	bool all_get = true;
 	for (auto& i : global_stat["configs"])
@@ -1930,8 +1930,8 @@ void create_process(
 		LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 #ifdef _DEBUG
-		std::string name = jsp["name"];
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str(), false);
+		std::string name_A = jsp["name"];
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name_A).c_str(), false);
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
 #endif
@@ -2066,7 +2066,7 @@ void create_process(
 		//size_t num_of_windows = 0;
 		//Sleep(1000);
 		//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
-		//LOGMESSAGE(L"%s hWnd:0x%x\n", utf8_to_wstring(jsp["name"]).c_str(), hWnd);
+		//LOGMESSAGE(L"%s hWnd:0x%x\n", name.c_str(), hWnd);
 		//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 		//jsp["win_num"] = static_cast<int>(num_of_windows);
 		jsp["running"] = true;
@@ -2090,7 +2090,7 @@ void create_process(
 				if (start_show)
 				{
 					extern HWND hWnd;
-					extern int start_show_timer_tick_cnt;
+					LOGMESSAGE(L"HWND hWnd:%d\n", hWnd);
 					start_show_timer_tick_cnt = 0;
 					SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 200, NULL);
 				}
@@ -2146,7 +2146,7 @@ void create_process(
 						// current hWnd is always 0. We should call GetHwnd later
 						//size_t num_of_windows = 0;
 						//HWND hWnd = GetHwnd(pi.hProcess, num_of_windows);
-						//LOGMESSAGE(L"%s hWnd:0x%x\n", utf8_to_wstring(jsp["name"]).c_str(), hWnd);
+						//LOGMESSAGE(L"%s hWnd:0x%x\n", name.c_str(), hWnd);
 						//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 						//jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
@@ -2169,7 +2169,16 @@ void create_process(
 					{
 						LOGMESSAGE(L"ShellExecuteEx failed to AssignProcessToJobObject, errorcode %d\n", GetLastError());
 						// prompt when no privileged to run a executable file with UAC requirement manifest
-						MessageBox(NULL, L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager", L"UIDP Error", MB_ICONERROR);
+						/*MessageBox(NULL,
+							L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager",
+							L"UIDP Error",
+							MB_ICONWARNING
+						);*/
+						ShowTrayIcon(
+							isZHCN ? (name + L": 因UIDP限制，AssignProcessToObject失败，程序现在不受CommandTrayHost控制，你需要手动关掉它。").c_str()
+							: translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.").c_str()
+							, NIM_ADD
+						);
 					}
 				}
 				//WaitForSingleObject(shExInfo.hProcess, INFINITE);

@@ -2,6 +2,8 @@
 
 #include "resource.h"
 
+BOOL ShowTrayIcon(LPCWSTR lpszProxy, DWORD dwMessage);
+
 #define NID_UID 123
 #define WM_TASKBARNOTIFY WM_USER+0x20
 #define WM_TASKBARNOTIFY_MENUITEM_SHOW (WM_USER + 0x21)
