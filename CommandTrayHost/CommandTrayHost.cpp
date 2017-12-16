@@ -35,6 +35,8 @@ bool is_cache_valid;
 int cache_config_cursor;
 int number_of_configs;
 
+int start_show_timer_tick_cnt;
+
 bool repeat_mod_hotkey;
 
 TCHAR szPathToExe[MAX_PATH * 10];
@@ -955,6 +957,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			LOGMESSAGE(L"unkown key pressed, id:%d=0x%x\n", nID, nID);
 		}
 
+		break;
+	case WM_TIMER:
+		LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
+		switch (wParam)
+		{
+		case VM_TIMER_CREATEPROCESS_SHOW:
+			update_hwnd_all();
+			break;
+		//default:
+			//LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
+		}
 		break;
 	case WM_CLOSE:
 		/*delete_lockfile();

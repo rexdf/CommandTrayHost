@@ -12,6 +12,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 void hideshow_all(bool is_hideall = true);
 void start_all(HANDLE, bool force = false);
 void restart_all(HANDLE);
+void update_hwnd_all();
 void kill_all(bool is_exit = true);
 void left_click_toggle();
 

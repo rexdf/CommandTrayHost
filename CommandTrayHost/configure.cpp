@@ -887,7 +887,7 @@ int configure_reader(std::string& out)
 			if (enable_hotkey)
 			{
 				//Value v(true, allocator);
-				val[name].AddMember("a", true, allocator);
+				//val[name].AddMember("a", true, allocator);
 				ret = check_rapidjson_object(
 					val[name],
 					global_hotkey_itms,
@@ -896,7 +896,7 @@ int configure_reader(std::string& out)
 					L"Hotkey Type Error",
 					L"global section",
 					false);
-				val[name].RemoveMember("a");
+				//val[name].RemoveMember("a");
 			}
 			else
 			{
@@ -1029,7 +1029,7 @@ int configure_reader(std::string& out)
 					if (valid_flag)
 					{
 						auto& d_config_i_ref = d_configs_ref[i];
-						if (!disable_cache_position && check_cache_valid(valid_flag, 0))
+						if (!disable_cache_position && check_cache_valid(valid_flag, cPosition))
 						{
 							Value v_l(cache_config_i_ref["left"], allocator);
 							Value v_t(cache_config_i_ref["top"], allocator);
@@ -1049,7 +1049,7 @@ int configure_reader(std::string& out)
 								position_ref.PushBack(v_t, allocator);
 							}
 						}
-						if (!disable_cache_size && check_cache_valid(valid_flag, 1))
+						if (!disable_cache_size && check_cache_valid(valid_flag, cSize))
 						{
 							int w = cache_config_i_ref["right"].GetInt() - cache_config_i_ref["left"].GetInt();
 							int h = cache_config_i_ref["bottom"].GetInt() - cache_config_i_ref["top"].GetInt();
@@ -1071,12 +1071,12 @@ int configure_reader(std::string& out)
 								position_ref.PushBack(v_h, allocator);
 							}
 						}
-						if (!disable_cache_enabled && check_cache_valid(valid_flag, 2))
+						if (!disable_cache_enabled && check_cache_valid(valid_flag, cEnabled))
 						{
 							Value v(cache_config_i_ref["enabled"], allocator);
 							d_config_i_ref["enabled"] = v;
 						}
-						if (!disable_cache_show && check_cache_valid(valid_flag, 3))
+						if (!disable_cache_show && check_cache_valid(valid_flag, cShow))
 						{
 							//assert(cache_config_i_ref.HasMember("start_show"));
 							Value v(cache_config_i_ref["start_show"], allocator);
@@ -1320,7 +1320,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		i["hwnd"] = 0;
 		i["win_num"] = 0;
 		i["show"] = false;
-		i["en_job"] = true;
+		i["en_job"] = false;
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
 		TCHAR commandLine[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
@@ -1547,6 +1547,44 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 	return hWnd;
 }
 
+void update_hwnd_all()
+{
+	extern int start_show_timer_tick_cnt;
+	cache_config_cursor = 0;
+	bool all_get = true;
+	for (auto& i : global_stat["configs"])
+	{
+		if (true == i["en_job"])
+		{
+			if (NULL == get_hwnd_from_json(i))
+			{
+				all_get = false;
+				start_show_timer_tick_cnt++;
+				LOGMESSAGE(L"%s tick failed %d\n",
+					utf8_to_wstring(global_stat["configs"][cache_config_cursor]["name"]).c_str(),
+					start_show_timer_tick_cnt
+				);
+				break;
+			}
+		}
+		cache_config_cursor++;
+	}
+	extern HWND hWnd;
+	if (all_get)
+	{
+		KillTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW);
+	}
+	else if (start_show_timer_tick_cnt > 100)
+	{
+		KillTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW);
+		MessageBox(NULL,
+			L"Some app cannot get HWND\n",
+			(utf8_to_wstring(global_stat["configs"][cache_config_cursor]["name"]) + L" HWND error").c_str(),
+			MB_OK
+		);
+	}
+}
+
 void start_all(HANDLE ghJob, bool force)
 {
 	//int cmd_idx = 0;
@@ -1719,6 +1757,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 			if (retValue != 0 && lpExitCode != STILL_ACTIVE)
 			{
 				itm["running"] = false;
+				itm["en_job"] = false;
 				itm["handle"] = 0;
 				itm["pid"] = -1;
 				itm["hwnd"] = 0;
@@ -1890,8 +1929,17 @@ void create_process(
 	try_read_optional_json(jsp, start_show, "start_show");
 #endif
 
-
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
+
+	if (enable_cache && !disable_cache_enabled)
+	{
+		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+		if (check_cache_valid(ref["valid"].get<int>(), cShow))
+		{
+			start_show = ref["start_show"];
+			LOGMESSAGE(L"start_show cache hit!");
+		}
+	}
 
 	jsp["handle"] = 0;
 	jsp["pid"] = -1;
@@ -1917,16 +1965,40 @@ void create_process(
 	//si.wShowWindow = SW_HIDE;
 	si.lpTitle = nameStr;
 
+	if (enable_cache && !disable_cache_position)
+	{
+		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+		if (check_cache_valid(ref["valid"].get<int>(), cPosition))
+		{
+			si.dwFlags |= STARTF_USEPOSITION;
+			si.dwX = ref["left"].get<int>();
+			si.dwY = ref["top"].get<int>();
+			LOGMESSAGE(L"%s cache position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
+		}
+	}
 	// GetWindowRect result is always a offset by random.
 	//https://www.experts-exchange.com/questions/20108790/CreateProcess-STARTUPINFO-window-position.html
-	if (json_object_has_member(jsp, "position"))
+	else if (json_object_has_member(jsp, "position"))
 	{
 		si.dwFlags |= STARTF_USEPOSITION;
 		si.dwX = jsp["position"][0];
 		si.dwY = jsp["position"][1];
 		LOGMESSAGE(L"%s position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
 	}
-	if (json_object_has_member(jsp, "size"))
+	if (enable_cache && !disable_cache_position)
+	{
+		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+		if (check_cache_valid(ref["valid"].get<int>(), cSize))
+		{
+			int width = ref["right"].get<int>() - ref["left"].get<int>();
+			int height = ref["bottom"].get<int>() - ref["top"].get<int>();
+			si.dwFlags |= STARTF_USESIZE;
+			si.dwXSize = width;
+			si.dwYSize = height;
+			LOGMESSAGE(L"%s cache size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
+		}
+	}
+	else if (json_object_has_member(jsp, "size"))
 	{
 		int width = jsp["size"][0], height = jsp["size"][1];
 		if (width || height)
@@ -1992,6 +2064,14 @@ void create_process(
 			else
 			{
 				jsp["en_job"] = true;
+				if (start_show)
+				{
+					extern HWND hWnd;
+					extern int start_show_timer_tick_cnt;
+					start_show_timer_tick_cnt = 0;
+					SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 400, NULL);
+				}
+
 			}
 		}
 		// Can we free handles now? Not sure about this.
@@ -2048,7 +2128,8 @@ void create_process(
 						//jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
 						//if (start_show) show_hide_toggle(jsp);
-						update_cache_enabled_start_show(true, start_show);
+						// Run as administrator then donot cache
+						//update_cache_enabled_start_show(true, start_show);
 						/*if (enable_cache)
 						{
 							if (false == disable_cache_enabled)
@@ -2079,7 +2160,7 @@ void create_process(
 			}
 		}
 		jsp["enabled"] = false;
-		if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, 2);
+		if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, cEnabled);
 		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
 }
@@ -2107,6 +2188,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 		jsp["pid"] = -1;
 		jsp["hwnd"] = 0;
 		jsp["win_num"] = 0;
+		jsp["en_job"] = false;
 		jsp["running"] = false;
 		jsp["show"] = false;
 		jsp["enabled"] = false;
@@ -2135,9 +2217,9 @@ void hideshow_all(bool is_hideall)
 					update_cache_position_size(hWnd);
 				}
 				itm["show"] = !is_show;
-				if (enable_cache && false == disable_cache_show)
+				if (enable_cache && !disable_cache_show && true == itm["en_job"])
 				{
-					update_cache("start_show", !is_show, 3);
+					update_cache("start_show", !is_show, cShow);
 				}
 
 				/*HWND hWnd = reinterpret_cast<HWND>(itm["hwnd"].get<int64_t>());
@@ -2190,6 +2272,7 @@ void left_click_toggle()
 void show_hide_toggle(nlohmann::json& jsp)
 {
 	bool is_show = jsp["show"];
+	bool is_en_job = jsp["en_job"];
 #ifdef _DEBUG
 	size_t num_of_windows = static_cast<size_t>(jsp["win_num"].get<int>());
 	LOGMESSAGE(L"%s num_of_windows size: %d GetHwnd:0xx\n",
@@ -2204,15 +2287,21 @@ void show_hide_toggle(nlohmann::json& jsp)
 	{
 		if (is_show)
 		{
+			if (is_en_job)
+			{
+				update_cache_position_size(hWnd);
+			}
 			ShowWindow(hWnd, SW_HIDE);
 			jsp["show"] = false;
-
+			if (enable_cache && !disable_cache_show && is_en_job)
+			{
+				update_cache("start_show", false, cShow);
+			}
 #ifdef _DEBUG
 			RECT rect = { NULL };
 			GetWindowRect(hWnd, &rect);
 			LOGMESSAGE(L"%s GetWindowRect left:%d right:%d bottom:%d top:%d\n", utf8_to_wstring(jsp["name"]).c_str(), rect.left, rect.right, rect.bottom, rect.top);
 #endif
-			update_cache_position_size(hWnd);
 		}
 		else
 		{
@@ -2244,9 +2333,9 @@ void show_hide_toggle(nlohmann::json& jsp)
 				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
 			}
 			jsp["show"] = true;
-			if (enable_cache && false == disable_cache_show)
+			if (enable_cache && !disable_cache_show && is_en_job)
 			{
-				update_cache("start_show", false, 3);
+				update_cache("start_show", true, cShow);
 			}
 		}
 	}
@@ -2266,6 +2355,17 @@ void kill_all(bool is_exit/* = true*/)
 		}*/
 		if (is_running)
 		{
+			if (enable_cache && (!disable_cache_position || !disable_cache_size))
+			{
+				if (true == itm["en_job"])
+				{
+					HWND hWnd = get_hwnd_from_json(itm);
+					if (hWnd)
+					{
+						update_cache_position_size(hWnd);
+					}
+				}
+			}
 			if (is_exit == false)
 			{
 				bool ignore_all = false;
@@ -2330,7 +2430,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{

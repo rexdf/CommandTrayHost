@@ -542,7 +542,7 @@ void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache)
 
 	if (is_update_cache && enable_cache && !disable_cache_enabled)
 	{
-		update_cache("enabled", false, 2);
+		update_cache("enabled", false, cEnabled);
 	}
 }
 
