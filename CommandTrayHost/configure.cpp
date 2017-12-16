@@ -8,6 +8,10 @@
 
 extern bool is_runas_admin;
 extern nlohmann::json global_stat;
+extern nlohmann::json* global_cache_configs_ref;
+extern nlohmann::json* global_configs_pointer;
+extern nlohmann::json* global_left_click_pointer;
+extern nlohmann::json* global_group_pointer;
 //extern CHAR locale_name[];
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
@@ -1324,7 +1328,17 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 
 	// I don't know where is js now? data? bss? heap? stack?
 	global_stat = nlohmann::json::parse(js_string);
-	for (auto& i : global_stat["configs"])
+	if (enable_cache)global_cache_configs_ref = &(global_stat["cache"]["configs"]);
+	global_configs_pointer = &(global_stat["configs"]);
+	if (json_object_has_member(global_stat, "left_click"))
+	{
+		global_left_click_pointer = &(global_stat["left_click"]);
+	}
+	if (json_object_has_member(global_stat, "groups"))
+	{
+		global_group_pointer = &(global_stat["groups"]);
+	}
+	for (auto& i : *global_configs_pointer)
 	{
 		i["running"] = false;
 		i["handle"] = 0;
@@ -1563,7 +1577,7 @@ void update_hwnd_all()
 {
 	cache_config_cursor = 0;
 	bool all_get = true;
-	for (auto& i : global_stat["configs"])
+	for (auto& i : *global_configs_pointer)
 	{
 		if (true == i["en_job"])
 		{
@@ -1573,7 +1587,7 @@ void update_hwnd_all()
 				all_get = false;
 				start_show_timer_tick_cnt++;
 				LOGMESSAGE(L"%s tick failed %d\n",
-					utf8_to_wstring(global_stat["configs"][cache_config_cursor]["name"]).c_str(),
+					utf8_to_wstring((*global_configs_pointer)[cache_config_cursor]["name"]).c_str(),
 					start_show_timer_tick_cnt
 				);
 				break;
@@ -1599,7 +1613,7 @@ void update_hwnd_all()
 		KillTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW);
 		MessageBox(NULL,
 			L"Some app cannot get HWND\n",
-			(utf8_to_wstring(global_stat["configs"][cache_config_cursor]["name"]) + L" HWND error").c_str(),
+			(utf8_to_wstring((*global_configs_pointer)[cache_config_cursor]["name"]) + L" HWND error").c_str(),
 			MB_OK
 		);
 	}
@@ -1609,7 +1623,7 @@ void start_all(HANDLE ghJob, bool force)
 {
 	//int cmd_idx = 0;
 	cache_config_cursor = 0;
-	for (auto& i : global_stat["configs"])
+	for (auto& i : (*global_configs_pointer))
 	{
 		if (force)
 		{
@@ -1639,7 +1653,7 @@ void start_all(HANDLE ghJob, bool force)
 	/*// not even work here, hwnd is still 0.
 	if (!force)
 	{
-		for (auto& i : global_stat["configs"])
+		for (auto& i : (*global_configs_pointer))
 		{
 			if (json_object_has_member(i, "start_show") && i["start_show"] == true)
 			{
@@ -1654,7 +1668,7 @@ void restart_all(HANDLE ghJob)
 {
 	//int cmd_idx = 0;
 	cache_config_cursor = 0;
-	for (auto& i : global_stat["configs"])
+	for (auto& i : (*global_configs_pointer))
 	{
 		if (i["running"] == true)
 		{
@@ -1692,7 +1706,7 @@ std::vector<HMENU>* vector_hemnu_p;
 // reduce parameters to minimize recursion stack usage
 void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu) //, std::vector<HMENU>& outVcHmenu)
 {
-	const nlohmann::json& configs = global_stat["configs"];
+	const nlohmann::json& configs = (*global_configs_pointer);
 
 	for (auto& m : root_groups)
 	{
@@ -1760,7 +1774,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 	}
 	int i = 0;
 	//std::wstring local_wstring;
-	for (auto& itm : global_stat["configs"])
+	for (auto& itm : (*global_configs_pointer))
 	{
 		hSubMenu = CreatePopupMenu();
 
@@ -1877,7 +1891,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		hSubMenu = CreatePopupMenu();
 		vector_hemnu_p = &outVcHmenu;
 		level_menu_symbol_p = menu_symbol_wstring.c_str();
-		create_group_level_menu(global_stat["groups"], hSubMenu);
+		create_group_level_menu(*global_group_pointer, hSubMenu);
 		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
 	}
 	//return true;
@@ -1960,7 +1974,7 @@ void create_process(
 
 	if (enable_cache && !disable_cache_enabled)
 	{
-		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+		auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
 		if (check_cache_valid(ref["valid"].get<int>(), cShow))
 		{
 			start_show = ref["start_show"];
@@ -2006,7 +2020,7 @@ void create_process(
 	{
 		if (!start_show_slient)
 		{
-			auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+			auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cPosition))
 			{
 				si.dwFlags |= STARTF_USEPOSITION;
@@ -2029,7 +2043,7 @@ void create_process(
 	{
 		if (!start_show_slient)
 		{
-			auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+			auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cSize))
 			{
 				int width = ref["right"].get<int>() - ref["left"].get<int>();
@@ -2274,7 +2288,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 void hideshow_all(bool is_hideall)
 {
 	cache_config_cursor = 0;
-	for (auto& itm : global_stat["configs"])
+	for (auto& itm : (*global_configs_pointer))
 	{
 		if (itm["running"])
 		{
@@ -2324,8 +2338,8 @@ void hideshow_all(bool is_hideall)
 
 void left_click_toggle()
 {
-	auto& jsps = global_stat["configs"];
-	for (auto& m : global_stat["left_click"])
+	auto& jsps = (*global_configs_pointer);
+	for (auto& m : *global_left_click_pointer)
 	{
 		int idx = m;
 		if (true == jsps[idx]["running"])
@@ -2417,7 +2431,7 @@ void show_hide_toggle(nlohmann::json& jsp)
 void kill_all(bool is_exit/* = true*/)
 {
 	cache_config_cursor = -1;
-	for (auto& itm : global_stat["configs"])
+	for (auto& itm : (*global_configs_pointer))
 	{
 		cache_config_cursor++; // for continue
 		bool is_running = itm["running"];

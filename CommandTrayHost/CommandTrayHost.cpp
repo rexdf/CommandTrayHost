@@ -14,6 +14,10 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 #endif
 
 nlohmann::json global_stat;
+nlohmann::json* global_cache_configs_ref;
+nlohmann::json* global_configs_pointer;
+nlohmann::json* global_left_click_pointer;
+nlohmann::json* global_group_pointer;
 HANDLE ghJob;
 HANDLE ghMutex;
 HICON gHicon;
@@ -818,7 +822,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int menu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) / 0x10;
 			int submenu_idx = (nID - WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE) % 0x10;
 			LOGMESSAGE(L"%x Clicked. %d %d\n", nID, menu_idx, submenu_idx);
-			nlohmann::json& js = global_stat["configs"][menu_idx];
+			nlohmann::json& js = (*global_configs_pointer)[menu_idx];
 			cache_config_cursor = menu_idx;
 			if (submenu_idx < 3)
 			{

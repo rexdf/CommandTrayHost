@@ -5,6 +5,8 @@
 #include "utils.hpp"
 
 extern nlohmann::json global_stat;
+extern nlohmann::json* global_cache_configs_ref;
+extern nlohmann::json* global_configs_pointer;
 extern int number_of_configs;
 
 extern bool enable_cache;
