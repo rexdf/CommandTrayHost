@@ -949,6 +949,15 @@ int configure_reader(std::string& out)
 		enable_cache = false;
 	}
 
+	LOGMESSAGE(L"disable_cache_enabled %d %d %d %d %d %d\n",
+		disable_cache_enabled,
+		disable_cache_position,
+		disable_cache_show,
+		disable_cache_size,
+		conform_cache_expire,
+		enable_cache
+	);
+
 	if (enable_cache)
 	{
 		if (d.HasMember("cache"))
@@ -1980,7 +1989,7 @@ void create_process(
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
 
-	if (enable_cache && !disable_cache_enabled)
+	if (enable_cache && !disable_cache_show)
 	{
 		auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 		if (check_cache_valid(ref["valid"].get<int>(), cShow))

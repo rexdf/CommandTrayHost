@@ -332,8 +332,8 @@ bool rapidjson_check_exist_type(
 	else
 	{
 		ret = not_exist_return;
+		LOGMESSAGE(L"%S not exist: ret:%d \n", name, not_exist_return);
 	}
-	LOGMESSAGE(L"%S not exist: ret:%d \n", name, not_exist_return);
 	if (post_func != nullptr)
 	{
 		post_func(val, name);
