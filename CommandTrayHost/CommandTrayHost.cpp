@@ -117,6 +117,7 @@ static BOOL MyEndTask(DWORD pid)
 
 BOOL ShowTrayIcon(LPCWSTR lpszProxy, DWORD dwMessage)
 {
+	LOGMESSAGE(L"%s %d", lpszProxy, dwMessage);
 	NOTIFYICONDATA nid;
 	ZeroMemory(&nid, sizeof(NOTIFYICONDATA));
 	nid.cbSize = (DWORD)sizeof(NOTIFYICONDATA);
@@ -718,7 +719,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				left_click_toggle();
 			}
-			else
+			else if (hConsole)
 			{
 				ShowWindow(hConsole, !IsWindowVisible(hConsole));
 				SetForegroundWindow(hConsole);
@@ -734,7 +735,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_COMMAND:
 		nID = LOWORD(wParam);
-		if (nID == WM_TASKBARNOTIFY_MENUITEM_SHOW)
+		/*if (nID == WM_TASKBARNOTIFY_MENUITEM_SHOW)
 		{
 			ShowWindow(hConsole, SW_SHOW);
 			SetForegroundWindow(hConsole);
@@ -743,11 +744,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ShowWindow(hConsole, SW_HIDE);
 		}
-		/*else if (nID == WM_TASKBARNOTIFY_MENUITEM_RELOAD)
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_RELOAD)
 		{
 			ReloadCmdline();
-		}*/
-		else if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
+		}
+		else */if (nID == WM_TASKBARNOTIFY_MENUITEM_STARTUP)
 		{
 			if (IsMyProgramRegisteredForStartup(szPathToExeToken))
 			{

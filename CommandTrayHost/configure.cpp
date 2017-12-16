@@ -2175,9 +2175,9 @@ void create_process(
 							MB_ICONWARNING
 						);*/
 						ShowTrayIcon(
-							isZHCN ? (name + L": 因UIDP限制，AssignProcessToObject失败，程序现在不受CommandTrayHost控制，你需要手动关掉它。").c_str()
-							: translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.").c_str()
-							, NIM_ADD
+							isZHCN ? (name + L"\n因UIDP限制，AssignProcessToObject失败，程序现在不受CommandTrayHost控制，你需要手动关掉它。").c_str()
+							: (name+L"\n"+translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.")).c_str()
+							, NIM_MODIFY
 						);
 					}
 				}
