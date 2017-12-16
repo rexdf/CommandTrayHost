@@ -408,6 +408,7 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 {
+	if (hProcess == NULL)return NULL;
 	WaitForInputIdle(hProcess, INFINITE);
 
 	ProcessWindowsInfo Info(GetProcessId(hProcess));

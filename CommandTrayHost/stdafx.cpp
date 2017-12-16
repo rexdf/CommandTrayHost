@@ -6,7 +6,7 @@
 
 // TODO: reference any additional headers you need in STDAFX.H
 // and not in this file
-#pragma comment( lib, "wininet" )
+//#pragma comment( lib, "wininet" )
 #pragma comment(lib, "Shlwapi")
 
 #if VER_PRODUCTBUILD == 7600

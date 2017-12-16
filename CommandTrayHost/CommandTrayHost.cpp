@@ -53,6 +53,7 @@ BOOL isZHCN, isENUS;
 HINSTANCE hInst;
 HWND hWnd;
 HWND hConsole;
+HANDLE hProcessCommandTrayHost;
 WCHAR szTitle[64] = L"";
 WCHAR szWindowClass[36] = L"command-tray-host";
 WCHAR szCommandLine[1024] = L"";
@@ -617,14 +618,15 @@ BOOL CreateConsole()
 	return TRUE;
 }
 //#pragma warning( pop )
+#endif
 
 BOOL ExecCmdline()
 {
-	SetWindowText(hConsole, szTitle);
+	//SetWindowText(hConsole, szTitle);
 	STARTUPINFO si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = SW_SHOW;
+	si.wShowWindow = SW_HIDE;
 	BOOL bRet = CreateProcess(NULL, szCommandLine, NULL, NULL, FALSE, CREATE_BREAKAWAY_FROM_JOB, NULL, NULL, &si, &pi);
 	if (bRet)
 	{
@@ -653,10 +655,12 @@ BOOL ExecCmdline()
 		ExitProcess(0);
 	}
 	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
+	//CloseHandle(pi.hProcess);
+	hProcessCommandTrayHost = pi.hProcess;
 	return TRUE;
 }
 
+#ifdef _DEBUG2
 BOOL TryDeleteUpdateFiles()
 {
 	WIN32_FIND_DATA FindFileData;
@@ -723,12 +727,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				left_click_toggle();
 			}
-			else if (hConsole)
+			else
 			{
-				ShowWindow(hConsole, !IsWindowVisible(hConsole));
-				SetForegroundWindow(hConsole);
+				if (hConsole == 0)
+				{
+					size_t num_of_windows_;
+					hConsole = GetHwnd(hProcessCommandTrayHost, num_of_windows_);
+					if (hConsole)
+					{
+						CloseHandle(hProcessCommandTrayHost);
+						if (gHicon)set_wnd_icon(hConsole, gHicon);
+					}
+				}
+				if (hConsole)
+				{
+					ShowWindow(hConsole, !IsWindowVisible(hConsole));
+					SetForegroundWindow(hConsole);
+				}
 			}
-
 		}
 		else if (lParam == WM_RBUTTONUP)
 		{
@@ -1055,7 +1071,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//
 	start_all(ghJob);
 	//CreateConsole();
-	//ExecCmdline();
+	if(!enable_left_click)ExecCmdline();
 	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();

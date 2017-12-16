@@ -745,7 +745,11 @@ int configure_reader(std::string& out)
 	// type check for global optional items
 	const RapidJsonObjectChecker global_optional_items[] = {
 		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
+#if VER_PRODUCTBUILD == 7600
+			enable_hotkey = false;
+#else
 			enable_hotkey = val[name].GetBool();
+#endif
 			return true;
 		} },
 		{ "lang", iStringType, true, lambda_remove_empty_string, [](Value& val, PCSTR name)->bool { // place hold for execute some code
