@@ -21,14 +21,14 @@ template<typename T>
 void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 {
 	assert(enable_cache);
-	//static auto& base_cache_ref = (*global_cache_configs_ref);
+	//static auto& base_cache_ref = (*global_cache_configs_pointer);
 	//static auto& base_main_ref = (*global_configs_pointer);
 	//static auto& base_cache_ref = global_stat["cache"]["configs"];
 	//static auto& base_main_ref = global_stat["configs"];
 	extern int cache_config_cursor;
-	extern nlohmann::json* global_cache_configs_ref;
+	extern nlohmann::json* global_cache_configs_pointer;
 	extern nlohmann::json* global_configs_pointer;
-	auto& cache_ref = (*global_cache_configs_ref)[cache_config_cursor][name];
+	auto& cache_ref = (*global_cache_configs_pointer)[cache_config_cursor][name];
 	//auto& main_ref= base_main_ref[cache_config_cursor][name];
 	if (cache_ref != value)
 	{
@@ -41,7 +41,7 @@ void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 		//base_ref[cache_config_cursor]["valid"] |= (1 << cnt);
 		//LOGMESSAGE(L"base_ref[cache_config_cursor]["valid"]: 0x%x\n", base_ref[cache_config_cursor]["valid"].get<int>());
 
-		auto& valid_ref = (*global_cache_configs_ref)[cache_config_cursor]["valid"];
+		auto& valid_ref = (*global_cache_configs_pointer)[cache_config_cursor]["valid"];
 		int valid_value = valid_ref, valid_mask = 1 << cnt;
 		if ((valid_value & valid_mask) == 0)
 		{
@@ -67,5 +67,6 @@ T get_cache(PCSTR name)
 	assert(enable_cache);
 	//static auto& base_ref = global["cache"]["configs"];
 	extern int cache_config_cursor;
-	return (*global_cache_configs_ref)[cache_config_cursor][name];
+	extern nlohmann::json* global_cache_configs_pointer;
+	return (*global_cache_configs_pointer)[cache_config_cursor][name];
 }

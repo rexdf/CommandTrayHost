@@ -8,10 +8,10 @@
 
 extern bool is_runas_admin;
 extern nlohmann::json global_stat;
-extern nlohmann::json* global_cache_configs_ref;
+extern nlohmann::json* global_cache_configs_pointer;
 extern nlohmann::json* global_configs_pointer;
 extern nlohmann::json* global_left_click_pointer;
-extern nlohmann::json* global_group_pointer;
+extern nlohmann::json* global_groups_pointer;
 //extern CHAR locale_name[];
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
@@ -1328,7 +1328,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 
 	// I don't know where is js now? data? bss? heap? stack?
 	global_stat = nlohmann::json::parse(js_string);
-	if (enable_cache)global_cache_configs_ref = &(global_stat["cache"]["configs"]);
+	if (enable_cache)global_cache_configs_pointer = &(global_stat["cache"]["configs"]);
 	global_configs_pointer = &(global_stat["configs"]);
 	if (json_object_has_member(global_stat, "left_click"))
 	{
@@ -1336,7 +1336,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	}
 	if (json_object_has_member(global_stat, "groups"))
 	{
-		global_group_pointer = &(global_stat["groups"]);
+		global_groups_pointer = &(global_stat["groups"]);
 	}
 	for (auto& i : *global_configs_pointer)
 	{
@@ -1371,7 +1371,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	}
 	if (enable_groups_menu)
 	{
-		enable_groups_menu = type_check_groups(global_stat["groups"], 0);
+		enable_groups_menu = type_check_groups(*global_groups_pointer, 0);
 		if (enable_groups_menu && false == json_object_has_member(global_stat, "groups_menu_symbol"))
 		{
 			global_stat["groups_menu_symbol"] = "+";
@@ -1891,7 +1891,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		hSubMenu = CreatePopupMenu();
 		vector_hemnu_p = &outVcHmenu;
 		level_menu_symbol_p = menu_symbol_wstring.c_str();
-		create_group_level_menu(*global_group_pointer, hSubMenu);
+		create_group_level_menu(*global_groups_pointer, hSubMenu);
 		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
 	}
 	//return true;
@@ -1974,7 +1974,7 @@ void create_process(
 
 	if (enable_cache && !disable_cache_enabled)
 	{
-		auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
+		auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 		if (check_cache_valid(ref["valid"].get<int>(), cShow))
 		{
 			start_show = ref["start_show"];
@@ -2020,7 +2020,7 @@ void create_process(
 	{
 		if (!start_show_slient)
 		{
-			auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
+			auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cPosition))
 			{
 				si.dwFlags |= STARTF_USEPOSITION;
@@ -2043,7 +2043,7 @@ void create_process(
 	{
 		if (!start_show_slient)
 		{
-			auto& ref = (*global_cache_configs_ref)[cache_config_cursor];
+			auto& ref = (*global_cache_configs_pointer)[cache_config_cursor];
 			if (check_cache_valid(ref["valid"].get<int>(), cSize))
 			{
 				int width = ref["right"].get<int>() - ref["left"].get<int>();

@@ -1,11 +1,11 @@
 ﻿#include "stdafx.h"
 #include "cache.h"
 #include "language.h"
-#include "configure.h"
-#include "utils.hpp"
+//#include "configure.h"
+//#include "utils.hpp"
 
 extern nlohmann::json global_stat;
-extern nlohmann::json* global_cache_configs_ref;
+extern nlohmann::json* global_cache_configs_pointer;
 extern nlohmann::json* global_configs_pointer;
 extern int number_of_configs;
 

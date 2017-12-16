@@ -14,10 +14,10 @@ extern "C" WINBASEAPI HWND WINAPI GetConsoleWindow();
 #endif
 
 nlohmann::json global_stat;
-nlohmann::json* global_cache_configs_ref;
+nlohmann::json* global_cache_configs_pointer;
 nlohmann::json* global_configs_pointer;
 nlohmann::json* global_left_click_pointer;
-nlohmann::json* global_group_pointer;
+nlohmann::json* global_groups_pointer;
 HANDLE ghJob;
 HANDLE ghMutex;
 HICON gHicon;

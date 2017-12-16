@@ -502,7 +502,7 @@ DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
 	return dwRet;
 }
 
-extern nlohmann::json global_stat;
+//extern nlohmann::json global_stat;
 //extern int number_of_configs;
 
 extern bool enable_cache;
