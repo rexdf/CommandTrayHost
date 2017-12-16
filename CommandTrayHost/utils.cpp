@@ -596,6 +596,53 @@ BOOL set_wnd_icon(HWND hWnd, HICON hIcon)
 	return 0 == err;
 }
 
+// https://stackoverflow.com/questions/2798922/storage-location-of-yellow-blue-shield-icon
+BOOL GetStockIcon(HICON& outHicon)
+{
+#if VER_PRODUCTBUILD == 7600
+#else
+	SHSTOCKICONINFO sii;
+	ZeroMemory(&sii, sizeof(sii));
+	sii.cbSize = sizeof(sii);
+	if (S_OK == SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICON | SHGSI_SMALLICON, &sii))
+	{
+		outHicon = sii.hIcon;
+		return TRUE;
+	}
+#endif
+	return FALSE;
+
+	/*
+	SHSTOCKICONINFO sii;
+	sii.cbSize = sizeof(sii);
+	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
+	HICON hiconShield = ExtractIconEx(sii. ...);
+
+	SHSTOCKICONINFO sii;
+	ZeroMemory(&sii, sizeof(sii));
+	sii.cbSize = sizeof(sii);
+	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
+
+	HICON ico;
+	SHDefExtractIcon(sii.szPath, sii.iIcon, 0, &ico, NULL, IconSize); // IconSize=256
+
+	return hiconShield;
+	*/
+}
+
+// http://www.programmersheaven.com/discussion/74164/converting-icon-to-bitmap-hicon-hbitmap
+HBITMAP BitmapFromIcon(HICON hIcon)
+{
+	HDC hDC = CreateCompatibleDC(NULL);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hDC, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hDC, hBitmap);
+	DrawIcon(hDC, 0, 0, hIcon);
+	SelectObject(hDC, hOldBitmap);
+	DeleteDC(hDC);
+	return hBitmap;
+}
+
+
 #ifdef _DEBUG
 //https://stackoverflow.com/questions/5058543/sendmessagecallback-usage-example
 VOID CALLBACK IconSendAsyncProc(__in  HWND hwnd,

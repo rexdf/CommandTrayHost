@@ -185,8 +185,9 @@ Windows命令行程序系统托盘管理工具
         "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里下箭头 Alt+Ctrl+Win+↑↓
         "topmost": "Alt+Ctrl+Winl+T", // 同样对任意程序都有效
     },
-    "repeat_mod_hotkey": false,
+    "repeat_mod_hotkey": false, // 是否长按算多次
     "enable_hotkey": true,
+    "start_show_slient": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 }
 ```
 

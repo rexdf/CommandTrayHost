@@ -28,6 +28,7 @@ bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
 bool disable_cache_show;
+bool start_show_slient;
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
 // after that, its false means need to flush cache out to disk
@@ -113,51 +114,6 @@ static BOOL MyEndTask(DWORD pid)
 	return _wsystem(szCmd) == 0;*/
 }
 
-// https://stackoverflow.com/questions/2798922/storage-location-of-yellow-blue-shield-icon
-BOOL GetStockIcon(HICON& outHicon)
-{
-#if VER_PRODUCTBUILD == 7600
-#else
-	SHSTOCKICONINFO sii;
-	ZeroMemory(&sii, sizeof(sii));
-	sii.cbSize = sizeof(sii);
-	if (S_OK == SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICON | SHGSI_SMALLICON, &sii))
-	{
-		outHicon = sii.hIcon;
-		return TRUE;
-	}
-#endif
-	return FALSE;
-
-	/*
-	SHSTOCKICONINFO sii;
-	sii.cbSize = sizeof(sii);
-	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
-	HICON hiconShield = ExtractIconEx(sii. ...);
-
-	SHSTOCKICONINFO sii;
-	ZeroMemory(&sii, sizeof(sii));
-	sii.cbSize = sizeof(sii);
-	SHGetStockIconInfo(SIID_SHIELD, SHGSI_ICONLOCATION, &sii);
-
-	HICON ico;
-	SHDefExtractIcon(sii.szPath, sii.iIcon, 0, &ico, NULL, IconSize); // IconSize=256
-
-	return hiconShield;
-	*/
-}
-
-// http://www.programmersheaven.com/discussion/74164/converting-icon-to-bitmap-hicon-hbitmap
-HBITMAP BitmapFromIcon(HICON hIcon)
-{
-	HDC hDC = CreateCompatibleDC(NULL);
-	HBITMAP hBitmap = CreateCompatibleBitmap(hDC, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
-	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hDC, hBitmap);
-	DrawIcon(hDC, 0, 0, hIcon);
-	SelectObject(hDC, hOldBitmap);
-	DeleteDC(hDC);
-	return hBitmap;
-}
 
 BOOL ShowTrayIcon(LPCTSTR lpszProxy, DWORD dwMessage)
 {
@@ -597,6 +553,7 @@ BOOL CreateConsole()
 	_wfreopen_s(&fp, L"CONOUT$", L"w+t", stdout);
 
 	hConsole = GetConsoleWindow();
+	ShowWindow(hConsole, SW_SHOW);
 
 	if (GetEnvironmentVariableW(L"TASKBAR_VISIBLE", szVisible, BUFSIZ - 1) && szVisible[0] == L'0')
 	{
@@ -656,7 +613,7 @@ BOOL ExecCmdline()
 	STARTUPINFO si = { sizeof(si) };
 	PROCESS_INFORMATION pi;
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = SW_HIDE;
+	si.wShowWindow = SW_SHOW;
 	BOOL bRet = CreateProcess(NULL, szCommandLine, NULL, NULL, FALSE, CREATE_BREAKAWAY_FROM_JOB, NULL, NULL, &si, &pi);
 	if (bRet)
 	{
@@ -835,7 +792,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DeleteTrayIcon();
 			delete_lockfile();*/
 			//CLEANUP_BEFORE_QUIT(2);
-			PostMessage(hConsole, WM_CLOSE, 0, 0);
+			//PostMessage(hConsole, WM_CLOSE, 0, 0);
+			PostMessage(hWnd, WM_CLOSE, 0, 0);
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_PROXYLIST_BASE + ARRAYSIZE(
 			lpProxyList))
@@ -1082,8 +1040,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//initialize_local();
 	//
 	start_all(ghJob);
-	CreateConsole();
-	ExecCmdline();
+	//CreateConsole();
+	//ExecCmdline();
 	ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	//TryDeleteUpdateFiles();
 

@@ -21,6 +21,7 @@ extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
+extern bool start_show_slient;
 extern bool is_cache_valid;
 extern int cache_config_cursor;
 
@@ -172,8 +173,9 @@ bool initial_configure()
         "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里0x26 0x28代表方向键上下键 Ctrl+Win+↑↓
         "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
     },
-    "repeat_mod_hotkey": false,
+    "repeat_mod_hotkey": false, // 是否长按算多次
     "enable_hotkey": true,
+    "start_show_slient": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -294,6 +296,7 @@ bool initial_configure()
     },
     "repeat_mod_hotkey": false,
     "enable_hotkey": true,
+    "start_show_slient": true,
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -712,6 +715,7 @@ int configure_reader(std::string& out)
 	disable_cache_enabled = true;
 	disable_cache_show = false;
 	repeat_mod_hotkey = false;
+	start_show_slient = true;
 
 	int cache_option_pointer_idx = 0;
 	bool* const cache_option_value_pointer[] = {
@@ -736,12 +740,12 @@ int configure_reader(std::string& out)
 			enable_hotkey = val[name].GetBool();
 			return true;
 		} },
-		{ "lang", iStringType, true, lambda_remove_empty_string },
-		{ "global", iTrueType, false, [](Value& val, PCSTR name)->bool { // place hold for execute some code
+		{ "lang", iStringType, true, lambda_remove_empty_string, [](Value& val, PCSTR name)->bool { // place hold for execute some code
 			bool has_lang = val.HasMember("lang");
 			initialize_local(has_lang, has_lang ? val["lang"].GetString() : NULL);
 			return true;
 		}},
+
 		{"configs", iArrayType, false, [&cnt,&config_items](Value& val,PCSTR name)->bool
 		{
 			for (auto& m : val[name].GetArray())
@@ -877,6 +881,10 @@ int configure_reader(std::string& out)
 		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option },
 		{ "disable_cache_show", iBoolType, true, lambda_cache_option },
 
+		{ "start_show_slient", iBoolType, true, [](const Value& val,PCSTR name)->bool {
+			start_show_slient = val[name].GetBool();
+			return true;
+		} },
 		{ "repeat_mod_hotkey", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			repeat_mod_hotkey = val[name].GetBool();
 			return true;
@@ -1556,7 +1564,8 @@ void update_hwnd_all()
 	{
 		if (true == i["en_job"])
 		{
-			if (NULL == get_hwnd_from_json(i))
+			HWND hWnd = get_hwnd_from_json(i);
+			if (NULL == hWnd)
 			{
 				all_get = false;
 				start_show_timer_tick_cnt++;
@@ -1565,6 +1574,14 @@ void update_hwnd_all()
 					start_show_timer_tick_cnt
 				);
 				break;
+			}
+			else
+			{
+				if (start_show_slient && i["show"] == true)
+				{
+					ShowWindow(hWnd, SW_SHOW);
+					SetForegroundWindow(hWnd);
+				}
 			}
 		}
 		cache_config_cursor++;
@@ -1961,19 +1978,22 @@ void create_process(
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = start_show ? SW_SHOW : SW_HIDE;
+	si.wShowWindow = (!start_show_slient && start_show) ? SW_SHOW : SW_HIDE;
 	//si.wShowWindow = SW_HIDE;
 	si.lpTitle = nameStr;
 
 	if (enable_cache && !disable_cache_position)
 	{
-		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
-		if (check_cache_valid(ref["valid"].get<int>(), cPosition))
+		if (!start_show_slient)
 		{
-			si.dwFlags |= STARTF_USEPOSITION;
-			si.dwX = ref["left"].get<int>();
-			si.dwY = ref["top"].get<int>();
-			LOGMESSAGE(L"%s cache position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
+			auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+			if (check_cache_valid(ref["valid"].get<int>(), cPosition))
+			{
+				si.dwFlags |= STARTF_USEPOSITION;
+				si.dwX = ref["left"].get<int>();
+				si.dwY = ref["top"].get<int>();
+				LOGMESSAGE(L"%s cache position:(%d,%d)\n", name.c_str(), si.dwX, si.dwY);
+			}
 		}
 	}
 	// GetWindowRect result is always a offset by random.
@@ -1987,15 +2007,18 @@ void create_process(
 	}
 	if (enable_cache && !disable_cache_position)
 	{
-		auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
-		if (check_cache_valid(ref["valid"].get<int>(), cSize))
+		if (!start_show_slient)
 		{
-			int width = ref["right"].get<int>() - ref["left"].get<int>();
-			int height = ref["bottom"].get<int>() - ref["top"].get<int>();
-			si.dwFlags |= STARTF_USESIZE;
-			si.dwXSize = width;
-			si.dwYSize = height;
-			LOGMESSAGE(L"%s cache size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
+			auto& ref = global_stat["cache"]["configs"][cache_config_cursor];
+			if (check_cache_valid(ref["valid"].get<int>(), cSize))
+			{
+				int width = ref["right"].get<int>() - ref["left"].get<int>();
+				int height = ref["bottom"].get<int>() - ref["top"].get<int>();
+				si.dwFlags |= STARTF_USESIZE;
+				si.dwXSize = width;
+				si.dwYSize = height;
+				LOGMESSAGE(L"%s cache size:(%d,%d)\n", name.c_str(), si.dwXSize, si.dwYSize);
+			}
 		}
 	}
 	else if (json_object_has_member(jsp, "size"))
@@ -2069,7 +2092,7 @@ void create_process(
 					extern HWND hWnd;
 					extern int start_show_timer_tick_cnt;
 					start_show_timer_tick_cnt = 0;
-					SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 400, NULL);
+					SetTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW, 200, NULL);
 				}
 
 			}

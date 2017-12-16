@@ -101,6 +101,8 @@ BOOL set_wnd_alpha(HWND hWnd, BYTE bAlpha);
 
 BOOL set_wnd_icon(HWND hWnd, HICON hIcon);
 
+BOOL GetStockIcon(HICON& outHicon);
+
 bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error = true);
 
 #ifdef _DEBUG
