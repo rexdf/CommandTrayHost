@@ -57,7 +57,7 @@ VALUE "LegalTrademarks", "\0"
 VALUE "OriginalFilename", "CommandTrayHost.exe\0"
 VALUE "PrivateBuild", "\0"
 VALUE "ProductName", "CommandTrayHost taskbar\0"
-VALUE "ProductVersion", "1, 6, 0, 0\0"
+VALUE "ProductVersion", "1, 7, 0, 0\0"
 VALUE "SpecialBuild", "\0"
 END
 END
@@ -130,8 +130,10 @@ STRINGTABLE DISCARDABLE
 BEGIN
 IDS_CMDLINE             L"cmd /v"
 IDS_ENVIRONMENT         L"TASKBAR_VISIBLE=0\nTASKBAR_TOOLTIP=CommandTrayHost\nTASKBAR_TITLE=CommandTrayHost Notify\nTASKBAR_BALLOON=CommandTrayHost 已经启动，单击托盘图标可以最小化，右击显示菜单。\n"
+#ifdef _DEBUG2
 IDS_PROXYLIST           L"http://127.0.0.1:8087/proxy.pac\n127.0.0.1:8087\n"
 IDS_RASPBK              "%APPDATA%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Application Data\\Microsoft\\Network\\Connections\\Pbk\\rasphone.pbk\n"
+#endif
 END
 
 #endif    // Chinese (P.R.C.) resources
