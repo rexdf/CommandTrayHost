@@ -415,6 +415,23 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 	return true;
 }
 
+BOOL get_alpha(HWND hwnd, BYTE& alpha,bool no_exstyle_return)
+{
+	alpha = 0;
+	DWORD dwExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	if ((dwExStyle | WS_EX_LAYERED) == 0)
+	{
+		if (no_exstyle_return)return FALSE;
+		SetWindowLong(hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
+	}
+	if (GetLayeredWindowAttributes(hwnd, NULL, &alpha, NULL))
+	{
+		if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 {
 	if (hProcess == NULL)return NULL;
@@ -517,8 +534,8 @@ DWORD WINAPI TerminateApp(DWORD dwPID, DWORD dwTimeout)
 
 extern bool enable_cache;
 //extern bool conform_cache_expire;
-//extern bool disable_cache_position;
-//extern bool disable_cache_size;
+extern bool disable_cache_position;
+extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 //extern bool disable_cache_show;
 extern bool is_cache_valid;

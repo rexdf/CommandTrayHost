@@ -32,6 +32,7 @@ bool disable_cache_position;
 bool disable_cache_size;
 bool disable_cache_enabled;
 bool disable_cache_show;
+bool disable_cache_alpha;
 bool start_show_silent;
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
@@ -855,7 +856,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			else if (submenu_idx == 5)
 			{
-				disable_enable_menu(js, ghJob, true);
+				//if (!is_runas_admin)  //comment out to just let it go
+				{
+					disable_enable_menu(js, ghJob, true);
+				}
 			}
 			if (enable_cache && false == is_cache_valid)
 			{
@@ -880,7 +884,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_EXIT)
 		{
-			PostMessage(hConsole, WM_CLOSE, 0, 0);
+			//PostMessage(hConsole, WM_CLOSE, 0, 0);
+			PostMessage(hWnd, WM_CLOSE, 0, 0);
 		}
 		else if (WM_TASKBARNOTIFY_MENUITEM_ELEVATE <= nID && nID <= WM_TASKBARNOTIFY_MENUITEM_RESTARTALL)
 		{
@@ -901,7 +906,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				LOGMESSAGE(L"dwExStyle:0x%x\n", dwExStyle);
 				if (nID == WM_HOTKEY_ADD_ALPHA || nID == WM_HOTKEY_MINUS_ALPHA) {
 					BYTE alpha;
-					SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
+					if (0 == (dwExStyle | WS_EX_LAYERED))
+					{
+						SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
+					}
 					if (GetLayeredWindowAttributes(cur_hwnd, NULL, &alpha, NULL))
 					{
 						if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;

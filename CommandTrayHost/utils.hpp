@@ -71,6 +71,8 @@ bool rapidjson_check_exist_type(
 
 //bool operator != (const RECT&, const RECT&);
 
+BOOL get_alpha(HWND hwnd, BYTE& alpha, bool no_exstyle_return = false);
+
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx = 0);
 
 #ifdef _DEBUG

@@ -26,6 +26,7 @@ extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
+extern bool disable_cache_alpha;
 extern bool start_show_silent;
 extern bool is_cache_valid;
 extern int cache_config_cursor;
@@ -166,6 +167,7 @@ bool initial_configure()
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
     "disable_cache_show": false, // 禁止缓存显示隐藏状态
+    "disable_cache_alpha": false, // 禁止缓存透明度 (缓存时只对有alpha值的configs有作用)
     // 具体说明参考顶部注释7
     "hotkey": { // 并不要求全部配置，可以只配置需要的
         "disable_all": "Alt+Win+Shift+D",
@@ -290,6 +292,7 @@ bool initial_configure()
     "disable_cache_size": false, // enable cache console windows size
     "disable_cache_enabled": true, // disable cache enable/disable status of command line
     "disable_cache_show": false, // disable cache hide/show status
+    "disable_cache_alpha": false, // disable alpha value (only work for configs with alpha)
     // see comment 7 on top
     "hotkey": {
         "disable_all": "Alt+Win+Shift+D",
@@ -741,6 +744,7 @@ int configure_reader(std::string& out)
 	disable_cache_size = false;
 	disable_cache_enabled = true;
 	disable_cache_show = false;
+	disable_cache_alpha = false;
 	repeat_mod_hotkey = false;
 	start_show_silent = true;
 	global_hotkey_alpha_step = 5;
@@ -753,11 +757,12 @@ int configure_reader(std::string& out)
 		&disable_cache_size,
 		&disable_cache_enabled,
 		&disable_cache_show,
-		// others cache_options_numbers = 6;
-		&start_show_silent,  // index 6
-		&repeat_mod_hotkey,  // index 7
+		&disable_cache_alpha,
+		// others cache_options_numbers = 7;
+		&start_show_silent,  // index 7
+		&repeat_mod_hotkey,  // index 8
 	};
-	const int cache_options_numbers = 6;
+	const int cache_options_numbers = 7;
 
 	auto lambda_cache_option = [&cache_cnt, &cache_option_value_pointer, &cache_option_pointer_idx, cache_options_numbers](const Value& val, PCSTR name)->bool {
 		*cache_option_value_pointer[cache_option_pointer_idx] = val[name].GetBool();
@@ -920,12 +925,14 @@ int configure_reader(std::string& out)
 		{ "disable_cache_size", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "disable_cache_show", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "disable_cache_alpha", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
 		{ "start_show_silent", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "repeat_mod_hotkey", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
 		{ "global_hotkey_alpha_step", iIntType, true, [](const Value& val,PCSTR name)->bool {
 			global_hotkey_alpha_step = val[name].GetInt();
+			if (global_hotkey_alpha_step < 1 || global_hotkey_alpha_step>255)return false;
 			return true;
 		} },
 
@@ -972,10 +979,11 @@ int configure_reader(std::string& out)
 		enable_cache = false;
 	}
 
-	LOGMESSAGE(L"disable_cache_enabled %d %d %d %d %d %d\n",
+	LOGMESSAGE(L"disable_cache_enabled %d %d %d %d %d %d %d\n",
 		disable_cache_enabled,
 		disable_cache_position,
 		disable_cache_show,
+		disable_cache_alpha,
 		disable_cache_size,
 		conform_cache_expire,
 		enable_cache
@@ -1021,15 +1029,25 @@ int configure_reader(std::string& out)
 						d_cache["configs"].Size() == cnt
 						)
 					{
-						RapidJsonObjectChecker cache_config_items[] = {
+						const RapidJsonObjectChecker cache_config_items[] = {
 							//{ "alpha", iIntType, false, lambda_check_alpha },
 							{ "enabled", iBoolType, false, nullptr },
 							{ "left", iIntType, false, nullptr },
 							{ "start_show", iBoolType, false, nullptr },
-							{ "valid", iIntType, false,[](const Value& val,PCSTR name)->bool {return val[name].GetInt() >= 0; } },
+							{ "valid", iIntType, false,/*[](const Value& val,PCSTR name)->bool {return val[name].GetInt() >= 0; }*/ },
 							{ "right", iIntType, false, nullptr },
 							{ "top", iIntType, false, nullptr },
 							{ "bottom", iIntType, false, nullptr },
+							{ "alpha", iIntType, true, nullptr, [&allocator](Value& val, PCSTR name)->bool {
+								if (!val.HasMember("alpha"))
+								{
+									val.AddMember("alpha", 255, allocator);
+									int valid = val["valid"].GetInt();
+									valid &= ~(1 << cAlpha);
+									val["valid"] = valid;
+								}
+								return true;
+							}},
 #ifdef _DEBUG
 							{ "name", iStringType, true, nullptr },
 #endif
@@ -1074,7 +1092,7 @@ int configure_reader(std::string& out)
 		//sync cache to configs, override setting in config.json
 		if (enable_cache && is_cache_valid)
 		{
-			if (!disable_cache_position || !disable_cache_size || !disable_cache_enabled || !disable_cache_show)
+			if (!disable_cache_position || !disable_cache_size || !disable_cache_enabled || !disable_cache_show || !disable_cache_alpha)
 			{
 				auto& d_configs_ref = d["configs"];
 				auto& cache_configs_ref = d["cache"]["configs"];
@@ -1145,6 +1163,18 @@ int configure_reader(std::string& out)
 								d_config_i_ref.AddMember("start_show", v, allocator);
 							}
 						}
+						if (!disable_cache_alpha && check_cache_valid(valid_flag, cAlpha) && d_config_i_ref.HasMember("alpha"))
+						{
+							Value v(cache_config_i_ref["alpha"], allocator);
+							if (d_config_i_ref.HasMember("alpha"))
+							{
+								d_config_i_ref["alpha"] = v;
+							}
+							/*else
+							{
+								d_config_i_ref.AddMember("alpha", v, allocator);
+							}*/
+						}
 					}
 				}
 			}
@@ -1179,11 +1209,11 @@ int configure_reader(std::string& out)
 			for (int i = 0; i < cnt; i++)
 			{
 				auto& d_config_i_ref = d_config_ref[i];
-				//int cache_alpha = 170;
-				//if (d_config_i_ref.HasMember("alpha"))
-				//{
-				//	cache_alpha = d_config_i_ref["alpha"].GetInt();
-				//}
+				int cache_alpha = 255;
+				if (d_config_i_ref.HasMember("alpha"))
+				{
+					cache_alpha = d_config_i_ref["alpha"].GetInt();
+				}
 				bool cache_enabled = d_config_i_ref["enabled"].GetBool();
 				bool cache_start_show = false;
 				if (d_config_i_ref.HasMember("start_show"))
@@ -1201,7 +1231,7 @@ int configure_reader(std::string& out)
 					cache_item.AddMember("top", 0, allocator);
 					cache_item.AddMember("right", 0, allocator);
 					cache_item.AddMember("bottom", 0, allocator);
-					//cache_item.AddMember("alpha", cache_alpha, allocator);
+					cache_item.AddMember("alpha", cache_alpha, allocator);
 					cache_item.AddMember("enabled", cache_enabled, allocator);
 					cache_item.AddMember("start_show", cache_start_show, allocator);
 					cache_item.AddMember("valid", 0, allocator);
@@ -1217,12 +1247,12 @@ int configure_reader(std::string& out)
 					static_cast<size_t>(json_file_size),
 					buffer_index,
 #ifdef _DEBUG
-					u8R"(%s{"left": 0, "top": 0, "right": 0, "bottom": 0, "valid":0 ,"enabled": %s, "start_show": %s, "name": "%s"})",
+					u8R"(%s{"alpha":%d, "left": 0, "top": 0, "right": 0, "bottom": 0, "valid":0 ,"enabled": %s, "start_show": %s, "name": "%s"})",
 #else
-					u8R"(%s{"left":0,"top":0,"right":0,"bottom":0,"valid":0,"enabled":%s,"start_show":%s})",
+					u8R"(%s{"alpha":%d,"left":0,"top":0,"right":0,"bottom":0,"valid":0,"enabled":%s,"start_show":%s})",
 #endif
 					i ? "," : "",
-					//cache_alpha,
+					cache_alpha,
 					cache_enabled ? "true" : "false",
 					cache_start_show ? "true" : "false"
 #ifdef _DEBUG
@@ -1562,6 +1592,10 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	return 1;
 }
 
+/*
+ * require cache_config_cursor
+ *
+ */
 inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 {
 	HWND hWnd = reinterpret_cast<HWND>(jsp["hwnd"].get<int64_t>());
@@ -1574,28 +1608,70 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 		{
 			jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 			jsp["win_num"] = static_cast<int>(num_of_windows);
+			auto& cache_i_ref = (*global_cache_configs_pointer)[cache_config_cursor];
+			int valid = 0;
+			if (enable_cache)
+			{
+				valid = cache_i_ref["valid"].get<int>();
+			}
 			if (json_object_has_member(jsp, "alpha"))
 			{
-				set_wnd_alpha(hWnd, jsp["alpha"]);
+				bool sucess_set_alpha = false;
+				if (enable_cache && !disable_cache_alpha)
+				{
+
+					if (check_cache_valid(valid, cAlpha))
+					{
+						set_wnd_alpha(hWnd, cache_i_ref["alpha"]);
+						sucess_set_alpha = true;
+					}
+				}
+				if (!sucess_set_alpha)
+				{
+					set_wnd_alpha(hWnd, jsp["alpha"]);
+				}
 			}
 			bool topmost = false;
-			bool use_pos = json_object_has_member(jsp, "position");
-			bool use_size = json_object_has_member(jsp, "size");
-			int x = 0, y = 0, cx = 0, cy = 0;
 			if (json_object_has_member(jsp, "topmost"))
 			{
 				topmost = jsp["topmost"];
 			}
-			if (use_pos)
+
+			bool use_pos = false;
+			bool use_size = false;
+			int x = 0, y = 0, cx = 0, cy = 0;
+			if (enable_cache && !disable_cache_position && check_cache_valid(valid, cPosition))
 			{
-				auto& ref = jsp["position"];
-				x = ref[0]; y = ref[1];
+				x = cache_i_ref["left"];
+				y = cache_i_ref["top"];
+				use_pos = true;
 			}
-			if (use_size)
+			else
 			{
-				auto& ref = jsp["size"];
-				cx = ref[0]; cy = ref[1];
+				use_pos = json_object_has_member(jsp, "position");
+				if (use_pos)
+				{
+					auto& ref = jsp["position"];
+					x = ref[0]; y = ref[1];
+				}
 			}
+			if (enable_cache && !disable_cache_position && check_cache_valid(valid, cSize))
+			{
+				cx = cache_i_ref["right"].get<int>() - cache_i_ref["left"].get<int>();
+				cy = cache_i_ref["bottom"].get<int>() - cache_i_ref["top"].get<int>();
+				use_size = true;
+			}
+			else
+			{
+				use_size = json_object_has_member(jsp, "size");
+				if (use_size)
+				{
+					auto& ref = jsp["size"];
+					cx = ref[0]; cy = ref[1];
+				}
+			}
+
+
 			if (0 == set_wnd_pos(hWnd, x, y, cx, cy, topmost, use_pos, use_size))
 			{
 				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
@@ -1983,6 +2059,14 @@ void create_process(
 	{
 		int64_t handle = jsp["handle"];
 		int64_t pid = jsp["pid"];
+		if (enable_cache && (!disable_cache_position || !disable_cache_size || !disable_cache_alpha))
+		{
+			HWND hwnd = get_hwnd_from_json(jsp);
+			if (hwnd)
+			{
+				update_cache_position_size(hwnd);
+			}
+		}
 
 		LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 

@@ -2,7 +2,7 @@
 #include "cache.h"
 #include "language.h"
 //#include "configure.h"
-//#include "utils.hpp"
+#include "utils.hpp"
 
 extern nlohmann::json global_stat;
 extern nlohmann::json* global_cache_configs_pointer;
@@ -15,6 +15,7 @@ extern bool disable_cache_position;
 extern bool disable_cache_size;
 extern bool disable_cache_enabled;
 extern bool disable_cache_show;
+extern bool disable_cache_alpha;
 extern bool is_cache_valid;
 
 extern BOOL isZHCN, isENUS;
@@ -156,6 +157,17 @@ void update_cache_position_size(HWND hWnd)
 		//{
 		//	update_cache("start_show", false, 3);
 		//}
+		if (!disable_cache_alpha)
+		{
+			BYTE alpha;
+			if (get_alpha(hWnd, alpha, true))
+			{
+				if (get_cache<int>("alpha") != alpha)
+				{
+					update_cache("alpha", alpha, cAlpha);
+				}
+			}
+		}
 		if (false == disable_cache_position || false == disable_cache_size)
 		{
 			RECT rect = {};
@@ -170,7 +182,6 @@ void update_cache_position_size(HWND hWnd)
 				{
 					update_cache("top", rect.top, cPosition);
 				}
-
 				/*if (false == disable_cache_position)
 				{
 				int left = get_cache<int>("left"), top = get_cache<int>("top");

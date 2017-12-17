@@ -170,6 +170,7 @@ Windows命令行程序系统托盘管理工具
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
     "disable_cache_show": false, // 禁止缓存显示隐藏状态
+    "disable_cache_alpha": false, // 禁止缓存透明度 (缓存时只对有alpha值的configs有作用)
     // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
     // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx

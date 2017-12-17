@@ -168,6 +168,7 @@ example configure
     "disable_cache_size": false,
     "disable_cache_enabled": true,
     "disable_cache_show": false,
+    "disable_cache_alpha": false, // (only work for configs with alpha)
     // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
