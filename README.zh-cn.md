@@ -241,6 +241,7 @@ Windows命令行程序系统托盘管理工具
 # 感谢
 
 [phuslu/taskbar](https://github.com/phuslu/taskbar)
+[@lirener](https://github.com/lirener)
 
 
 [i1]: https://github.com/rexdf/CommandTrayHost/issues/1

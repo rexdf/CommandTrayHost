@@ -238,6 +238,7 @@ See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github
 # Thanks
 
 [phuslu/taskbar](https://github.com/phuslu/taskbar)
+[@lirener](https://github.com/lirener)
 
 
 [i1]: https://github.com/rexdf/CommandTrayHost/issues/1
