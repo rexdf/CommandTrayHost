@@ -99,7 +99,7 @@ bool is_valid_vk(char c)
 
 bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 {
-	if (!s)return false;
+	if (!s || !s[0])return false;
 	extern bool repeat_mod_hotkey;
 	fsModifiers = repeat_mod_hotkey ? NULL : MOD_NOREPEAT;
 	int idx = 0;
@@ -130,7 +130,11 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 		{
 			idx += 2;
 			char c1 = s[idx], c2 = s[idx + 1];
-			if ('0' <= c1 && c1 <= '9' && '0' <= c2 && c2 <= '9')
+			if ('a' <= c1 && c1 <= 'f')c1 -= 'a' - 10;
+			if ('A' <= c1 && c1 <= 'F')c1 -= 'A' - 10;
+			if ('a' <= c2 && c2 <= 'f')c2 -= 'a' - 10;
+			if ('A' <= c2 && c2 <= 'F')c2 -= 'A' - 10;
+			if ('0' <= c1 && c1 <= '9' + 6 && '0' <= c2 && c2 <= '9' + 6)
 			{
 				vk = 0x10 * (c1 - '0') + (c2 - '0');
 				idx += 2;
