@@ -1655,7 +1655,7 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 					x = ref[0]; y = ref[1];
 				}
 			}
-			if (enable_cache && !disable_cache_position && check_cache_valid(valid, cSize))
+			if (enable_cache && !disable_cache_size && check_cache_valid(valid, cSize))
 			{
 				cx = cache_i_ref["right"].get<int>() - cache_i_ref["left"].get<int>();
 				cy = cache_i_ref["bottom"].get<int>() - cache_i_ref["top"].get<int>();

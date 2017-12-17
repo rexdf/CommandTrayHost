@@ -36,7 +36,7 @@ void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 		cache_ref = value;
 		is_cache_valid = false;
 		// why we need it? when restart app
-		auto& main_config_i_ref = (*global_configs_pointer)[cache_config_cursor];
+		//auto& main_config_i_ref = (*global_configs_pointer)[cache_config_cursor];
 		/*if (0 == strcmp(name, "start_show"))
 		{
 			main_config_i_ref[name] = value;
