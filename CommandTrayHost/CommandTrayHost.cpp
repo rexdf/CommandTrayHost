@@ -863,7 +863,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			if (enable_cache && false == is_cache_valid)
 			{
-				flush_cache();
+				/*static int cache_write_cnt = 0;
+				if (cache_write_cnt < 10)
+				{
+					cache_write_cnt++;
+				}
+				else*/
+				{
+					//cache_write_cnt = 0;
+					flush_cache();
+				}
 			}
 		}
 		else

@@ -2061,10 +2061,13 @@ void create_process(
 		int64_t pid = jsp["pid"];
 		if (enable_cache && (!disable_cache_position || !disable_cache_size || !disable_cache_alpha))
 		{
-			HWND hwnd = get_hwnd_from_json(jsp);
-			if (hwnd)
+			if (true == jsp["en_job"])
 			{
-				update_cache_position_size(hwnd);
+				HWND hwnd = get_hwnd_from_json(jsp);
+				if (hwnd)
+				{
+					update_cache_position_size(hwnd);
+				}
 			}
 		}
 
@@ -2392,7 +2395,17 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 		{
 			int64_t handle = jsp["handle"];
 			int64_t pid = jsp["pid"];
-
+			if (enable_cache && (!disable_cache_position || !disable_cache_size || !disable_cache_alpha))
+			{
+				if (true == jsp["en_job"])
+				{
+					HWND hwnd = get_hwnd_from_json(jsp);
+					if (hwnd)
+					{
+						update_cache_position_size(hwnd);
+					}
+				}
+			}
 			LOGMESSAGE(L"pid:%d disable_menu process running, now kill it\n", pid);
 
 #ifdef _DEBUG
@@ -2574,7 +2587,7 @@ void kill_all(bool is_exit/* = true*/)
 		}*/
 		if (is_running)
 		{
-			if (enable_cache && (!disable_cache_position || !disable_cache_size))
+			if (enable_cache && (!disable_cache_position || !disable_cache_size || !disable_cache_alpha))
 			{
 				if (true == itm["en_job"])
 				{
