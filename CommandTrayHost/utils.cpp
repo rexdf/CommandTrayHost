@@ -130,13 +130,18 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 		{
 			idx += 2;
 			char c1 = s[idx], c2 = s[idx + 1];
+
 			if ('a' <= c1 && c1 <= 'f')c1 -= 'a' - 10;
-			if ('A' <= c1 && c1 <= 'F')c1 -= 'A' - 10;
+			else if ('A' <= c1 && c1 <= 'F')c1 -= 'A' - 10;
+			else if ('0' <= c1 && c1 <= '9')c1 -= '0';
+
 			if ('a' <= c2 && c2 <= 'f')c2 -= 'a' - 10;
-			if ('A' <= c2 && c2 <= 'F')c2 -= 'A' - 10;
-			if ('0' <= c1 && c1 <= '9' + 6 && '0' <= c2 && c2 <= '9' + 6)
+			else if ('A' <= c2 && c2 <= 'F')c2 -= 'A' - 10;
+			else if ('0' <= c2 && c2 <= '9')c2 -= '0';
+
+			if (0 <= c1 && c1 <= 15 && 0 <= c2 && c2 <= 15)
 			{
-				vk = 0x10 * (c1 - '0') + (c2 - '0');
+				vk = 0x10 * c1 + c2;
 				idx += 2;
 			}
 			else
