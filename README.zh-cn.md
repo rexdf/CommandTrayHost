@@ -188,6 +188,7 @@ Windows命令行程序系统托盘管理工具
         "topmost": "Alt+Ctrl+Winl+T", // 同样对任意程序都有效
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
+    "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 }

@@ -43,6 +43,7 @@ int number_of_configs;
 int start_show_timer_tick_cnt;
 
 bool repeat_mod_hotkey;
+int global_hotkey_alpha_step;
 
 TCHAR szPathToExe[MAX_PATH * 10];
 TCHAR szPathToExeToken[MAX_PATH * 10];
@@ -906,12 +907,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;
 						if (nID == WM_HOTKEY_ADD_ALPHA)
 						{
-							if (alpha < 250)alpha += 5;
+							if (alpha < 255 - global_hotkey_alpha_step)alpha += global_hotkey_alpha_step;
 							else alpha = 255;
 						}
 						else if (nID == WM_HOTKEY_MINUS_ALPHA)
 						{
-							if (alpha > 5)alpha -= 5;
+							if (alpha > global_hotkey_alpha_step)alpha -= global_hotkey_alpha_step;
 							else alpha = 0;
 						}
 						LOGMESSAGE(L"alpha:%d\n", alpha);
@@ -1071,7 +1072,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//
 	start_all(ghJob);
 	//CreateConsole();
-	if(!enable_left_click)ExecCmdline();
+	if (!enable_left_click)ExecCmdline();
 	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();

@@ -31,6 +31,7 @@ extern bool is_cache_valid;
 extern int cache_config_cursor;
 
 extern bool repeat_mod_hotkey;
+extern int global_hotkey_alpha_step;
 
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
@@ -181,6 +182,7 @@ bool initial_configure()
         "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
+    "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 })json" : u8R"json({
@@ -304,6 +306,7 @@ bool initial_configure()
         "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
     },
     "repeat_mod_hotkey": false,
+    "global_hotkey_alpha_step": 5,
     "enable_hotkey": true,
     "start_show_silent": true,
 })json";
@@ -740,6 +743,7 @@ int configure_reader(std::string& out)
 	disable_cache_show = false;
 	repeat_mod_hotkey = false;
 	start_show_silent = true;
+	global_hotkey_alpha_step = 5;
 
 	int cache_option_pointer_idx = 0;
 	bool* const cache_option_value_pointer[] = {
@@ -748,12 +752,16 @@ int configure_reader(std::string& out)
 		&disable_cache_position,
 		&disable_cache_size,
 		&disable_cache_enabled,
-		&disable_cache_show
+		&disable_cache_show,
+		// others cache_options_numbers = 6;
+		&start_show_silent,  // index 6
+		&repeat_mod_hotkey,  // index 7
 	};
+	const int cache_options_numbers = 6;
 
-	auto lambda_cache_option = [&cache_cnt, &cache_option_value_pointer, &cache_option_pointer_idx](const Value& val, PCSTR name)->bool {
+	auto lambda_cache_option = [&cache_cnt, &cache_option_value_pointer, &cache_option_pointer_idx, cache_options_numbers](const Value& val, PCSTR name)->bool {
 		*cache_option_value_pointer[cache_option_pointer_idx] = val[name].GetBool();
-		cache_cnt++;
+		if (cache_option_pointer_idx < cache_options_numbers)cache_cnt++;
 		//cache_option_pointer_idx++;
 		return true;
 	};
@@ -913,14 +921,13 @@ int configure_reader(std::string& out)
 		{ "disable_cache_enabled", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "disable_cache_show", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
-		{ "start_show_silent", iBoolType, true, [](const Value& val,PCSTR name)->bool {
-			start_show_silent = val[name].GetBool();
+		{ "start_show_silent", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "repeat_mod_hotkey", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+
+		{ "global_hotkey_alpha_step", iIntType, true, [](const Value& val,PCSTR name)->bool {
+			global_hotkey_alpha_step = val[name].GetInt();
 			return true;
 		} },
-		{ "repeat_mod_hotkey", iBoolType, true, [](const Value& val,PCSTR name)->bool {
-			repeat_mod_hotkey = val[name].GetBool();
-			return true;
-		}},
 
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms,&allocator](Value& val,PCSTR name)->bool {
 			bool ret = true;

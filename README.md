@@ -185,6 +185,7 @@ example configure
         "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
     },
     "repeat_mod_hotkey": false,
+    "global_hotkey_alpha_step": 5,
     "enable_hotkey": true,
     "start_show_silent": true,
 }
