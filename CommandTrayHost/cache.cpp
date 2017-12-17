@@ -42,6 +42,10 @@ bool is_cache_not_expired()
 				{
 					return true;
 				}
+				else if (IDYES == result)
+				{
+					enable_cache = false;
+				}
 			}
 		}
 		LOGMESSAGE(L"PathFileExists failed\n");
@@ -101,6 +105,14 @@ bool is_cache_not_expired()
 					std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
 					o_cache << std::endl;
 				}
+			}
+			else if (IDYES == result)
+			{
+				if (NULL == DeleteFile(CACHE_FILENAMEW))
+				{
+					MessageBox(NULL, L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+				}
+				enable_cache = false;
 			}
 		}
 		RETURN_AND_CLOSE_CREATEFILE(return_val);
