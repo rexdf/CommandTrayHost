@@ -42,7 +42,7 @@ bool is_cache_not_expired()
 				{
 					return true;
 				}
-				else if (IDYES == result)
+				else if (IDYES == result) // global_stat != nullptr
 				{
 					enable_cache = false;
 				}
@@ -108,11 +108,24 @@ bool is_cache_not_expired()
 			}
 			else if (IDYES == result)
 			{
-				if (NULL == DeleteFile(CACHE_FILENAMEW))
+				if (global_stat == nullptr)
 				{
-					MessageBox(NULL, L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+					LOGMESSAGE(L"IDYES nullptr\n");
 				}
-				enable_cache = false;
+				else
+				{
+					LOGMESSAGE(L"IDYES\n");
+					CLOSE_CREATEFILE(json_hFile);
+					CLOSE_CREATEFILE(cache_hFile);
+					if (NULL == DeleteFile(CACHE_FILENAMEW))
+					{
+						LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
+						MessageBox(NULL, L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+					}
+					enable_cache = false;
+					return false;
+				}
+
 			}
 		}
 		RETURN_AND_CLOSE_CREATEFILE(return_val);
