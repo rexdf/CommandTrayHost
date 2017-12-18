@@ -51,6 +51,7 @@ bool initial_configure()
 
 	std::string config = isZHCN ? u8R"json({
     /**
+     * 0. 常见样例可以参考项目wiki.
      * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c.
      * 2. 所有的路径必须要是C:\\Windows这样的双斜杠分割，这是json的字符串规定。
      * 3. 所有的路径都可以是相对路径，比如 ..\..\icons\icon.ico这种形式。
@@ -720,8 +721,7 @@ int configure_reader(std::string& out)
 			return true;
 		}},
 
-		{"configs", iArrayType, false, [&cnt,&config_items](Value& val,PCSTR name)->bool
-		{
+		{ "configs", iArrayType, false, [&cnt,&config_items](Value& val,PCSTR name)->bool {
 			for (auto& m : val[name].GetArray())
 			{
 
@@ -2501,7 +2501,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{
