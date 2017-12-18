@@ -129,7 +129,7 @@ END
 STRINGTABLE DISCARDABLE
 BEGIN
 IDS_CMDLINE             L"cmd /v"
-IDS_ENVIRONMENT         L"TASKBAR_VISIBLE=0\nTASKBAR_TOOLTIP=CommandTrayHost\nTASKBAR_TITLE=CommandTrayHost Notify\nTASKBAR_BALLOON=CommandTrayHost 已经启动，单击托盘图标可自定义，右击显示菜单。\n"
+IDS_ENVIRONMENT         L"TASKBAR_VISIBLE=0\nTASKBAR_TOOLTIP=CommandTrayHost\nTASKBAR_TITLE=CommandTrayHost Notify\nTASKBAR_BALLOON=CommandTrayHost 已经启动，可自定义单击托盘行为、右击显示菜单内容。\n"
 #ifdef _DEBUG2
 IDS_PROXYLIST           L"http://127.0.0.1:8087/proxy.pac\n127.0.0.1:8087\n"
 IDS_RASPBK              "%APPDATA%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Microsoft\\Network\\Connections\\Pbk\n%ALLUSERSPROFILE%\\Application Data\\Microsoft\\Network\\Connections\\Pbk\\rasphone.pbk\n"
