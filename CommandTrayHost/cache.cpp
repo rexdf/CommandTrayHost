@@ -3,6 +3,7 @@
 #include "language.h"
 //#include "configure.h"
 #include "utils.hpp"
+#include "configure.h"
 
 extern nlohmann::json global_stat;
 extern nlohmann::json* global_cache_configs_pointer;
@@ -20,19 +21,30 @@ extern bool is_cache_valid;
 
 extern BOOL isZHCN, isENUS;
 
-bool is_cache_not_expired()
+bool is_cache_not_expired(bool is_from_flush)
 {
 	PCWSTR json_filename = CONFIG_FILENAMEW;
 	PCWSTR cache_filename = CACHE_FILENAMEW;
+	if (TRUE != PathFileExists(json_filename))
+	{
+		extern HANDLE ghJob;
+		extern HICON gHicon;
+		if (NULL == init_global(ghJob, gHicon))
+		{
+			//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+			//enable_cache = true;
+			return true;
+		}
+	}
 	if (TRUE != PathFileExists(cache_filename))
 	{
-		if (global_stat != nullptr)
+		if (is_from_flush && global_stat != nullptr)
 		{
 			if (conform_cache_expire)
 			{
 				const int result = MessageBox(NULL,
-					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则清空缓存"
-					L"\n\n选择 否 则保留缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 缓存可能会错位"
+					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则临时禁用缓存"
+					L"\n\n选择 否 则继续缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 缓存可能会错位"
 					:
 					translate_w2w(L"You just Delete " CONFIG_FILENAMEW L"\n\nChoose Yes to clear"
 						L" cache\n\nChoose No to keep expired cache.").c_str(),
@@ -90,8 +102,13 @@ bool is_cache_not_expired()
 			//bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
 			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
 			const int result = MessageBox(NULL,
-				isZHCN ? L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
-				L"\n\n选择 否 则保留缓存数据"
+				isZHCN ? (is_from_flush ?
+					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
+					L"\n\n选择 否 则保留缓存数据，下次启动CommandTrayHost才加载config.json"
+					:
+					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
+					L"\n\n选择 否 则保留缓存数据"
+					)
 				:
 				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 					L" cache\n\nChoose No to keep expired cache.").c_str(),
@@ -124,6 +141,16 @@ bool is_cache_not_expired()
 						MessageBox(NULL, L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
 					}
 					enable_cache = false;
+					kill_all();
+					extern HANDLE ghJob;
+					extern HICON gHicon;
+					if (NULL == init_global(ghJob, gHicon))
+					{
+						//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+						//enable_cache = true;
+						return true;
+					}
+					//enable_cache = false;
 					return false;
 				}
 
@@ -211,7 +238,7 @@ bool flush_cache()
 	LOGMESSAGE(L"Now flush cache\n");
 	//return true;
 	is_cache_valid = true;
-	if (is_cache_not_expired())
+	if (is_cache_not_expired(true))
 	{
 		std::ofstream o(CACHE_FILENAMEA);
 		if (o.good())
@@ -223,7 +250,7 @@ bool flush_cache()
 #endif
 			return true;
 		}
-	}
+}
 
 	return false;
 }

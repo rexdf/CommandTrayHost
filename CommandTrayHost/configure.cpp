@@ -591,7 +591,7 @@ int configure_reader(std::string& out)
 		{ "size", iArrayType, true, lambda_check_position_size },
 		{ "ignore_all", iBoolType, true, nullptr },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
-			if (enable_hotkey)
+			if (global_stat == nullptr && enable_hotkey)
 			{
 				config_hotkey_items_idx = 0;
 				return check_rapidjson_object(
@@ -938,7 +938,7 @@ int configure_reader(std::string& out)
 
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms,&allocator](Value& val,PCSTR name)->bool {
 			bool ret = true;
-			if (enable_hotkey)
+			if (global_stat == nullptr && enable_hotkey)
 			{
 				//Value v(true, allocator);
 				//val[name].AddMember("a", true, allocator);
@@ -1473,6 +1473,10 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 	}
 
+	if (hIcon != NULL)
+	{
+		return 1;
+	}
 	if (json_object_has_member(global_stat, "icon"))
 	{
 		std::string icon = global_stat["icon"];
