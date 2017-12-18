@@ -622,77 +622,6 @@ int configure_reader(std::string& out)
 		}},
 	};
 
-	/*for (auto& m : d["configs"].GetArray())
-	{
-
-#ifdef _DEBUG
-		StringBuffer sb;
-		Writer<StringBuffer> writer(sb);
-		m.Accept(writer);
-		std::string ss = sb.GetString();
-		LOGMESSAGE(L"Type of member %s is %S\n",
-			//ss.c_str(),
-			utf8_to_wstring(ss).c_str(),
-			kTypeNames[m.GetType()]);
-		//LOGMESSAGE(L"Type of member %S is %S\n",
-		//m.GetString(), kTypeNames[m.GetType()]);
-#endif
-		//assert
-		{
-			assert(m.IsObject());
-
-			assert(m.HasMember("name"));
-			assert(m["name"].IsString());
-
-			assert(m.HasMember("path"));
-			assert(m["path"].IsString());
-
-			assert(m.HasMember("cmd"));
-			assert(m["cmd"].IsString());
-
-			assert(m.HasMember("working_directory"));
-			assert(m["working_directory"].IsString());
-
-			assert(m.HasMember("addition_env_path"));
-			assert(m["addition_env_path"].IsString());
-
-			assert(m.HasMember("use_builtin_console"));
-			assert(m["use_builtin_console"].IsBool());
-
-			assert(m.HasMember("is_gui"));
-			assert(m["is_gui"].IsBool());
-
-			assert(m.HasMember("enabled"));
-			assert(m["enabled"].IsBool());
-		}
-
-		if (!m.IsObject())
-		{
-			MessageBox(NULL, L"configs must be object",
-				L"config Type error",
-				MB_OK | MB_ICONERROR
-			);
-			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		}
-
-		//check for config item
-		if (false == check_rapidjson_object(
-			m,
-			config_items,
-			ARRAYSIZE(config_items),
-			L": One of require_admin(bool) start_show(bool) ignore_all(bool)"
-			L" topmost(bool) icon(str) alpha(0-255)",
-			L" Type Error",
-			NULL,
-			true)
-			)
-		{
-			SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
-		}
-
-		cnt++;
-	}*/
-
 	int global_hotkey_idx = 0;
 	auto lambda_global_hotkey_idx = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
 		global_hotkey_idx++;
@@ -1489,25 +1418,6 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			try_read_optional_json(global_stat, icon_size, "icon_size");
 #endif
 
-			/*if (json_object_has_member(global_stat, "icon_size"))
-			{
-				icon_size = global_stat["icon_size"];
-				int out_icon_size = 0;
-				if (icon_size == 16 || icon_size == 32 || icon_size == 256)
-				{
-					out_icon_size = icon_size;
-				}
-				else
-				{
-					MessageBox(NULL, L"icon_size value must be one of 16 32 256", L"WARNING", MB_OK | MB_ICONWARNING);
-					icon_size = out_icon_size = 256;
-				}
-			}
-			else
-			{
-				icon_size = 256;
-			}*/
-
 			std::wstring icon_wfilename = utf8_to_wstring(icon);
 			if (FALSE == get_hicon(icon_wfilename.c_str(), icon_size, hIcon))
 			{
@@ -1516,81 +1426,6 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		}
 
 	}
-
-	/*bool try_success;
-	std::string icon;// = global_stat.at("icon");
-
-	assert(icon.empty());
-
-#ifdef _DEBUG
-	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon", __FUNCTION__);
-#else
-	try_success = try_read_optional_json<std::string>(global_stat, icon, "icon");
-#endif
-	if (try_success)
-	{
-		int icon_size = -1, out_icon_size = 0;
-#ifdef _DEBUG
-		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size", __FUNCTION__);
-#else
-		try_success = try_read_optional_json<int>(global_stat, icon_size, "icon_size");
-#endif
-		if (try_success && (icon_size == 16 || icon_size == 32 || icon_size == 256))
-		{
-			out_icon_size = icon_size;
-		}
-
-		std::wstring wicon = utf8_to_wstring(icon);
-		LPCWSTR pLoad = wicon.c_str();
-		if (TRUE == PathFileExists(pLoad))
-		{
-			LOGMESSAGE(L"icon file eixst %s\n", pLoad);
-			// wcscpy_s(szIcon, MAX_PATH * 2, pLoad);
-			WCHAR szIcon[MAX_PATH * 2];
-			if (FAILED(StringCchCopy(szIcon, MAX_PATH * 2 / sizeof(WCHAR), pLoad)))
-			{
-				LOGMESSAGE(L"StringCchCopy failed\n");
-			}
-			else
-			{
-				LOGMESSAGE(L"ShowTrayIcon Load from file %s\n", szIcon);
-				hIcon = reinterpret_cast<HICON>(LoadImage(NULL,
-					szIcon,
-					IMAGE_ICON,
-					icon_size ? icon_size : 256,
-					icon_size ? icon_size : 256,
-					LR_LOADFROMFILE)
-					);
-				if (hIcon == NULL)
-				{
-					LOGMESSAGE(L"Load IMAGE_ICON failed!\n");
-				}
-			}
-			*//*hIcon = reinterpret_cast<HICON>(LoadImage( // returns a HANDLE so we have to cast to HICON
-			NULL,             // hInstance must be NULL when loading from a file
-			wicon.c_str(),   // the icon file name
-			IMAGE_ICON,       // specifies that the file is an icon
-			16,                // width of the image (we'll specify default later on)
-			16,                // height of the image
-			LR_LOADFROMFILE //|  // we want to load a file (as opposed to a resource)
-			//LR_DEFAULTSIZE |   // default metrics based on the type (IMAGE_ICON, 32x32)
-			//LR_SHARED         // let the system release the handle when it's no longer used
-			));*//*
-		}
-
-
-	}*/
-
-	//read first then write
-	/*if (enable_cache)
-	{
-		initial_read_cache();
-	}
-
-	if (enable_cache)
-	{
-		initial_write_cache();
-	}*/
 
 	return 1;
 }
