@@ -1449,33 +1449,32 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	}
 	LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
 
-	if (ghJob != NULL)
-	{
-		return 1;
-	}
-
-	ghJob = CreateJobObject(NULL, NULL); // GLOBAL
 	if (ghJob == NULL)
 	{
-		MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
-		return NULL;
-	}
-	else
-	{
-		JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
-
-		// Configure all child processes associated with the job to terminate when the
-		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-		if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
+		ghJob = CreateJobObject(NULL, NULL); // GLOBAL
+		if (ghJob == NULL)
 		{
-			MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
+			MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
+		}
+		else
+		{
+			JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
+
+			// Configure all child processes associated with the job to terminate when the
+			jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+			if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
+			{
+				MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
+				return NULL;
+			}
 		}
 	}
 
 	if (hIcon != NULL)
 	{
-		return 1;
+		DestroyIcon(hIcon);
+		//return 1;
 	}
 	if (json_object_has_member(global_stat, "icon"))
 	{
@@ -2666,7 +2665,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{

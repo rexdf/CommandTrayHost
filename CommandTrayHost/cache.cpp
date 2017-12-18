@@ -4,6 +4,7 @@
 //#include "configure.h"
 #include "utils.hpp"
 #include "configure.h"
+#include "CommandTrayHost.h"
 
 extern nlohmann::json global_stat;
 extern nlohmann::json* global_cache_configs_pointer;
@@ -150,6 +151,8 @@ bool is_cache_not_expired(bool is_from_flush)
 						//enable_cache = true;
 						return true;
 					}
+					DeleteTrayIcon();
+					ShowTrayIcon(L"", NIM_ADD);
 					//enable_cache = false;
 					return false;
 				}
