@@ -231,20 +231,20 @@ Windows命令行程序系统托盘管理工具
 
 # Road map
 
-- 计划任务，定时任务
-- 热加载config.json
+- [ ] 计划任务，定时任务
+- [x] 热加载config.json
 
 # TODO
 
-- 现在一旦重启某个应用，那么之前的窗口就会被关掉，然后重新开启一个。这样之前的日志就丢失了。希望对每个应用，启动一个独立辅助Console，即使重新启动应用，历史日志(标准IO输出)依然可以保留。 `use_builtin_console`就是用来做这个用途的。可以参考的有 [ConEmu](https://github.com/Maximus5/ConEmu)，看上去必须要注入子进程，将其标准IO导入到ConsoleHelper才行。
+- [ ] 现在一旦重启某个应用，那么之前的窗口就会被关掉，然后重新开启一个。这样之前的日志就丢失了。希望对每个应用，启动一个独立辅助Console，即使重新启动应用，历史日志(标准IO输出)依然可以保留。 `use_builtin_console`就是用来做这个用途的。可以参考的有 [ConEmu](https://github.com/Maximus5/ConEmu)，看上去必须要注入子进程，将其标准IO导入到ConsoleHelper才行。
 
-- 可以自动更新应用，比如kcptun-windows，提供github地址然后检测是否有更新。
+- [ ] 可以自动更新应用，比如kcptun-windows，提供github地址然后检测是否有更新。
 
-- 内置代理转换，如Socks5--> http，IE代理快速设置。
+- [ ] 内置代理转换，如Socks5--> http，IE代理快速设置。
 
-- 尝试集成 [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
+- [ ] 尝试集成 [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
 
-- UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
+- [ ] UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
 
 # 感谢
 

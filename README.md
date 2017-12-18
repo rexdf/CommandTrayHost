@@ -225,20 +225,20 @@ See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github
 
 # Road map
 
-- Timer, task schedule, crontab, monitor
-- Hot reloading config.json
+- [ ] Timer, task schedule, crontab, monitor
+- [x] Hot reloading config.json
 
 # Help wanted
 
-- When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)
+- [ ] When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)
 
-- Auto update check for some github projects, etc kcptun-windows.
+- [ ] Auto update check for some github projects, etc kcptun-windows.
 
-- ProxyAgent，Socks5--> http，IE Proxy setting。
+- [ ] ProxyAgent，Socks5--> http，IE Proxy setting。
 
-- [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
+- [ ] [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
 
-- UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
+- [ ] UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
 
 
 # Thanks
