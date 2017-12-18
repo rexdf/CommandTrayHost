@@ -352,8 +352,8 @@ bool check_rapidjson_object(
 			{
 				wname = msg_text_header;
 			}
-			MessageBox(
-				NULL,
+			msg_prompt(
+				//NULL,
 				(wname + msg_text).c_str(),
 				(utf8_to_wstring(cur_Foo.name) + msg_title).c_str(),
 				MB_OK | MB_ICONERROR
@@ -388,7 +388,7 @@ int configure_reader(std::string& out)
 	if (json_file_size > 1024 * 1024 * 100)
 	{
 		json_file_size = 1024 * 1024 * 100;
-		MessageBox(NULL, L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
+		msg_prompt(/*NULL,*/ L"The file size of config.json is larger than 100MB!", L"WARNING", MB_OK | MB_ICONWARNING);
 	}
 	char* readBuffer = reinterpret_cast<char*>(malloc(static_cast<size_t>(json_file_size + 10)));
 	if (NULL == readBuffer)
@@ -399,7 +399,7 @@ int configure_reader(std::string& out)
 	errno_t err = _wfopen_s(&fp, json_filename, L"rb"); // 非 Windows 平台使用 "r"
 	if (0 != err)
 	{
-		MessageBox(NULL, L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL, */L"Open configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		free(readBuffer);
 		return NULL;
 	}
@@ -839,7 +839,7 @@ int configure_reader(std::string& out)
 
 				if (!m.IsObject())
 				{
-					MessageBox(NULL, L"configs must be object",
+					msg_prompt(/*NULL, */L"configs must be object",
 						L"config Type error",
 						MB_OK | MB_ICONERROR
 					);
@@ -993,7 +993,7 @@ int configure_reader(std::string& out)
 	{
 		if (d.HasMember("cache"))
 		{
-			MessageBox(NULL, L"You should never put \"cache\" in " CONFIG_FILENAMEW
+			msg_prompt(/*NULL,*/ L"You should never put \"cache\" in " CONFIG_FILENAMEW
 				L"\n Cache is now removed!",
 				L"Cache error",
 				MB_OK | MB_ICONWARNING
@@ -1008,7 +1008,7 @@ int configure_reader(std::string& out)
 			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAMEW, L"rb"); // 非 Windows 平台使用 "r"
 			if (0 != err)
 			{
-				MessageBox(NULL, L"Open cache failed!", L"Error", MB_OK | MB_ICONERROR);
+				msg_prompt(/*NULL,*/ L"Open cache failed!", L"Error", MB_OK | MB_ICONERROR);
 				enable_cache = false;
 			}
 			if (enable_cache)
@@ -1200,7 +1200,7 @@ int configure_reader(std::string& out)
 				u8R"({"configs":[)"
 			))
 			{
-				MessageBox(NULL, L"cache buffer error 1",
+				msg_prompt(/*NULL, */L"cache buffer error 1",
 					L"Cache error",
 					MB_OK | MB_ICONWARNING
 				);
@@ -1260,7 +1260,7 @@ int configure_reader(std::string& out)
 #endif
 				))
 				{
-					MessageBox(NULL, L"cache buffer error 2",
+					msg_prompt(/*NULL, */L"cache buffer error 2",
 						L"Cache error",
 						MB_OK | MB_ICONWARNING
 					);
@@ -1275,7 +1275,7 @@ int configure_reader(std::string& out)
 				u8R"(]})"
 			))
 			{
-				MessageBox(NULL, L"cache buffer error 3",
+				msg_prompt(/*NULL, */L"cache buffer error 3",
 					L"Cache error",
 					MB_OK | MB_ICONWARNING
 				);
@@ -1310,7 +1310,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 {
 	if (deep > MAX_MENU_LEVEL_LIMIT)
 	{
-		MessageBox(NULL, L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ L"groups have too much level!", L"Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
 	if (!root.is_array())
@@ -1325,7 +1325,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 			int val = m;
 			if (val >= number_of_configs)
 			{
-				MessageBox(NULL,
+				msg_prompt(//NULL,
 					L"groups index must start from 0, and not exceed number of configs!",
 					L"Error",
 					MB_OK | MB_ICONERROR
@@ -1385,7 +1385,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
 	{
-		MessageBox(NULL, L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ L"Load configure failed!", L"Error", MB_OK | MB_ICONERROR);
 		return NULL;
 	}
 	number_of_configs = cmd_cnt;
@@ -1424,7 +1424,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			PTSTR pIdx = StrStr(commandLine, L".exe");
 			if (pIdx == NULL)
 			{
-				MessageBox(NULL, L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
+				msg_prompt(/*NULL, */L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
 			}
 			if (pIdx)
 			{
@@ -1454,7 +1454,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		ghJob = CreateJobObject(NULL, NULL); // GLOBAL
 		if (ghJob == NULL)
 		{
-			MessageBox(NULL, L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
+			msg_prompt(/*NULL, */L"Could not create job object", L"Error", MB_OK | MB_ICONERROR);
 			return NULL;
 		}
 		else
@@ -1465,7 +1465,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 			if (0 == SetInformationJobObject(ghJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli)))
 			{
-				MessageBox(NULL, L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
+				msg_prompt(/*NULL,*/ L"Could not SetInformationJobObject", L"Error", MB_OK | MB_ICONERROR);
 				return NULL;
 			}
 		}
@@ -1511,7 +1511,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			std::wstring icon_wfilename = utf8_to_wstring(icon);
 			if (FALSE == get_hicon(icon_wfilename.c_str(), icon_size, hIcon))
 			{
-				MessageBox(NULL, (icon_wfilename + L" icon file load failed!").c_str(), L"WARNING", MB_OK | MB_ICONWARNING);
+				msg_prompt(/*NULL, */(icon_wfilename + L" icon file load failed!").c_str(), L"WARNING", MB_OK | MB_ICONWARNING);
 			}
 		}
 
@@ -1730,7 +1730,7 @@ void update_hwnd_all()
 	else if (start_show_timer_tick_cnt > 100)
 	{
 		KillTimer(hWnd, VM_TIMER_CREATEPROCESS_SHOW);
-		MessageBox(NULL,
+		msg_prompt(//NULL,
 			L"Some app cannot get HWND\n",
 			(utf8_to_wstring((*global_configs_pointer)[cache_config_cursor]["name"]) + L" HWND error").c_str(),
 			MB_OK
@@ -2129,7 +2129,7 @@ void create_process(
 	if (name.length() > 255 || FAILED(StringCchCopy(nameStr, 256, name.c_str())))
 	{
 		LOGMESSAGE(L"StringCchCopy failed\n");
-		MessageBox(NULL, L"name is too long to exceed 256 characters", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ L"name is too long to exceed 256 characters", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	STARTUPINFO si;
@@ -2208,7 +2208,7 @@ void create_process(
 	{
 		//assert(false);
 		LOGMESSAGE(L"Copy cmd failed\n");
-		MessageBox(NULL, L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	LOGMESSAGE(L"cmd_idx:\n path: %s\n cmd: %s\n", path, commandLine);
@@ -2250,7 +2250,7 @@ void create_process(
 				if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 				{
 					jsp["en_job"] = false;
-					MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+					msg_prompt(/*NULL, */L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 				}
 				else
 				{
@@ -2272,7 +2272,7 @@ void create_process(
 			{
 				if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 				{
-					MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+					msg_prompt(/*NULL,*/ L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 				}
 			}
 			CloseHandle(pi.hProcess);
@@ -2381,7 +2381,7 @@ void create_process(
 			jsp["enabled"] = false;
 			if (enable_cache && !disable_cache_enabled)update_cache("enabled", false, cEnabled);
 		}
-		MessageBox(NULL, (name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
+		msg_prompt(/*NULL, */(name + L" CreateProcess Failed.").c_str(), L"Msg", MB_ICONERROR);
 	}
 	if (not_host_by_commandtrayhost)
 	{
@@ -2707,7 +2707,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		)
 	{
 		LOGMESSAGE(L"StringCchCopy failed\n");
-		MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
 	}
 
 	/*wcscpy_s(szValue, count, L"\"");
@@ -2722,7 +2722,7 @@ BOOL RegisterMyProgramForStartup(PCWSTR pszAppName, PCWSTR pathToExe, PCWSTR arg
 		if (FAILED(StringCchCat(szValue, count, args)))
 		{
 			LOGMESSAGE(L"StringCchCat failed\n");
-			MessageBox(NULL, L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
+			msg_prompt(/*NULL, */L"RegisterMyProgramForStartup szValue Failed!", L"Error", MB_OK | MB_ICONERROR);
 		}
 	}
 
@@ -2905,7 +2905,7 @@ void ElevateNow()
 				if (dwError == ERROR_CANCELLED)
 				{
 					// The user refused to allow privileges elevation.
-					MessageBox(NULL, L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
+					msg_prompt(/*NULL, */L"End user did not allow elevation!", L"Error", MB_OK | MB_ICONERROR);
 					//bool is_another_instance_running();
 					//is_another_instance_running();
 				}
@@ -3002,7 +3002,7 @@ bool is_another_instance_running()
 		{
 			if (ERROR_FILE_NOT_FOUND != GetLastError())
 			{
-				MessageBox(NULL, L"OpenMutex Failed with unknown error!",
+				msg_prompt(/*NULL,*/ L"OpenMutex Failed with unknown error!",
 					L"Error",
 					MB_OK | MB_ICONERROR);
 			}
@@ -3114,7 +3114,7 @@ void makeSingleInstance3()
 
 		if (true == to_exit_now)
 		{
-			MessageBox(NULL, L"CommandTrayHost is already running!\n"
+			msg_prompt(/*NULL, */L"CommandTrayHost is already running!\n"
 				L"If you are sure not, you can reboot your computer \n"
 				L"or move CommandTrayHost.exe to other folder \n"
 				L"or rename CommandTrayHost.exe",

@@ -644,7 +644,7 @@ BOOL ExecCmdline()
 		{
 			if (0 == AssignProcessToJobObject(ghJob, pi.hProcess))
 			{
-				MessageBox(NULL, L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
+				msg_prompt(/*NULL,*/ L"Could not AssignProcessToObject", L"Error", MB_OK | MB_ICONERROR);
 			}
 		}
 	}
@@ -653,7 +653,7 @@ BOOL ExecCmdline()
 #ifdef _DEBUG
 		wprintf(L"ExecCmdline \"%s\" failed!\n", szCommandLine);
 #endif
-		MessageBox(NULL, szCommandLine, L"Error: Cannot execute!", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ szCommandLine, L"Error: Cannot execute!", MB_OK | MB_ICONERROR);
 		ExitProcess(0);
 	}
 	CloseHandle(pi.hThread);
@@ -1064,7 +1064,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	}
 	if (!init_cth_path())
 	{
-		MessageBox(NULL, L"Initialization CommandTrayHost Path failed!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL,*/ L"Initialization CommandTrayHost Path failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	CDCurrentDirectory();
@@ -1081,7 +1081,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
 	if (NULL == init_global(ghJob, gHicon))
 	{
-		MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+		msg_prompt(/*NULL, */L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 	check_admin(is_runas_admin);

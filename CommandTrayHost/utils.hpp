@@ -35,7 +35,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	}
 	catch (...)
 	{
-		MessageBox(NULL,
+		msg_prompt(//NULL,
 			(utf8_to_wstring(query_string) + L" type check failed!").c_str(),
 			L"Type Error",
 			MB_OK | MB_ICONERROR
@@ -80,6 +80,12 @@ void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cach
 #else
 void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache = true);
 #endif
+
+int msg_prompt(
+	_In_opt_ LPCTSTR lpText,
+	_In_opt_ LPCTSTR lpCaption,
+	_In_     UINT    uType
+);
 
 BOOL get_hicon(PCWSTR, int, HICON&, bool share = false);
 

@@ -43,7 +43,7 @@ bool is_cache_not_expired(bool is_from_flush)
 		{
 			if (conform_cache_expire)
 			{
-				const int result = MessageBox(NULL,
+				const int result = msg_prompt(//NULL,
 					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则临时禁用缓存"
 					L"\n\n选择 否 则继续缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 缓存可能会错位"
 					:
@@ -102,7 +102,9 @@ bool is_cache_not_expired(bool is_from_flush)
 		{
 			//bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
 			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
-			const int result = MessageBox(NULL,
+			extern HWND hWnd;
+			SetForegroundWindow(hWnd);
+			const int result = msg_prompt(//NULL,
 				isZHCN ? (is_from_flush ?
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
 					L"\n\n选择 否 则保留缓存数据，下次启动CommandTrayHost才加载config.json"
@@ -139,7 +141,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					if (NULL == DeleteFile(CACHE_FILENAMEW))
 					{
 						LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
-						MessageBox(NULL, L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+						msg_prompt(/*NULL,*/ L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
 					}
 					enable_cache = false;
 					kill_all();

@@ -195,7 +195,7 @@ bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
 	{
 		if (show_error)
 		{
-			MessageBox(NULL,
+			msg_prompt(//NULL,
 				(msg + std::wstring(L" string parse error!")).c_str(),
 				L"Hotkey String Error",
 				MB_OK | MB_ICONWARNING
@@ -210,7 +210,7 @@ bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
 		LOGMESSAGE(L"error_code:0x%x\n", error_code);
 		if (show_error)
 		{
-			MessageBox(NULL,
+			msg_prompt(//NULL,
 				(msg + (L"\n Error code:" + std::to_wstring(error_code))).c_str(),
 				L"Hotkey Register HotKey Error",
 				MB_OK | MB_ICONWARNING
@@ -258,7 +258,7 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 	}
 	catch (...)
 	{
-		MessageBox(NULL,
+		msg_prompt(//NULL,
 			L"json_object_has_member error",
 			L"Type Error",
 			MB_OK | MB_ICONERROR
@@ -357,6 +357,17 @@ bool rapidjson_check_exist_type(
 	return rct1.left != rct2.left || rct1.top != rct2.top || rct1.right != rct2.right || rct1.bottom != rct2.bottom;
 }*/
 
+int msg_prompt(
+	//_In_opt_ HWND    hWnd,
+	_In_opt_ LPCTSTR lpText,
+	_In_opt_ LPCTSTR lpCaption,
+	_In_     UINT    uType
+)
+{
+	extern HWND hWnd;
+	SetForegroundWindow(hWnd);
+	return MessageBox(NULL, lpText, lpCaption, uType);
+}
 
 BOOL get_hicon(PCWSTR filename, int icon_size, HICON& hIcon, bool share)
 {
@@ -415,7 +426,7 @@ BOOL __stdcall EnumProcessWindowsProc(HWND hwnd, LPARAM lParam)
 	return true;
 }
 
-BOOL get_alpha(HWND hwnd, BYTE& alpha,bool no_exstyle_return)
+BOOL get_alpha(HWND hwnd, BYTE& alpha, bool no_exstyle_return)
 {
 	alpha = 0;
 	DWORD dwExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
