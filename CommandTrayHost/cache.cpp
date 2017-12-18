@@ -236,10 +236,32 @@ void update_cache_position_size(HWND hWnd)
 	}
 }
 
-bool flush_cache()
+bool flush_cache(/*bool is_exit*/)
 {
 	assert(enable_cache);
 	assert(false == is_cache_valid);
+	/*static int cache_write_cnt = 0;
+	if (is_exit == false)
+	{
+		if (cache_write_cnt < 100)
+		{
+			cache_write_cnt++;
+			return true;
+		}
+		else
+		{
+			cache_write_cnt = 0;
+		}
+	}
+	else
+	{
+#ifdef _DEBUG
+		std::ofstream o("cache_write.txt");
+		o << "cache_write_cnt: " << cache_write_cnt << std::endl;
+#endif
+		cache_write_cnt = 0;
+	}*/
+
 	LOGMESSAGE(L"Now flush cache\n");
 	//return true;
 	is_cache_valid = true;
@@ -255,7 +277,7 @@ bool flush_cache()
 #endif
 			return true;
 		}
-}
+	}
 
 	return false;
 }

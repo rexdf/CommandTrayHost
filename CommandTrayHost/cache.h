@@ -2,7 +2,7 @@
 
 bool is_cache_not_expired(bool is_from_flush = false);
 
-bool flush_cache();
+bool flush_cache(/*bool is_exist = false*/);
 
 enum CacheType
 {

@@ -1403,6 +1403,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	if (hIcon != NULL)
 	{
 		DestroyIcon(hIcon);
+		hIcon = NULL;
 		//return 1;
 	}
 	if (json_object_has_member(global_stat, "icon"))
@@ -2316,7 +2317,7 @@ void hideshow_all(bool is_hideall)
 	}
 	if (enable_cache && false == is_cache_valid)
 	{
-		flush_cache();
+		flush_cache(/*true*/);
 	}
 }
 
@@ -2474,7 +2475,7 @@ void kill_all(bool is_exit/* = true*/)
 	}
 	if (enable_cache && false == is_cache_valid)
 	{
-		flush_cache();
+		flush_cache(/*is_exit*/);
 	}
 }
 

@@ -1094,10 +1094,18 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();
 
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-	return 0;
+	if (!is_cache_valid)
+	{
+		flush_cache(/*true*/);
+	}
+#ifdef _DEBUG
+	std::ofstream o("before_quit.txt");
+	o << "ok!" << std::endl;
+#endif
+	return 0;// msg.wParam;
 }
