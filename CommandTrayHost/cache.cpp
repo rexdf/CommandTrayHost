@@ -153,6 +153,7 @@ bool is_cache_not_expired(bool is_from_flush)
 						//enable_cache = true;
 						return true;
 					}
+					start_all(ghJob);
 					DeleteTrayIcon();
 					ShowTrayIcon(L"", NIM_ADD);
 					//enable_cache = false;
