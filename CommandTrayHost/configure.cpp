@@ -186,6 +186,7 @@ bool initial_configure()
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
+    "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 })json" : u8R"json({
@@ -311,6 +312,7 @@ bool initial_configure()
     },
     "repeat_mod_hotkey": false,
     "global_hotkey_alpha_step": 5,
+    "show_hotkey_in_menu": true,
     "enable_hotkey": true,
     "start_show_silent": true,
 })json";
@@ -471,8 +473,8 @@ int configure_reader(std::string& out)
 	};
 	*/
 
-	int screen_fullx = GetSystemMetrics(SM_CXFULLSCREEN);
-	int screen_fully = GetSystemMetrics(SM_CYFULLSCREEN);
+	const int screen_fullx = GetSystemMetrics(SM_CXFULLSCREEN);
+	const int screen_fully = GetSystemMetrics(SM_CYFULLSCREEN);
 
 	/*int screen_full_ints[] = {
 		GetSystemMetrics(SM_CXFULLSCREEN),
@@ -527,12 +529,52 @@ int configure_reader(std::string& out)
 
 	int config_hotkey_items_idx;
 	bool enable_hotkey = true;
+	bool show_hotkey_in_menu = true;
+	//menu translation items
+	Value* config_i_pointer = nullptr; // a dirty method to add menu to configs
+	bool current_hotkey_success = false;
 
-	auto lambda_config_hotkey_items_idx = [&config_hotkey_items_idx](const Value& val, PCSTR name)->bool {
+	PCSTR const configs_menu[][2] = {
+		{ u8"显示", u8"Show" },
+		{ u8"隐藏", u8"Hide" },
+		{ u8"启用", u8"Enable" },
+		{ u8"停用", u8"Disable" },
+		{ u8"重启命令", u8"Restart Command" },
+		{ u8"管理员运行", u8"Run As Administrator" },
+	};
+
+	auto lambda_config_hotkey_items_idx = [&enable_hotkey, &configs_menu, &show_hotkey_in_menu, &config_hotkey_items_idx, &current_hotkey_success, &allocator, &config_i_pointer](Value& val, PCSTR name)->bool {
+		if (show_hotkey_in_menu && enable_hotkey)
+		{
+			auto& menu_ref = (*config_i_pointer)["menu"];
+
+			for (int i = 0; i < 2; i++)
+			{
+				int configs_menu_idx = config_hotkey_items_idx;
+				if (configs_menu_idx == 1)configs_menu_idx += 1;
+				else if (configs_menu_idx > 1)configs_menu_idx += 2;
+				//< 2 ? config_hotkey_items_idx : config_hotkey_items_idx + 2;
+				Value s;
+				std::string menu_name = isZHCN ? configs_menu[configs_menu_idx + i][0] : translate(configs_menu[configs_menu_idx + i][1]).c_str();
+				if (current_hotkey_success)
+				{
+					// order is important, commandtrayhost marked word: 4bfsza3ay
+					s.SetString((menu_name + " (" + val[name].GetString() + ")").c_str(), allocator);
+				}
+				else
+				{
+					s.SetString(menu_name.c_str(), allocator);
+				}
+				LOGMESSAGE(L"menu_ref %S\n", s.GetString());
+				menu_ref.PushBack(s, allocator);
+				if (config_hotkey_items_idx > 1)break; // very very dirty way
+			}
+		}
 		config_hotkey_items_idx++;
+		current_hotkey_success = false;
 		return true;
 	};
-	auto lambda_config_hotkey = [&cnt, &config_hotkey_items_idx](Value& val, PCSTR name)->bool {
+	auto lambda_config_hotkey = [&show_hotkey_in_menu, &cnt, &config_hotkey_items_idx, &current_hotkey_success](Value& val, PCSTR name)->bool {
 		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
 		if (0 == config_hotkey_items_idx)
 		{
@@ -555,12 +597,27 @@ int configure_reader(std::string& out)
 			id,
 			(L"configs idx:" + std::to_wstring(cnt) + L" " + utf8_to_wstring(name) + L" hotkey setting error!").c_str()
 		);
+		if (show_hotkey_in_menu && ret)
+		{
+			current_hotkey_success = true;
+		}
 		LOGMESSAGE(L"%s config_hotkey_items_idx:%d ret:%d\n",
 			utf8_to_wstring(val[name].GetString()).c_str(),
 			config_hotkey_items_idx,
 			ret
 		);
 		//config_hotkey_items_idx++;
+		return true;
+	};
+
+	auto lambda_remove_menu = [&allocator](Value& val, PCSTR name)->bool {
+		if (val.HasMember(name))
+		{
+			LOGMESSAGE(L"%s\n", utf8_to_wstring(name).c_str());
+			msg_prompt(L"You should not put menu in configs!", L"configs error", MB_OK);
+			val.RemoveMember(name);
+		}
+		val.AddMember(Value{}.SetString(name, allocator), Value{}.SetArray(), allocator);
 		return true;
 	};
 
@@ -581,7 +638,7 @@ int configure_reader(std::string& out)
 		{ "addition_env_path", iStringType, false, nullptr },
 		{ "use_builtin_console", iBoolType, false, nullptr },
 		{ "is_gui", iBoolType, false, nullptr },
-		{ "enabled", iBoolType, false, nullptr },
+		{ "enabled", iBoolType, false, nullptr }, //remove menu item
 		//optional
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "start_show", iBoolType, true, nullptr },
@@ -591,9 +648,14 @@ int configure_reader(std::string& out)
 		{ "position", iArrayType , true, lambda_check_position_size },
 		{ "size", iArrayType, true, lambda_check_position_size },
 		{ "ignore_all", iBoolType, true, nullptr },
-		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items](Value& val, PCSTR name)->bool {
+		//{ "menu", iNullType, true, nullptr, lambda_remove_menu },
+		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items,&show_hotkey_in_menu,&lambda_remove_menu](Value& val, PCSTR name)->bool {
 			if (global_stat == nullptr && enable_hotkey)
 			{
+				if (show_hotkey_in_menu)
+				{
+					lambda_remove_menu(val, "menu");
+				}
 				config_hotkey_items_idx = 0;
 				return check_rapidjson_object(
 					val[name],
@@ -605,7 +667,16 @@ int configure_reader(std::string& out)
 					false);
 			}
 			return true;
-		} },
+		}, [&enable_hotkey,&show_hotkey_in_menu](Value& val, PCSTR name)->bool {
+			if (enable_hotkey && show_hotkey_in_menu)
+			{
+				if (val.HasMember("menu") && val["menu"].Size() == 0)
+				{
+					val.RemoveMember("menu");
+				}
+			}
+			return true;
+		}  },
 		{ "not_host_by_commandtrayhost", iBoolType, true, nullptr },
 		{ "not_monitor_by_commandtrayhost", iBoolType, true, [&allocator](Value& val, PCSTR name)->bool {
 			if (val[name] == true)
@@ -622,15 +693,76 @@ int configure_reader(std::string& out)
 			return true;
 		}},
 	};
-
-	int global_hotkey_idx = 0;
-	auto lambda_global_hotkey_idx = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
-		global_hotkey_idx++;
+	PCSTR const global_menu[][2] = {
+		// with hotkey
+		{ u8"全部禁用", u8"Disable All" },
+		{ u8"全部启动", u8"Enable All"},
+		{ u8"隐藏全部", u8"Hide All" },
+		{ u8"全部显示", u8"Show All" },
+		{ u8"全部重启", u8"Restart All" },
+		{ u8"提权", u8"Elevate" },
+		{ u8"退出", u8"Exit" },
+		//need to add by others
+		{ u8"全部", u8"All" },
+		{ u8"开机启动", u8"Start on Boot" },
+		{ u8"主页", u8"Home" },
+		{ u8"关于", u8"About" },
+		{ u8"帮助", u8"Help" },
+	};
+	auto lambda_menu_check = [&global_menu, &configs_menu, &d, &allocator](Value& val, PCSTR name)->bool {
+		auto& menu_ref = d["menu"];
+		if (menu_ref.Size() == 0)
+		{
+			for (int i = 0; i < ARRAYSIZE(global_menu); i++)
+			{
+				menu_ref.PushBack(Value{}.SetString(isZHCN ? global_menu[i][0] : translate(global_menu[i][1]).c_str(), allocator), allocator);
+			}
+		}
+		auto& config_menu_ref = d["config_menu"];
+		if (config_menu_ref.Size() == 0)
+		{
+			for (int i = 0; i < ARRAYSIZE(configs_menu); i++)
+			{
+				config_menu_ref.PushBack(Value{}.SetString(isZHCN ? configs_menu[i][0] : translate(configs_menu[i][1]).c_str(), allocator), allocator);
+			}
+		}
 		return true;
 	};
-	auto lambda_global_hotkey = [&global_hotkey_idx](const Value& val, PCSTR name)->bool {
+	int global_hotkey_idx = 0;
+	auto lambda_global_hotkey_idx = [&global_menu, &configs_menu, &global_hotkey_idx, &current_hotkey_success, &allocator, &d](Value& val, PCSTR name)->bool {
+		const int index_of_left_click = 7;
+		const int others_menu_translation = 5;
+		if (global_hotkey_idx < index_of_left_click)
+		{
+			auto& menu_ref = d["menu"];
+			for (int i = 0; i < others_menu_translation + 1; i++) // last one to run all left
+			{
+				Value s;
+				std::string menu_name = isZHCN ? global_menu[global_hotkey_idx + i][0] : translate(global_menu[global_hotkey_idx + i][1]).c_str();
+				if (current_hotkey_success && i == 0)
+				{
+					// order is important, commandtrayhost marked word: 4bfsza3ay
+					s.SetString((menu_name + " (" + val[name].GetString() + ")").c_str(), allocator);
+				}
+				else
+				{
+					s.SetString(menu_name.c_str(), allocator);
+				}
+				menu_ref.PushBack(s, allocator);
+				if (global_hotkey_idx < index_of_left_click - 1) // very very dirty method, last time run all left one
+				{
+					break;
+				}
+			}
+
+		}
+		global_hotkey_idx++;
+		current_hotkey_success = false;
+		return true;
+	};
+	auto lambda_global_hotkey = [&show_hotkey_in_menu, &global_hotkey_idx, &current_hotkey_success](const Value& val, PCSTR name)->bool {
 		const int global_hotkey_idxs[] = {
-			WM_TASKBARNOTIFY_MENUITEM_DISABLEALL ,
+			WM_TASKBARNOTIFY_MENUITEM_DISABLEALL , // order is important, commandtrayhost marked word: 4bfsza3ay
 			WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
 			WM_TASKBARNOTIFY_MENUITEM_HIDEALL,
 			WM_TASKBARNOTIFY_MENUITEM_SHOWALL,
@@ -643,11 +775,16 @@ int configure_reader(std::string& out)
 			WM_HOTKEY_MINUS_ALPHA,
 			WM_HOTKEY_TOPMOST,
 		};
+		const int index_of_left_click = 7;
 		bool ret = registry_hotkey(
 			val[name].GetString(),
 			global_hotkey_idxs[global_hotkey_idx],
 			(utf8_to_wstring(name) + L" hotkey setting error!").c_str()
 		);
+		if (show_hotkey_in_menu && ret && global_hotkey_idx < index_of_left_click)
+		{
+			current_hotkey_success = true;
+		}
 		LOGMESSAGE(L"%s ret:%d\n", utf8_to_wstring(val[name].GetString()).c_str(), ret);
 		return true;
 	};
@@ -715,13 +852,17 @@ int configure_reader(std::string& out)
 #endif
 			return true;
 		} },
+		{ "show_hotkey_in_menu", iBoolType, true, [&show_hotkey_in_menu](const Value& val,PCSTR name)->bool {
+			show_hotkey_in_menu = val[name].GetBool();
+			return true;
+		} },
 		{ "lang", iStringType, true, lambda_remove_empty_string, [](Value& val, PCSTR name)->bool { // place hold for execute some code
 			bool has_lang = val.HasMember("lang");
 			initialize_local(has_lang, has_lang ? val["lang"].GetString() : NULL);
 			return true;
 		}},
 
-		{ "configs", iArrayType, false, [&cnt,&config_items](Value& val,PCSTR name)->bool {
+		{ "configs", iArrayType, false, [&cnt,&config_items,&config_i_pointer](Value& val,PCSTR name)->bool {
 			for (auto& m : val[name].GetArray())
 			{
 
@@ -775,7 +916,7 @@ int configure_reader(std::string& out)
 					return false;
 					//SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 				}
-
+				config_i_pointer = &m; // very bad method, but have to
 				//check for config item
 				if (false == check_rapidjson_object(
 					m,
@@ -809,6 +950,7 @@ int configure_reader(std::string& out)
 			LOGMESSAGE(L"enable_groups_menu:%d\n", enable_groups_menu);
 			return true;
 		}},
+
 		{ "groups_menu_symbol", iStringType, true, nullptr },
 		{ "icon", iStringType, true, lambda_remove_empty_string },
 		{ "left_click", iArrayType, true, [&cnt](const Value& val,PCSTR name)->bool {
@@ -865,6 +1007,8 @@ int configure_reader(std::string& out)
 			return true;
 		} },
 
+		{ "menu", iNullType, true, nullptr, lambda_remove_menu },
+		{ "config_menu", iNullType, true, nullptr, lambda_remove_menu },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms,&allocator](Value& val,PCSTR name)->bool {
 			bool ret = true;
 			if (global_stat == nullptr && enable_hotkey)
@@ -886,7 +1030,7 @@ int configure_reader(std::string& out)
 				ret = true;
 			}
 			return ret;
-		}},
+		}, lambda_menu_check },
 	};
 
 	if (false == check_rapidjson_object(
@@ -1694,8 +1838,166 @@ void create_group_level_menu(const nlohmann::json& root_groups, HMENU root_hmenu
 	}
 }
 
-
 void get_command_submenu(std::vector<HMENU>& outVcHmenu)
+{
+	LOGMESSAGE(L"enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
+
+#define RUNAS_ADMINISRATOR_INDEX 5
+
+	/*LPCTSTR MENUS_LEVEL2_CN[] = {
+		L"显示",
+		L"隐藏" ,
+		L"启用",
+		L"停用",
+		L"重启命令",
+		L"管理员运行"  //index is 5, magic number
+	};
+	LPCTSTR MENUS_LEVEL2_EN[] = {
+		L"Show",
+		L"Hide" ,
+		L"Enable" ,
+		L"Disable",
+		L"Restart Command",
+		L"Run As Administrator" //index is 5, magic number
+	};*/
+	HMENU hSubMenu = NULL;
+
+	if (!enable_groups_menu)
+	{
+		hSubMenu = CreatePopupMenu();
+		outVcHmenu.push_back(hSubMenu);
+	}
+	int i = 0;
+	//std::wstring local_wstring;
+	for (auto& itm : (*global_configs_pointer))
+	{
+		hSubMenu = CreatePopupMenu();
+
+		bool is_enabled = static_cast<bool>(itm["enabled"]);
+		bool is_running = static_cast<bool>(itm["running"]);
+		bool is_show = static_cast<bool>(itm["show"]);
+		bool is_en_job = static_cast<bool>(itm["en_job"]);
+
+		int64_t handle = itm["handle"];
+		if (is_running)
+		{
+			DWORD lpExitCode;
+			BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
+			if (retValue != 0 && lpExitCode != STILL_ACTIVE)
+			{
+				itm["running"] = false;
+				itm["en_job"] = false;
+				itm["handle"] = 0;
+				itm["pid"] = -1;
+				itm["hwnd"] = 0;
+				itm["win_num"] = 0;
+				itm["show"] = false;
+				itm["enabled"] = false;
+
+				is_running = false;
+				is_show = false;
+				is_enabled = false;
+			}
+		}
+
+		UINT uSubFlags = (is_en_job && is_running) ? (MF_STRING) : (MF_STRING | MF_GRAYED);
+		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
+			utf8_to_wstring(itm["path"]).c_str());
+		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
+			utf8_to_wstring(itm["cmd"]).c_str());
+		//AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
+		//utf8_to_wstring(itm["working_directory"]).c_str());
+		AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
+
+		const int info_items_cnt = 2;
+		uSubFlags = is_enabled ? (MF_STRING) : (MF_STRING | MF_GRAYED);
+		nlohmann::json* menu_translation_pointer;
+		if (json_object_has_member(itm, "menu"))
+		{
+			menu_translation_pointer = &(itm["menu"]);
+		}
+		else
+		{
+			menu_translation_pointer = &(global_stat["config_menu"]);
+		}
+		for (int j = 0; j < 3; j++)
+		{
+			UINT uflag;
+			if (j == 1)
+			{
+				uflag = MF_STRING;
+			}
+			else
+			{
+				uflag = uSubFlags;
+			}
+			ConfigMenuNameIndex config_menu_idx;
+			//int menu_name_item;// = j + (j == 0 && is_running) + (j == 1 && is_show) + (j == 2 ? 0 : 2);
+			if (j == 0)
+			{
+				if (is_show) {
+					//menu_name_item = 1; 
+					config_menu_idx = mHide;
+				}
+				else
+				{
+					//menu_name_item = 0;
+					config_menu_idx = mShow;
+				}
+			}
+			else if (j == 1)
+			{
+				if (is_enabled)
+				{
+					//menu_name_item = 3;
+					config_menu_idx = mDisable;
+				}
+				else
+				{
+					//menu_name_item = 2;
+					config_menu_idx = mEnable;
+				}
+			}
+			else
+			{
+				//menu_name_item = 4;
+				config_menu_idx = mRestart;
+			}
+			AppendMenu(hSubMenu, uflag, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
+				utf8_to_wstring((*menu_translation_pointer)[config_menu_idx]).c_str()
+			);
+		}
+		if (!is_runas_admin)
+		{
+			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
+			/*AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
+				isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] :
+				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX]).c_str()
+			);*/
+			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + 5,
+				utf8_to_wstring((*menu_translation_pointer)[mRunAsAdministrator]).c_str()
+			);
+		}
+		if (!enable_groups_menu)
+		{
+			UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
+			AppendMenu(outVcHmenu[0], uFlags, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(itm["name"]).c_str());
+		}
+		outVcHmenu.push_back(hSubMenu);
+		i++;
+	}
+	if (enable_groups_menu)
+	{
+		std::wstring menu_symbol_wstring = utf8_to_wstring(global_stat["groups_menu_symbol"]) + L" ";
+		hSubMenu = CreatePopupMenu();
+		vector_hemnu_p = &outVcHmenu;
+		level_menu_symbol_p = menu_symbol_wstring.c_str();
+		create_group_level_menu(*global_groups_pointer, hSubMenu);
+		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
+	}
+}
+
+void get_command_submenu2(std::vector<HMENU>& outVcHmenu)
 {
 	LOGMESSAGE(L"enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
 	//return {};

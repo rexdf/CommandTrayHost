@@ -1082,3 +1082,65 @@ BOOL ShowPopupMenu()
 
 */
 
+
+BOOL ShowPopupMenuJson3()
+{
+	POINT pt;
+	HMENU hSubMenu = NULL;
+	//const LCID cur_lcid = GetSystemDefaultLCID();
+	//const BOOL isZHCN = cur_lcid == 2052;
+	//LPCTSTR lpCurrentProxy = GetWindowsProxy();
+	std::vector<HMENU> vctHmenu;
+	get_command_submenu(vctHmenu);
+
+	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : translate_w2w(L"Hide All").c_str()));
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RESTARTALL, (isZHCN ? L"全部重启" : translate_w2w(L"Restart All").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All").c_str()));
+	vctHmenu.push_back(hSubMenu);
+	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+
+	UINT uFlags = IsMyProgramRegisteredForStartup(szPathToExeToken) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
+	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot").c_str()));
+	{
+		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate").c_str()));
+		/*HICON shieldIcon;
+		if (GetStockIcon(shieldIcon))
+		{
+			AppendMenu(vctHmenu[0], is_runas_admin ? (MF_BITMAP | MF_CHECKED) : MF_BITMAP, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, reinterpret_cast<LPCTSTR>(BitmapFromIcon(shieldIcon)));
+		}*/
+
+	}
+	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOW, (isZHCN ? L"\x663e\x793a" : L"Show"));
+	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDE, (isZHCN ? L"\x9690\x85cf" : L"Hide"));
+	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RELOAD, (isZHCN ? L"\x91cd\x65b0\x8f7d\x5165" : L"Reload"));
+	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+
+	hSubMenu = CreatePopupMenu();
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home").c_str()));
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : translate_w2w(L"About").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help").c_str()));
+	vctHmenu.push_back(hSubMenu);
+
+	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
+
+	GetCursorPos(&pt);
+	TrackPopupMenu(vctHmenu[0], TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
+	PostMessage(hWnd, WM_NULL, 0, 0);
+	LOGMESSAGE(L"hWnd:0x%x\n", hWnd);
+
+	for (auto it : vctHmenu)
+	{
+		if (it != NULL)
+		{
+			DestroyMenu(it);
+		}
+	}
+	//free vctHmenu memory now
+	return TRUE;
+}

@@ -1,5 +1,31 @@
 ﻿#pragma once
 
+enum ConfigMenuNameIndex
+{
+	mShow,
+	mHide,
+	mEnable,
+	mDisable,
+	mRestart,
+	mRunAsAdministrator,
+};
+enum GloabalMenuNameIndx
+{
+	mDisableAll, // order is important, commandtrayhost marked word: 4bfsza3ay
+	mEnableAll,
+	mHideAll,
+	mShowall,
+	mRestartALL,
+	mElevate,
+	mExit,
+
+	mAll,
+	mStartOnBoot,
+	mHome,
+	mAbout,
+	mHelp,
+};
+
 void get_command_submenu(std::vector<HMENU>&);
 //int init_global(HANDLE&, PWSTR, int&);
 int init_global(HANDLE&, HICON&);

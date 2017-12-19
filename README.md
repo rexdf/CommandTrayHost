@@ -187,6 +187,7 @@ example configure
     },
     "repeat_mod_hotkey": false,
     "global_hotkey_alpha_step": 5,
+    "show_hotkey_in_menu": true,
     "enable_hotkey": true,
     "start_show_silent": true,
 }

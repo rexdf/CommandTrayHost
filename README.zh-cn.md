@@ -190,6 +190,7 @@ Windows命令行程序系统托盘管理工具
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
+    "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
 }

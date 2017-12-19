@@ -40,6 +40,10 @@
 
 #include <nlohmann/json.hpp>
 
+#ifdef _M_AMD64
+#define RAPIDJSON_48BITPOINTER_OPTIMIZATION	1
+#endif
+
 //#pragma warning( disable : 4003)
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -51,11 +55,6 @@
 #include <rapidjson/filereadstream.h>   // FileReadStream
 #include <rapidjson/encodedstream.h>    // AutoUTFInputStream
 //#include <rapidjson/pointer.h>
-
-
-#ifdef _M_AMD64
-#define RAPIDJSON_48BITPOINTER_OPTIMIZATION	1
-#endif
 
 #include <ntverp.h>
 #if VER_PRODUCTBUILD == 7600

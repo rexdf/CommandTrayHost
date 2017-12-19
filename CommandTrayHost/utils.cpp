@@ -44,6 +44,22 @@ std::string wstring_to_utf8(const std::wstring& str)
 	return myconv.to_bytes(str);
 }
 
+/*
+// convert UTF-8 string to u16string
+std::u16string utf8_to_u16string(const std::string& str)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> myconv;
+	return myconv.from_bytes(str);
+}
+
+// convert u16string to UTF-8 string
+std::string u16string_to_utf8(const std::u16string& str)
+{
+	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> myconv;
+	return myconv.to_bytes(str);
+}
+*/
+
 bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...)
 {
 	va_list args;

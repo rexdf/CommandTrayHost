@@ -359,7 +359,7 @@ BOOL SetWindowsProxyForAllRasConnections(WCHAR* szProxy)
 //#pragma warning( pop )
 #endif
 
-BOOL ShowPopupMenuJson3()
+BOOL ShowPopupMenuJson4()
 {
 	POINT pt;
 	HMENU hSubMenu = NULL;
@@ -369,25 +369,35 @@ BOOL ShowPopupMenuJson3()
 	std::vector<HMENU> vctHmenu;
 	get_command_submenu(vctHmenu);
 
+	auto& menu_ref = global_stat["menu"];
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
-	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : translate_w2w(L"Hide All").c_str()));
+	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, (isZHCN ? L"隐藏全部" : translate_w2w(L"Hide All").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_HIDEALL, utf8_to_wstring(menu_ref[mHideAll]).c_str());
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All").c_str()));
+	/*AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, (isZHCN ? L"全部禁用" : translate_w2w(L"Disable All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, (isZHCN ? L"全部启动" : translate_w2w(L"Enable All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, (isZHCN ? L"全部显示" : translate_w2w(L"Show All").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RESTARTALL, (isZHCN ? L"全部重启" : translate_w2w(L"Restart All").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"全部" : translate_w2w(L"All").c_str()));
+	*/
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_DISABLEALL, utf8_to_wstring(menu_ref[mDisableAll]).c_str());
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ENABLEALL, utf8_to_wstring(menu_ref[mEnableAll]).c_str());
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_SHOWALL, utf8_to_wstring(menu_ref[mShowall]).c_str());
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_RESTARTALL, utf8_to_wstring(menu_ref[mRestartALL]).c_str());
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(menu_ref[mAll]).c_str());
 	vctHmenu.push_back(hSubMenu);
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	UINT uFlags = IsMyProgramRegisteredForStartup(szPathToExeToken) ? (MF_STRING | MF_CHECKED) : (MF_STRING);
-	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot").c_str()));
+	//AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, (isZHCN ? L"开机启动" : translate_w2w(L"Start on Boot").c_str()));
+	AppendMenu(vctHmenu[0], uFlags, WM_TASKBARNOTIFY_MENUITEM_STARTUP, utf8_to_wstring(menu_ref[mStartOnBoot]).c_str());
 	{
-		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate").c_str()));
+		//AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, (isZHCN ? L"提权" : translate_w2w(L"Elevate").c_str()));
+		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_STRING | MF_CHECKED) : MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, utf8_to_wstring(menu_ref[mElevate]).c_str());
 		/*HICON shieldIcon;
 		if (GetStockIcon(shieldIcon))
 		{
-			AppendMenu(vctHmenu[0], is_runas_admin ? (MF_BITMAP | MF_CHECKED) : MF_BITMAP, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, reinterpret_cast<LPCTSTR>(BitmapFromIcon(shieldIcon)));
+		AppendMenu(vctHmenu[0], is_runas_admin ? (MF_BITMAP | MF_CHECKED) : MF_BITMAP, WM_TASKBARNOTIFY_MENUITEM_ELEVATE, reinterpret_cast<LPCTSTR>(BitmapFromIcon(shieldIcon)));
 		}*/
 
 	}
@@ -397,13 +407,18 @@ BOOL ShowPopupMenuJson3()
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 
 	hSubMenu = CreatePopupMenu();
-	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home").c_str()));
+	/*AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, (isZHCN ? L"主页" : translate_w2w(L"Home").c_str()));
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, (isZHCN ? L"关于" : translate_w2w(L"About").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help").c_str()));
+	*/
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, utf8_to_wstring(menu_ref[mHome]).c_str());
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, utf8_to_wstring(menu_ref[mAbout]).c_str());
+	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(menu_ref[mHelp]).c_str());
 	vctHmenu.push_back(hSubMenu);
 
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
-	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
+	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
+	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, utf8_to_wstring(menu_ref[mExit]).c_str());
 
 	GetCursorPos(&pt);
 	TrackPopupMenu(vctHmenu[0], TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
@@ -443,7 +458,7 @@ BOOL ParseProxyList()
 		lpProxyList[i++] = pos;
 		//pos = _wcstok(NULL, sep);
 		pos = wcstok_s(nullptr, sep, &next_token);
-	}
+}
 	lpProxyList[i] = 0;
 
 	for (LPSTR ptr = szRasPbk; *ptr; ptr++)
@@ -618,7 +633,7 @@ BOOL CreateConsole()
 	}
 
 	return TRUE;
-}
+	}
 //#pragma warning( pop )
 #endif
 
@@ -708,7 +723,7 @@ BOOL ReloadCmdline()
 	Sleep(200);
 	ExecCmdline();
 	return TRUE;
-}
+	}
 
 #endif
 
@@ -752,7 +767,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			// https://msdn.microsoft.com/en-us/library/windows/desktop/ms648002(v=vs.85).aspx
 			SetForegroundWindow(hWnd);
-			ShowPopupMenuJson3();
+			ShowPopupMenuJson4();
 		}
 		break;
 	case WM_COMMAND:
