@@ -1842,24 +1842,6 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 {
 	LOGMESSAGE(L"enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
 
-#define RUNAS_ADMINISRATOR_INDEX 5
-
-	/*LPCTSTR MENUS_LEVEL2_CN[] = {
-		L"显示",
-		L"隐藏" ,
-		L"启用",
-		L"停用",
-		L"重启命令",
-		L"管理员运行"  //index is 5, magic number
-	};
-	LPCTSTR MENUS_LEVEL2_EN[] = {
-		L"Show",
-		L"Hide" ,
-		L"Enable" ,
-		L"Disable",
-		L"Restart Command",
-		L"Run As Administrator" //index is 5, magic number
-	};*/
 	HMENU hSubMenu = NULL;
 
 	if (!enable_groups_menu)
@@ -1970,10 +1952,6 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		if (!is_runas_admin)
 		{
 			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
-			/*AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
-				isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] :
-				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX]).c_str()
-			);*/
 			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + 5,
 				utf8_to_wstring((*menu_translation_pointer)[mRunAsAdministrator]).c_str()
 			);
@@ -1995,164 +1973,6 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		create_group_level_menu(*global_groups_pointer, hSubMenu);
 		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
 	}
-}
-
-void get_command_submenu2(std::vector<HMENU>& outVcHmenu)
-{
-	LOGMESSAGE(L"enable_groups_menu:%d json %s\n", enable_groups_menu, utf8_to_wstring(global_stat.dump()).c_str());
-	//return {};
-
-#define RUNAS_ADMINISRATOR_INDEX 5
-
-	LPCTSTR MENUS_LEVEL2_CN[] = {
-		L"显示",
-		L"隐藏" ,
-		L"启用",
-		L"停用",
-		L"重启命令",
-		L"管理员运行"  //index is 5, magic number
-	};
-	LPCTSTR MENUS_LEVEL2_EN[] = {
-		L"Show",
-		L"Hide" ,
-		L"Enable" ,
-		L"Disable",
-		L"Restart Command",
-		L"Run As Administrator" //index is 5, magic number
-	};
-	HMENU hSubMenu = NULL;
-	//const LCID cur_lcid = GetSystemDefaultLCID();
-	//const BOOL isZHCN = cur_lcid == 2052;
-	//std::vector<HMENU> vctHmenu;
-	if (!enable_groups_menu)
-	{
-		hSubMenu = CreatePopupMenu();
-		outVcHmenu.push_back(hSubMenu);
-	}
-	int i = 0;
-	//std::wstring local_wstring;
-	for (auto& itm : (*global_configs_pointer))
-	{
-		hSubMenu = CreatePopupMenu();
-
-		bool is_enabled = static_cast<bool>(itm["enabled"]);
-		bool is_running = static_cast<bool>(itm["running"]);
-		bool is_show = static_cast<bool>(itm["show"]);
-		bool is_en_job = static_cast<bool>(itm["en_job"]);
-
-		int64_t handle = itm["handle"];
-		if (is_running)
-		{
-			DWORD lpExitCode;
-			BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
-			if (retValue != 0 && lpExitCode != STILL_ACTIVE)
-			{
-				itm["running"] = false;
-				itm["en_job"] = false;
-				itm["handle"] = 0;
-				itm["pid"] = -1;
-				itm["hwnd"] = 0;
-				itm["win_num"] = 0;
-				itm["show"] = false;
-				itm["enabled"] = false;
-
-				is_running = false;
-				is_show = false;
-				is_enabled = false;
-			}
-		}
-
-		UINT uSubFlags = (is_en_job && is_running) ? (MF_STRING) : (MF_STRING | MF_GRAYED);
-		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
-			utf8_to_wstring(itm["path"]).c_str());
-		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
-			utf8_to_wstring(itm["cmd"]).c_str());
-		//AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
-			//utf8_to_wstring(itm["working_directory"]).c_str());
-		AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
-
-		const int info_items_cnt = 2;
-		uSubFlags = is_enabled ? (MF_STRING) : (MF_STRING | MF_GRAYED);
-		for (int j = 0; j < 3; j++)
-		{
-			int menu_name_item;// = j + (j == 0 && is_running) + (j == 1 && is_show) + (j == 2 ? 0 : 2);
-			if (j == 0)
-			{
-				if (is_show) { menu_name_item = 1; }
-				else { menu_name_item = 0; }
-			}
-			else if (j == 1)
-			{
-				if (is_enabled) { menu_name_item = 3; }
-				else { menu_name_item = 2; }
-			}
-			else
-			{
-				menu_name_item = 4;
-			}
-			/*LPCTSTR lpText;
-
-			if (isZHCN)
-			{
-				lpText = MENUS_LEVEL2_CN[menu_name_item];
-			}
-			else
-			{
-				local_wstring = translate_w2w(MENUS_LEVEL2_EN[menu_name_item], cur_lcid);
-				lpText = local_wstring.c_str();
-			}*/
-			if (j != 1)
-			{
-				AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
-					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
-					translate_w2w(MENUS_LEVEL2_EN[menu_name_item]).c_str()
-				);
-			}
-			else
-			{
-				AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + j,
-					isZHCN ? MENUS_LEVEL2_CN[menu_name_item] :
-					translate_w2w(MENUS_LEVEL2_EN[menu_name_item]).c_str()
-				);
-			}
-		}
-		if (!is_runas_admin)
-		{
-			/*LPCTSTR lpText;// = isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] : MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX];
-			if (isZHCN)
-			{
-				lpText = MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX];
-			}
-			else
-			{
-				local_wstring = translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX], cur_lcid);
-				lpText = local_wstring.c_str();
-			}*/
-			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
-			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 5,
-				isZHCN ? MENUS_LEVEL2_CN[RUNAS_ADMINISRATOR_INDEX] :
-				translate_w2w(MENUS_LEVEL2_EN[RUNAS_ADMINISRATOR_INDEX]).c_str()
-			);
-		}
-		if (!enable_groups_menu)
-		{
-			UINT uFlags = is_enabled ? (MF_STRING | MF_CHECKED | MF_POPUP) : (MF_STRING | MF_POPUP);
-			AppendMenu(outVcHmenu[0], uFlags, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(itm["name"]).c_str());
-		}
-		outVcHmenu.push_back(hSubMenu);
-		i++;
-	}
-	if (enable_groups_menu)
-	{
-		std::wstring menu_symbol_wstring = utf8_to_wstring(global_stat["groups_menu_symbol"]) + L" ";
-		hSubMenu = CreatePopupMenu();
-		vector_hemnu_p = &outVcHmenu;
-		level_menu_symbol_p = menu_symbol_wstring.c_str();
-		create_group_level_menu(*global_groups_pointer, hSubMenu);
-		outVcHmenu.insert(outVcHmenu.begin(), hSubMenu);
-	}
-	//return true;
-	//return vctHmenu;
 }
 
 /* nlohmann::json& js		global internel state
