@@ -45,6 +45,9 @@
     <ClInclude Include="trash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\third_party\ccronexpr\ccronexpr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -63,6 +66,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\ccronexpr\ccronexpr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

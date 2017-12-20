@@ -66,6 +66,10 @@
 //#endif
 #include <strsafe.h>
 
+#define CRON_USE_LOCAL_TIME
+#define CRON_COMPILE_AS_CXX
+#include "ccronexpr.h"
+
 #ifdef _DEBUG
 //#define LOGMESSAGE( str ) OutputDebugString( str );
 void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
