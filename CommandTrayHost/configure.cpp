@@ -1875,10 +1875,12 @@ void handle_crontab(int idx)
 		if (crontab_count != 1)
 		{
 			cron_expr c;
-			time_t next_t = 0;
-			next_t = cron_next(&c, time(NULL)); // return -1 when failed
-			if (next_t > 0)
+			time_t next_t = 0, now_t = time(NULL);
+			next_t = cron_next(&c, now_t); // return -1 when failed
+			LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
+			if (next_t > now_t)
 			{
+				next_t -= now_t;
 				next_t *= 1000;
 				if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
 				SetTimer(hWnd, VM_TIMER_BASE + idx, static_cast<UINT>(next_t), NULL);
@@ -1887,6 +1889,10 @@ void handle_crontab(int idx)
 					crontab_ref["count"] = crontab_count - 1;
 				}
 			}
+		}
+		else
+		{
+			crontab_ref["enabled"] = false;
 		}
 	}
 	else
@@ -2746,6 +2752,11 @@ void kill_all(bool is_exit/* = true*/)
 	for (auto& itm : (*global_configs_pointer))
 	{
 		cache_config_cursor++; // for continue
+		if (json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
+		{
+			extern HWND hWnd;
+			KillTimer(hWnd, VM_TIMER_BASE + cache_config_cursor);
+		}
 		bool is_running = itm["running"];
 		/*if (is_exit)
 		{
