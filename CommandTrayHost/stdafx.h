@@ -97,7 +97,7 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 #define CACHE_FILENAMEA "command_tray_host.cache"
 #define CONFIG_FILENAMEA "config.json"
 
-#define VERSION_NUMS L"1.8.0"
+#define VERSION_NUMS L"1.9.0"
 
 #define MAX_MENU_LEVEL_LIMIT	40
 
