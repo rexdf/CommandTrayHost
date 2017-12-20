@@ -257,20 +257,44 @@ int64_t FileSize(PCWSTR name)
 	return size.QuadPart;
 }
 
-void to_json(nlohmann::json& j, const cron_expr& p) {
-	j = nlohmann::json{ std::string(reinterpret_cast<const char*>(&p),sizeof(cron_expr)) };
+/*void to_json(nlohmann::json& j, const cron_expr& p) {
+	j = nlohmann::json{ std::string(reinterpret_cast<const char*>(&p), sizeof(cron_expr)) };
 }
 
 void from_json(const nlohmann::json& j, cron_expr& p) {
-	StringCchCopyA(reinterpret_cast<char*>(&p), sizeof(cron_expr), j.get<std::string>().data());
+	memcpy(reinterpret_cast<char*>(&p), j.get<std::string>().data(), sizeof(cron_expr));
 }
 
 cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
 {
-	if (json_object_has_member(jsp, "crontab_config") && json_object_has_member(jsp, "cron_expr"))
+	if (json_object_has_member(jsp, "crontab_config") && json_object_has_member(jsp["crontab_config"], "cron_expr"))
 	{
-		result = jsp["crontab_config"]["cron_expr"].get<cron_expr>();
+		result = jsp["crontab_config"]["cron_expr"];
 		return &result;
+	}
+	return nullptr;
+}*/
+
+cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
+{
+	if (json_object_has_member(jsp, "crontab_config"))
+	{
+		auto& crontab_config_ref = jsp["crontab_config"];
+		if (crontab_config_ref["enabled"])
+		{
+			//cron_expr expr;
+			ZeroMemory(&result, sizeof(cron_expr)); // if not do this, always get incorrect result
+			const char* err = NULL;
+			cron_parse_expr(crontab_config_ref["crontab"].get<std::string>().c_str(), &result, &err);
+			if (err)
+			{
+				LOGMESSAGE(L"cron_parse_expr failed! %S\n", err);
+			}
+			else
+			{
+				return &result;
+			}
+		}
 	}
 	return nullptr;
 }

@@ -658,7 +658,7 @@ int configure_reader(std::string& out)
 		} },
 		{ "crontab", iStringType,false,[&allocator](Value& val, PCSTR name)->bool {
 			if (!val["enabled"].GetBool())return true;
-			if (val.HasMember("cron_expr"))return false;
+			//if (val.HasMember("cron_expr"))return false;
 			const char* crontab = val[name].GetString();
 			if (crontab[0] == 0)return false;
 			cron_expr expr;
@@ -670,9 +670,9 @@ int configure_reader(std::string& out)
 				LOGMESSAGE(L"cron_parse_expr failed! %S\n",err);
 				return false;
 			}
-			Value v;
-			v.SetString(reinterpret_cast<const char*>(&expr), sizeof(cron_expr), allocator);
-			val.AddMember("cron_expr", v, allocator);
+			//Value v;
+			//v.SetString(reinterpret_cast<const char*>(&expr), sizeof(cron_expr), allocator);
+			//val.AddMember("cron_expr", v, allocator);
 			return true;
 		} },
 		{ "method", iStringType,false,[](Value& val, PCSTR name)->bool {
@@ -1587,6 +1587,31 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			}
 			i["exe_seperator"] = static_cast<int>(pIdx - commandLine);
 		}
+
+		if (json_object_has_member(i, "crontab_config"))
+		{
+			LOGMESSAGE(L"%s crontab_config enabled %d\n",
+				utf8_to_wstring(i["name"]).c_str(),
+				i["crontab_config"]["enabled"].get<bool>()
+			);
+			/*auto& crontab_config_ref = i["crontab_config"];
+			if (crontab_config_ref["enabled"])
+			{
+				cron_expr expr;
+				ZeroMemory(&expr, sizeof(expr)); // if not do this, always get incorrect result
+				const char* err = NULL;
+				LOGMESSAGE(L"crontab_config_ref %S\n", crontab_config_ref["crontab"].get<std::string>().c_str());
+				cron_parse_expr(crontab_config_ref["crontab"].get<std::string>().c_str(), &expr, &err);
+				if (err)
+				{
+					LOGMESSAGE(L"cron_parse_expr failed! %S\n", err);
+				}
+				else
+				{
+					crontab_config_ref["cron_expr"] = expr;
+				}
+			}*/
+		}
 	}
 	if (enable_groups_menu)
 	{
@@ -1894,17 +1919,21 @@ void start_all(HANDLE ghJob, bool force)
 		}
 		else
 		{
-			if (json_object_has_member(i, "crontab_config") && i["crontab_config"]["count"]["enabled"])
+			if (json_object_has_member(i, "crontab_config") && i["crontab_config"]["enabled"])
 			{
+				LOGMESSAGE(L"i[crontab_config][enabled]\n");
+				//assert(json_object_has_member(i["crontab_config"], "cron_expr"));
 				cron_expr c;
 				if (nullptr != get_cron_expr(i, c))
 				{
 					//int cront_cnt = i["crontab_config"]["count"];
 					extern HWND hWnd;
-					time_t next_t = 0;
-					next_t = cron_next(&c, time(NULL)); // return -1 when failed
-					if (next_t > 0)
+					time_t next_t = 0, now_t = time(NULL);
+					next_t = cron_next(&c, now_t); // return -1 when failed
+					LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
+					if (next_t > now_t)
 					{
+						next_t -= now_t;
 						next_t *= 1000;
 						if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
 						SetTimer(hWnd, VM_TIMER_BASE + cache_config_cursor, static_cast<UINT>(next_t), NULL);
