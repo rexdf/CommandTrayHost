@@ -71,6 +71,10 @@ bool initial_configure()
      *    键盘码参考这里 https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
      *    大小写无关，顺序无关，如果多个非修饰符的按钮，最后的那个按钮会起作用。
      *    热键注册失败，一般是与系统中存在的冲突了，换一个再试
+     * 8. crontab语法，秒 分 时 日期 月份 星期，比常规crontab多了个秒钟，具体语法使用搜索引擎
+     *    例子 0 0/10 * * * *  每10分钟运行一次
+     *    例子 0 1,11,21 * * * 每小时的1分 11分 21分运行一次
+     *    例子 0 2/10 12-14 * * * 12点到14点，每小时从2分钟开始每10分钟运行一次
      */
     "configs": [
         {
@@ -118,6 +122,14 @@ bool initial_configure()
             "use_builtin_console": false,
             "is_gui": false,
             "enabled": false,
+            // 可选
+            "crontab_config": { // crontab配置
+                "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考上面8
+                "method": "start", // 支持的有 start restart stop
+                "count": 0, // 0 表示infinite不只限制，大于0的整数，表示运行多少次就不运行了
+                // 可选
+                "enabled": true,
+            },
         },
         {
             "name": "cmd例子3",
@@ -199,6 +211,7 @@ bool initial_configure()
      * 6. set "enable_cache": true to enable cache.
      * 7. alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
      *    https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+     * 8. crontab is from https://github.com/staticlibs/ccronexpr
      */
     "configs": [
         {
@@ -244,6 +257,14 @@ bool initial_configure()
             "use_builtin_console": false,
             "is_gui": false,
             "enabled": false,
+            // Optional
+            "crontab_config": { 
+                "crontab": "8 */2 15-16 29 2 *", 
+                "method": "start", // start restart stop
+                "count": 0, // times to run, 0 infinite
+                // Optional
+                "enabled": true,
+            },
         },
         {
             "name": "cmd example 3",
@@ -627,6 +648,49 @@ int configure_reader(std::string& out)
 		{ "restart", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx },
 		{ "elevate", iStringType, true, lambda_config_hotkey, lambda_config_hotkey_items_idx },
 	};
+	const RapidJsonObjectChecker config_crontab_items[] = {
+		{ "enabled", iBoolType,true,nullptr,[&allocator](Value& val, PCSTR name)->bool {
+			if (!val.HasMember(name))
+			{
+				val.AddMember(Value{}.SetString(name, allocator), true, allocator);
+			}
+			return true;
+		} },
+		{ "crontab", iStringType,false,[&allocator](Value& val, PCSTR name)->bool {
+			if (!val["enabled"].GetBool())return true;
+			if (val.HasMember("cron_expr"))return false;
+			const char* crontab = val[name].GetString();
+			if (crontab[0] == 0)return false;
+			cron_expr expr;
+			ZeroMemory(&expr, sizeof(expr)); // if not do this, always get incorrect result
+			const char* err = NULL;
+			cron_parse_expr(crontab, &expr, &err);
+			if (err)
+			{
+				LOGMESSAGE(L"cron_parse_expr failed! %S\n",err);
+				return false;
+			}
+			Value v;
+			v.SetString(reinterpret_cast<const char*>(&expr), sizeof(cron_expr), allocator);
+			val.AddMember("cron_expr", v, allocator);
+			return true;
+		} },
+		{ "method", iStringType,false,[](Value& val, PCSTR name)->bool {
+			if (!val["enabled"].GetBool())return true;
+			const char* method = val[name].GetString();
+			if (0 == StrCmpA(method,"restart") || 0 == StrCmpA(method, "start") || 0 == StrCmpA(method, "stop"))
+			{
+				return true;
+			}
+			return false;
+		} },
+		{ "count", iIntType, false, [](Value& val, PCSTR name)->bool {
+			if (!val["enabled"].GetBool())return true;
+			int count = val[name].GetInt();
+			if (count < 0)return false;
+			return true;
+		} },
+	};
 
 	//type check for items in configs
 	const RapidJsonObjectChecker config_items[] = {
@@ -692,6 +756,16 @@ int configure_reader(std::string& out)
 			}
 			return true;
 		}},
+		{ "crontab_config", iObjectType, true, [&config_crontab_items](Value& val, PCSTR name)->bool {
+			return check_rapidjson_object(
+				val[name],
+				config_crontab_items,
+				ARRAYSIZE(config_crontab_items),
+				L": One of configs section crontab setting error!",
+				(utf8_to_wstring(name) + L"crontab_config Type Error").c_str(),
+				(utf8_to_wstring(val["name"].GetString()) + L" config section").c_str(),
+				false);
+		} },
 	};
 	PCSTR const global_menu[][2] = {
 		// with hotkey
@@ -1031,6 +1105,8 @@ int configure_reader(std::string& out)
 			}
 			return ret;
 		}, lambda_menu_check },
+			//{ "enable_crontab", iBoolType, true, nullptr },
+			//{ "crontabs", iArrayType, true, nullptr }
 	};
 
 	if (false == check_rapidjson_object(
@@ -1718,6 +1794,85 @@ void update_hwnd_all()
 	}
 }
 
+void handle_crontab(int idx)
+{
+	auto& config_i_ref = (*global_configs_pointer)[idx]; // ["crontab_config"]
+	if (json_object_has_member(config_i_ref, "crontab_config"))
+	{
+		auto& crontab_ref = config_i_ref["crontab_config"];
+		extern HWND hWnd;
+		KillTimer(hWnd, VM_TIMER_BASE + idx);
+
+		std::string crontab_method = crontab_ref["method"];
+		extern HANDLE ghJob;
+		bool enable_cache_backup = enable_cache;
+		enable_cache = false;
+		if (crontab_method == "start")
+		{
+			bool to_start = true;
+
+			if (config_i_ref["running"])
+			{
+				int64_t handle = config_i_ref["handle"];
+				DWORD lpExitCode;
+				BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
+				if (retValue != 0 && lpExitCode == STILL_ACTIVE)
+				{
+					to_start = false;
+				}
+			}
+			if (to_start)
+			{
+				config_i_ref["enabled"] = true;
+				create_process(config_i_ref, ghJob);
+			}
+		}
+		/*else if (crontab_method == "restart")
+		{
+
+		}
+		else if (crontab_method == "stop")*/
+		else
+		{
+			if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
+			{
+				disable_enable_menu(config_i_ref, ghJob);
+			}
+			if (crontab_method == "restart")
+			{
+				disable_enable_menu(config_i_ref, ghJob);
+			}
+		}
+		enable_cache = enable_cache_backup;
+
+		int crontab_count = crontab_ref["count"];
+
+		if (crontab_count != 1)
+		{
+			cron_expr c;
+			time_t next_t = 0;
+			next_t = cron_next(&c, time(NULL)); // return -1 when failed
+			if (next_t > 0)
+			{
+				next_t *= 1000;
+				if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
+				SetTimer(hWnd, VM_TIMER_BASE + idx, static_cast<UINT>(next_t), NULL);
+				if (crontab_count > 1)
+				{
+					crontab_ref["count"] = crontab_count - 1;
+				}
+			}
+		}
+	}
+	else
+	{
+		msg_prompt(L"Crontab has no crontab_config! Please report this windows screenshot to author!",
+			L"Crontab Error",
+			MB_OK
+		);
+	}
+}
+
 void start_all(HANDLE ghJob, bool force)
 {
 	//int cmd_idx = 0;
@@ -1735,6 +1890,26 @@ void start_all(HANDLE ghJob, bool force)
 			if (false == ignore_all)
 			{
 				i["enabled"] = true;
+			}
+		}
+		else
+		{
+			if (json_object_has_member(i, "crontab_config") && i["crontab_config"]["count"]["enabled"])
+			{
+				cron_expr c;
+				if (nullptr != get_cron_expr(i, c))
+				{
+					//int cront_cnt = i["crontab_config"]["count"];
+					extern HWND hWnd;
+					time_t next_t = 0;
+					next_t = cron_next(&c, time(NULL)); // return -1 when failed
+					if (next_t > 0)
+					{
+						next_t *= 1000;
+						if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
+						SetTimer(hWnd, VM_TIMER_BASE + cache_config_cursor, static_cast<UINT>(next_t), NULL);
+					}
+				}
 			}
 		}
 		bool is_enabled = i["enabled"];
@@ -2350,7 +2525,8 @@ void create_process(
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
 	bool is_enabled = jsp["enabled"];
-	if (false == runas_admin && is_enabled) {
+	if (false == runas_admin && is_enabled)
+	{
 		bool is_running = jsp["running"];
 		if (is_running)
 		{

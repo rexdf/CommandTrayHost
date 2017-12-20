@@ -31,3 +31,4 @@ BOOL ShowTrayIcon(LPCWSTR lpszProxy, DWORD dwMessage);
 #define WM_HOTKEY_TOPMOST (WM_USER + 0x65)
 
 #define VM_TIMER_CREATEPROCESS_SHOW 0x100
+#define VM_TIMER_BASE 0x200

@@ -257,6 +257,24 @@ int64_t FileSize(PCWSTR name)
 	return size.QuadPart;
 }
 
+void to_json(nlohmann::json& j, const cron_expr& p) {
+	j = nlohmann::json{ std::string(reinterpret_cast<const char*>(&p),sizeof(cron_expr)) };
+}
+
+void from_json(const nlohmann::json& j, cron_expr& p) {
+	StringCchCopyA(reinterpret_cast<char*>(&p), sizeof(cron_expr), j.get<std::string>().data());
+}
+
+cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
+{
+	if (json_object_has_member(jsp, "crontab_config") && json_object_has_member(jsp, "cron_expr"))
+	{
+		result = jsp["crontab_config"]["cron_expr"].get<cron_expr>();
+		return &result;
+	}
+	return nullptr;
+}
+
 bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 {
 	try

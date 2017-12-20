@@ -458,7 +458,7 @@ BOOL ParseProxyList()
 		lpProxyList[i++] = pos;
 		//pos = _wcstok(NULL, sep);
 		pos = wcstok_s(nullptr, sep, &next_token);
-}
+	}
 	lpProxyList[i] = 0;
 
 	for (LPSTR ptr = szRasPbk; *ptr; ptr++)
@@ -633,7 +633,7 @@ BOOL CreateConsole()
 	}
 
 	return TRUE;
-	}
+}
 //#pragma warning( pop )
 #endif
 
@@ -723,7 +723,7 @@ BOOL ReloadCmdline()
 	Sleep(200);
 	ExecCmdline();
 	return TRUE;
-	}
+}
 
 #endif
 
@@ -981,13 +981,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_TIMER:
 		LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
-		switch (wParam)
+		if (wParam == VM_TIMER_CREATEPROCESS_SHOW)
 		{
-		case VM_TIMER_CREATEPROCESS_SHOW:
 			update_hwnd_all();
-			break;
+
+		}
+		if (VM_TIMER_BASE <= wParam && wParam <= 0xBF00)
+		{
+			int idx = static_cast<int>(wParam - VM_TIMER_BASE);
+			if (idx >= number_of_configs || idx < 0)
+			{
+				msg_prompt(L"Crontab has some fatal error unknown idx! Please report this windows screenshot to author!",
+					L"Crontab Error",
+					MB_OK
+				);
+			}
+			else
+			{
+				handle_crontab(idx);
+			}
+		}
+		else
+		{
 			//default:
-				//LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
+			//LOGMESSAGE(L"WM_TIMER tick %d\n", wParam);
 		}
 		break;
 	case WM_CLOSE:
@@ -1108,7 +1125,31 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();
+#ifdef _DEBUG
+	{
+		cron_expr expr;
+		ZeroMemory(&expr, sizeof(expr));
+		const char* err = NULL;
+		cron_parse_expr("8 */2 15-16 29 2 *", &expr, &err);
+		if (err)LOGMESSAGE(L"cron_parse_expr err: %S\n", err);
+		else LOGMESSAGE(L"cron_parse_expr ok!\n");
+		assert(0 == err);
+		time_t cur = time(NULL);
+		time_t next = cron_next(&expr, cur);
 
+		LOGMESSAGE(L"%lld -> %lld diff:%lld", next, cur, next - cur);
+		double dif = difftime(next, cur);
+		char buffer[80];
+		tm t1, t2;
+		localtime_s(&t1, &cur);
+		localtime_s(&t2, &next);
+		strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S", &t1);
+		LOGMESSAGE(L"t1:%S %f\n", buffer, dif);
+		strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S", &t2);
+		LOGMESSAGE(L"t2:%S %f\n", buffer, dif);
+		LOGMESSAGE(L"%lld\n", ((time_t)-1));
+	}
+#endif
 	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{
 		TranslateMessage(&msg);

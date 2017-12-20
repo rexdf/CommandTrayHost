@@ -31,6 +31,8 @@
 
 #include "stdafx.h"
 
+//#define _CRT_SECURE_NO_WARNINGS 1 
+
 #pragma warning( push )
 #pragma warning( disable : 4996 )
 

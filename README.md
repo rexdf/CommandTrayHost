@@ -18,6 +18,7 @@ A Command Line program systray for Windows
 - Menu level limit is 40
 - Multiple instance of startup and running
 - Hotkey
+- Crontab
 
 # Usage
 
@@ -74,6 +75,14 @@ example configure
             "use_builtin_console": false,
             "is_gui": false,
             "enabled": true
+            // Optional
+            "crontab_config": { 
+                "crontab": "8 */2 15-16 29 2 *", 
+                "method": "start", // start restart stop
+                "count": 0, // times to run, 0 infinite
+                // Optional
+                "enabled": true,
+            },
         },
         {
             "name": "herokuapp",

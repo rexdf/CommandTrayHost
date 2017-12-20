@@ -19,6 +19,7 @@ Windows命令行程序系统托盘管理工具
 - 自定义菜单层级最多支持40级
 - 多实例运行与开机启动支持
 - 热键支持
+- Crontab计划任务
 
 # 使用
 
@@ -77,6 +78,14 @@ Windows命令行程序系统托盘管理工具
             "use_builtin_console": false,
             "is_gui": false,
             "enabled": true
+            // 可选
+            "crontab_config": { // crontab配置
+                "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考上面8
+                "method": "start", // 支持的有 start restart stop
+                "count": 0, // 0 表示不只限制，大于0的整数，表示运行多少次就不运行了
+                // 可选
+                "enabled": true,
+            },
         },
         {
             "name": "herokuapp",
