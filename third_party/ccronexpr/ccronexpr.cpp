@@ -21,13 +21,22 @@
  * Created on February 24, 2015, 9:35 AM
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <string.h>
-#include <math.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <ctype.h>
+//#include <errno.h>
+//#include <limits.h>
+//#include <string.h>
+//#include <math.h>
+
+#include "stdafx.h"
+
+#pragma warning( push )
+#pragma warning( disable : 4996 )
+
+#if VER_PRODUCTBUILD == 7600
+#pragma warning( disable : 4995 )
+#endif
 
 #include "ccronexpr.h"
 
@@ -101,13 +110,13 @@ time_t cron_mktime(struct tm* tm) {
 #endif /* _WIN32 */
 
 
-#ifndef CRON_TEST_MALLOC
+/*#ifndef CRON_TEST_MALLOC
 #define cronFree(x) free(x);
 #define cronMalloc(x) malloc(x);
 #else
 void* cronMalloc(size_t n);
 void cronFree(void* p);
-#endif
+#endif*/
 
 struct tm* cron_time(time_t* date, struct tm* out) {
 #ifdef __MINGW32__
@@ -139,6 +148,14 @@ struct tm* cron_time(time_t* date, struct tm* out) {
 }
 
 #endif /* CRON_USE_LOCAL_TIME */
+
+#ifndef CRON_TEST_MALLOC
+#define cronFree(x) free(x);
+#define cronMalloc(x) malloc(x);
+#else
+void* cronMalloc(size_t n);
+void cronFree(void* p);
+#endif
 
 void cron_set_bit(uint8_t* rbyte, int idx) {
     uint8_t j = (uint8_t) (idx / 8);
@@ -923,3 +940,4 @@ time_t cron_next(cron_expr* expr, time_t date) {
     return cron_mktime(calendar);
 }
 
+#pragma warning( pop )
