@@ -2752,7 +2752,7 @@ void kill_all(bool is_exit/* = true*/)
 	for (auto& itm : (*global_configs_pointer))
 	{
 		cache_config_cursor++; // for continue
-		if (json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
+		if (is_exit && json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
 		{
 			extern HWND hWnd;
 			KillTimer(hWnd, VM_TIMER_BASE + cache_config_cursor);
