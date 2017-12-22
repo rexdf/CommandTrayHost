@@ -1874,7 +1874,7 @@ void handle_crontab(int idx)
 
 		if (crontab_count != 1)
 		{
-			cron_expr c;
+			cron_expr c;if (nullptr != get_cron_expr(i, c)){
 			time_t next_t = 0, now_t = time(NULL);
 			next_t = cron_next(&c, now_t); // return -1 when failed
 			LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
@@ -1888,7 +1888,7 @@ void handle_crontab(int idx)
 				{
 					crontab_ref["count"] = crontab_count - 1;
 				}
-			}
+			}}
 		}
 		else
 		{
