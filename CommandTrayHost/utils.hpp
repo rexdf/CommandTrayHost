@@ -49,7 +49,7 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 
 //void from_json(const nlohmann::json& j, cron_expr& p);
 
-void crontab_log(const nlohmann::json& jsp, time_t, time_t, PCSTR, PCSTR);
+void crontab_log(const nlohmann::json& jsp, time_t, time_t, PCSTR, PCSTR, int);
 
 cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result);
 
@@ -92,7 +92,7 @@ void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache = true);
 int msg_prompt(
 	_In_opt_ LPCTSTR lpText,
 	_In_opt_ LPCTSTR lpCaption,
-	_In_     UINT    uType
+	_In_     UINT    uType = MB_OK
 );
 
 BOOL get_hicon(PCWSTR, int, HICON&, bool share = false);

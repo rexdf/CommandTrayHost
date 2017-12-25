@@ -75,6 +75,7 @@ bool initial_configure()
      *    例子 0 0/10 * * * *  每10分钟运行一次
      *    例子 0 1,11,21 * * * 每小时的1分 11分 21分运行一次
      *    例子 0 2/10 12-14 * * * 12点到14点，每小时从2分钟开始每10分钟运行一次
+     *    日志文件超过10M会进行rotate，最多支持rotate文件数为500
      */
     "configs": [
         {
@@ -1850,9 +1851,10 @@ void handle_crontab(int idx)
 		extern HWND hWnd;
 		KillTimer(hWnd, VM_TIMER_BASE + idx);
 
-		bool crontab_write_log = false;
+		//bool crontab_write_log = false;
 		time_t log_time_cur = time(NULL), log_time_next = 0;
 		PCSTR log_msg = nullptr, log_cron_msg = nullptr;
+		int log_count = 0;
 		std::string crontab_method = crontab_ref["method"];
 		extern HANDLE ghJob;
 		bool enable_cache_backup = enable_cache;
@@ -1878,7 +1880,7 @@ void handle_crontab(int idx)
 				config_i_ref["enabled"] = true;
 				create_process(config_i_ref, ghJob);
 				log_msg = "method:start started.";
-				crontab_write_log = true;
+				//crontab_write_log = true;
 			}
 		}
 		/*else if (crontab_method == "restart")
@@ -1892,14 +1894,14 @@ void handle_crontab(int idx)
 			{
 				disable_enable_menu(config_i_ref, ghJob);
 				log_msg = "method:kill stopped.";
-				crontab_write_log = true;
+				//crontab_write_log = true;
 			}
 			if (crontab_method == "restart")
 			{
 				config_i_ref["enabled"] = true;
 				create_process(config_i_ref, ghJob, false);
 				log_msg = "method:restart done.";
-				crontab_write_log = true;
+				//crontab_write_log = true;
 			}
 		}
 		enable_cache = enable_cache_backup;
@@ -1929,6 +1931,7 @@ void handle_crontab(int idx)
 					if (crontab_count > 1)
 					{
 						crontab_ref["count"] = crontab_count - 1;
+						log_count = crontab_count - 1;
 					}
 				}
 			}
@@ -1937,10 +1940,11 @@ void handle_crontab(int idx)
 		{
 			crontab_ref["enabled"] = false;
 			log_cron_msg = "count limited";
+			log_count = -1;
 		}
 		if (json_object_has_member(crontab_ref, "log"))
 		{
-			crontab_log(config_i_ref, log_time_cur, log_time_next, log_msg, log_cron_msg);
+			crontab_log(config_i_ref, log_time_cur, log_time_next, log_msg, log_cron_msg, log_count);
 		}
 	}
 	else

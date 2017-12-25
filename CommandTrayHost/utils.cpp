@@ -275,7 +275,38 @@ cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
 	return nullptr;
 }*/
 
-void crontab_log(const nlohmann::json& jsp, time_t time_cur, time_t time_next, PCSTR log_msg, PCSTR cron_msg)
+void rotate_file(PCWSTR filename)
+{
+	TCHAR buffer[MAX_PATH * 10];
+	for (int i = 1; i < 500; i++)
+	{
+		StringCchPrintf(buffer, ARRAYSIZE(buffer), L"%s.%d", filename, i);
+		if (TRUE != PathFileExists(buffer))
+		{
+			if (MoveFile(filename, buffer))
+			{
+
+			}
+			else
+			{
+				msg_prompt(
+					L"cannot rename filename!",
+					L"Logrotate failed!",
+					MB_OK
+				);
+			}
+		}
+	}
+	msg_prompt(L"There are too many log files, Please delete or move them elsewhere.", L"Logrotate error", MB_OK);
+}
+
+void crontab_log(const nlohmann::json& jsp, 
+	time_t time_cur, 
+	time_t time_next, 
+	PCSTR log_msg, 
+	PCSTR cron_msg,
+	int log_count
+)
 {
 	if (json_object_has_member(jsp, "crontab_config"))
 	{
@@ -285,21 +316,28 @@ void crontab_log(const nlohmann::json& jsp, time_t time_cur, time_t time_next, P
 		size_t idx = 0, len;
 		tm t1;
 		localtime_s(&t1, &time_cur);
-		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S ", &t1);
+		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d %H:%M:%S ", &t1);
 		printf_to_bufferA(buffer, buffer_len - idx, idx,
-			"%s  %s  %s",
+			"[%s] [%s] [left count: %d%s] [%s]",
 			jsp["name"].get<std::string>().c_str(),
 			log_msg,
+			log_count,
+			log_count==0?" infinite":"",
 			cron_msg
 		);
 		if (time_next)
 		{
 			localtime_s(&t1, &time_next);
-			len = strftime(buffer + idx, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S ", &t1);
+			len = strftime(buffer + idx, ARRAYSIZE(buffer), " %Y-%m-%d %H:%M:%S ", &t1);
 			idx += len;
 		}
 
 		std::string crontab_log_filename = crontab_config_ref["log"];
+		std::wstring crontab_log_filename_w = utf8_to_wstring(crontab_log_filename);
+		if (PathFileExists(crontab_log_filename_w.c_str()) && FileSize(crontab_log_filename_w.c_str()) > 1024 * 1024 * 10)
+		{
+			rotate_file(crontab_log_filename_w.c_str());
+		}
 		std::ofstream o_log(crontab_log_filename.c_str(), std::ios_base::app | std::ios_base::out);
 		o_log << buffer << std::endl;
 	}
