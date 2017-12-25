@@ -295,6 +295,7 @@ void rotate_file(PCWSTR filename)
 					MB_OK
 				);
 			}
+			return;
 		}
 	}
 	msg_prompt(L"There are too many log files, Please delete or move them elsewhere.", L"Logrotate error", MB_OK);
@@ -334,7 +335,7 @@ void crontab_log(const nlohmann::json& jsp,
 
 		std::string crontab_log_filename = crontab_config_ref["log"];
 		std::wstring crontab_log_filename_w = utf8_to_wstring(crontab_log_filename);
-		if (PathFileExists(crontab_log_filename_w.c_str()) && FileSize(crontab_log_filename_w.c_str()) > 1024 * 1024 * 10)
+		if (TRUE == PathFileExists(crontab_log_filename_w.c_str()) && FileSize(crontab_log_filename_w.c_str()) > 1024 * 1024 * 10)
 		{
 			rotate_file(crontab_log_filename_w.c_str());
 		}
