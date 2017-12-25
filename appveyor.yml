@@ -14,15 +14,13 @@ init:
 clone_folder: c:\projects\CommandTrayHost
 install:
 - cmd: >-
-    pushd .
-    
     cd /d c:\tools\vcpkg
 
     git pull
 
     bootstrap-vcpkg.bat
 
-    popd
+    cd /d c:\projects\CommandTrayHost
 
     vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
 
