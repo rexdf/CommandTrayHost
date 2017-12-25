@@ -49,6 +49,8 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 
 //void from_json(const nlohmann::json& j, cron_expr& p);
 
+void crontab_log(const nlohmann::json& jsp, time_t, time_t, PCSTR, PCSTR);
+
 cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result);
 
 void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator);

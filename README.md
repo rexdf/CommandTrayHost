@@ -82,6 +82,8 @@ example configure
                 "count": 0, // times to run, 0 infinite
                 // Optional
                 "enabled": true,
+                "log": "commandtrayhost.log",
+                "log_level": 0, // log level 0 1 2
             },
         },
         {
@@ -235,7 +237,7 @@ See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github
 
 # Road map
 
-- [ ] Timer, task schedule, crontab, monitor
+- [x] Timer, task schedule, crontab, monitor
 - [x] Hot reloading config.json
 
 # Help wanted

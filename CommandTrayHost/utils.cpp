@@ -275,6 +275,36 @@ cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
 	return nullptr;
 }*/
 
+void crontab_log(const nlohmann::json& jsp, time_t time_cur, time_t time_next, PCSTR log_msg, PCSTR cron_msg)
+{
+	if (json_object_has_member(jsp, "crontab_config"))
+	{
+		auto& crontab_config_ref = jsp["crontab_config"];
+		const size_t buffer_len = 256;
+		char buffer[buffer_len];
+		size_t idx = 0, len;
+		tm t1;
+		localtime_s(&t1, &time_cur);
+		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S ", &t1);
+		printf_to_bufferA(buffer, buffer_len - idx, idx,
+			"%s  %s  %s",
+			jsp["name"].get<std::string>().c_str(),
+			log_msg,
+			cron_msg
+		);
+		if (time_next)
+		{
+			localtime_s(&t1, &time_next);
+			len = strftime(buffer + idx, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S ", &t1);
+			idx += len;
+		}
+
+		std::string crontab_log_filename = crontab_config_ref["log"];
+		std::ofstream o_log(crontab_log_filename.c_str(), std::ios_base::app | std::ios_base::out);
+		o_log << buffer << std::endl;
+	}
+}
+
 cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
 {
 	if (json_object_has_member(jsp, "crontab_config"))

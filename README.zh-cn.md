@@ -85,6 +85,8 @@ Windows命令行程序系统托盘管理工具
                 "count": 0, // 0 表示不只限制，大于0的整数，表示运行多少次就不运行了
                 // 可选
                 "enabled": true,
+                "log": "commandtrayhost.log", // 日志文件名,注释掉本行就禁掉log了
+                "log_level": 0, // log级别，缺省默认为0。0为仅仅记录crontab触发记录，1附加启动时的信息，2附加下次触发的信息
             },
         },
         {
@@ -241,7 +243,7 @@ Windows命令行程序系统托盘管理工具
 
 # Road map
 
-- [ ] 计划任务，定时任务
+- [x] 计划任务，定时任务
 - [x] 热加载config.json
 
 # TODO

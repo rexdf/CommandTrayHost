@@ -129,6 +129,8 @@ bool initial_configure()
                 "count": 0, // 0 表示infinite不只限制，大于0的整数，表示运行多少次就不运行了
                 // 可选
                 "enabled": true,
+                "log": "commandtrayhost.log", // 日志文件名,注释掉本行就禁掉log了
+                "log_level": 0, // log级别，缺省默认为0。0为仅仅记录crontab触发记录，1附加启动时的信息，2附加下次触发的信息
             },
         },
         {
@@ -264,6 +266,8 @@ bool initial_configure()
                 "count": 0, // times to run, 0 infinite
                 // Optional
                 "enabled": true,
+                "log": "commandtrayhost.log",
+                "log_level": 0, // log level 0 1 2
             },
         },
         {
@@ -688,6 +692,24 @@ int configure_reader(std::string& out)
 			if (!val["enabled"].GetBool())return true;
 			int count = val[name].GetInt();
 			if (count < 0)return false;
+			return true;
+		} },
+		{ "log", iStringType, true, [](Value& val, PCSTR name)->bool {
+			if (val["log"].GetStringLength() == 0)
+			{
+				val.RemoveMember(name);
+			}
+			return true;
+		} },
+		{ "log_level", iIntType, true, [](Value& val, PCSTR name)->bool {
+			int log_level = val["log_level"].GetInt();
+			if (log_level < 0 || log_level > 3)return false;
+			return true;
+		}, [&allocator](Value& val, PCSTR name)->bool {
+			if (val.HasMember("log") && !val.HasMember("log_level"))
+			{
+				val.AddMember("log_level", 0, allocator);
+			}
 			return true;
 		} },
 	};
@@ -1828,10 +1850,14 @@ void handle_crontab(int idx)
 		extern HWND hWnd;
 		KillTimer(hWnd, VM_TIMER_BASE + idx);
 
+		bool crontab_write_log = false;
+		time_t log_time_cur = time(NULL), log_time_next = 0;
+		PCSTR log_msg = nullptr, log_cron_msg = nullptr;
 		std::string crontab_method = crontab_ref["method"];
 		extern HANDLE ghJob;
 		bool enable_cache_backup = enable_cache;
 		enable_cache = false;
+
 		if (crontab_method == "start")
 		{
 			bool to_start = true;
@@ -1844,12 +1870,15 @@ void handle_crontab(int idx)
 				if (retValue != 0 && lpExitCode == STILL_ACTIVE)
 				{
 					to_start = false;
+					log_msg = "method:start program is still running.";
 				}
 			}
 			if (to_start)
 			{
 				config_i_ref["enabled"] = true;
 				create_process(config_i_ref, ghJob);
+				log_msg = "method:start started.";
+				crontab_write_log = true;
 			}
 		}
 		/*else if (crontab_method == "restart")
@@ -1862,37 +1891,56 @@ void handle_crontab(int idx)
 			if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
 			{
 				disable_enable_menu(config_i_ref, ghJob);
+				log_msg = "method:kill stopped.";
+				crontab_write_log = true;
 			}
 			if (crontab_method == "restart")
 			{
-				disable_enable_menu(config_i_ref, ghJob);
+				config_i_ref["enabled"] = true;
+				create_process(config_i_ref, ghJob, false);
+				log_msg = "method:restart done.";
+				crontab_write_log = true;
 			}
 		}
 		enable_cache = enable_cache_backup;
+
 
 		int crontab_count = crontab_ref["count"];
 
 		if (crontab_count != 1)
 		{
-			cron_expr c;if (nullptr != get_cron_expr(config_i_ref, c)){
-			time_t next_t = 0, now_t = time(NULL);
-			next_t = cron_next(&c, now_t); // return -1 when failed
-			LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
-			if (next_t > now_t)
+			cron_expr c;
+			if (nullptr != get_cron_expr(config_i_ref, c))
 			{
-				next_t -= now_t;
-				next_t *= 1000;
-				if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
-				SetTimer(hWnd, VM_TIMER_BASE + idx, static_cast<UINT>(next_t), NULL);
-				if (crontab_count > 1)
+				time_t next_t = 0, now_t = time(NULL);
+				next_t = cron_next(&c, now_t); // return -1 when failed
+				LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
+				if (next_t > now_t)
 				{
-					crontab_ref["count"] = crontab_count - 1;
+					log_time_next = next_t; // logging
+
+					next_t -= now_t;
+					next_t *= 1000;
+					if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
+					SetTimer(hWnd, VM_TIMER_BASE + idx, static_cast<UINT>(next_t), NULL);
+
+					log_cron_msg = "schedule next"; // logging
+
+					if (crontab_count > 1)
+					{
+						crontab_ref["count"] = crontab_count - 1;
+					}
 				}
-			}}
+			}
 		}
 		else
 		{
 			crontab_ref["enabled"] = false;
+			log_cron_msg = "count limited";
+		}
+		if (json_object_has_member(crontab_ref, "log"))
+		{
+			crontab_log(config_i_ref, log_time_cur, log_time_next, log_msg, log_cron_msg);
 		}
 	}
 	else
