@@ -25,6 +25,7 @@ def main():
             if os.path.isfile(nlohmann_json_path):
                 with open(nlohmann_json_path, "rb") as f:
                     content = f.read().decode('utf-8')
+                print('\n'.join(content.split("\n")[:6]))
                 content2 = content
 
                 for type_name in type_name_yeild():
