@@ -300,10 +300,10 @@ void rotate_file(PCWSTR filename)
 	msg_prompt(L"There are too many log files, Please delete or move them elsewhere.", L"Logrotate error", MB_OK);
 }
 
-void crontab_log(const nlohmann::json& jsp, 
-	time_t time_cur, 
-	time_t time_next, 
-	PCSTR log_msg, 
+void crontab_log(const nlohmann::json& jsp,
+	time_t time_cur,
+	time_t time_next,
+	PCSTR log_msg,
 	PCSTR cron_msg,
 	int log_count
 )
@@ -318,11 +318,11 @@ void crontab_log(const nlohmann::json& jsp,
 		localtime_s(&t1, &time_cur);
 		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d %H:%M:%S ", &t1);
 		printf_to_bufferA(buffer, buffer_len - idx, idx,
-			"[%s] [%s] [left count: %d%s] [%s]",
+			"[%s] [%s] [left count: %d] [%s]",
 			jsp["name"].get<std::string>().c_str(),
 			log_msg,
 			log_count,
-			log_count==0?" infinite":"",
+			//log_count == 0 ? " infinite" : "",
 			cron_msg
 		);
 		if (time_next)

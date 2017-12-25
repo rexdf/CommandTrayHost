@@ -108,6 +108,7 @@ bool is_cache_not_expired(bool is_from_flush)
 				isZHCN ? (is_from_flush ?
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
 					L"\n\n选择 否 则保留缓存数据，下次启动CommandTrayHost才加载config.json"
+					L"\n\n选择 取消 则重新加载配置，但是并不删除缓存"
 					:
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
 					L"\n\n选择 否 则保留缓存数据"
@@ -116,7 +117,7 @@ bool is_cache_not_expired(bool is_from_flush)
 				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 					L" cache\n\nChoose No to keep expired cache.").c_str(),
 				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
-				MB_YESNO
+				MB_YESNOCANCEL
 			);
 			if (IDNO == result)
 			{
@@ -127,7 +128,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					o_cache << std::endl;
 				}
 			}
-			else if (IDYES == result)
+			else if (IDYES == result || IDCANCEL == result)
 			{
 				if (global_stat == nullptr)
 				{
@@ -138,10 +139,13 @@ bool is_cache_not_expired(bool is_from_flush)
 					LOGMESSAGE(L"IDYES\n");
 					CLOSE_CREATEFILE(json_hFile);
 					CLOSE_CREATEFILE(cache_hFile);
-					if (NULL == DeleteFile(CACHE_FILENAMEW))
+					if (IDYES == result)
 					{
-						LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
-						msg_prompt(/*NULL,*/ L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+						if (NULL == DeleteFile(CACHE_FILENAMEW))
+						{
+							LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
+							msg_prompt(/*NULL,*/ L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+						}
 					}
 					enable_cache = false;
 					kill_all();
@@ -277,8 +281,8 @@ bool flush_cache(/*bool is_exit*/)
 			o << global_stat["cache"];
 #endif
 			return true;
-		}
 	}
+}
 
 	return false;
 }
