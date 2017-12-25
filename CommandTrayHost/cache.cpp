@@ -119,7 +119,7 @@ bool is_cache_not_expired(bool is_from_flush)
 				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
 				MB_YESNOCANCEL
 			);
-			if (IDNO == result)
+			if (IDNO == result || IDCANCEL == result)
 			{
 				return_val = true;
 				if (global_stat == nullptr)
@@ -128,7 +128,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					o_cache << std::endl;
 				}
 			}
-			else if (IDYES == result || IDCANCEL == result)
+			if (IDYES == result || IDCANCEL == result)
 			{
 				if (global_stat == nullptr)
 				{
