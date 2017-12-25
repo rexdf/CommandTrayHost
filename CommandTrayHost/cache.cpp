@@ -117,12 +117,12 @@ bool is_cache_not_expired(bool is_from_flush)
 				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 					L" cache\n\nChoose No to keep expired cache.").c_str(),
 				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
-				MB_YESNOCANCEL
+				is_from_flush ? MB_YESNOCANCEL : MB_YESNO
 			);
 			if (IDNO == result || IDCANCEL == result)
 			{
 				return_val = true;
-				if (global_stat == nullptr)
+				if (global_stat == nullptr || IDCANCEL == result)
 				{
 					std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
 					o_cache << std::endl;
@@ -281,8 +281,8 @@ bool flush_cache(/*bool is_exit*/)
 			o << global_stat["cache"];
 #endif
 			return true;
+		}
 	}
-}
 
 	return false;
 }
