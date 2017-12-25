@@ -16,9 +16,9 @@ install:
 - cmd: >-
     cd /d c:\tools\vcpkg
 
-    rem git pull
+    git pull
 
-    rem bootstrap-vcpkg.bat
+    bootstrap-vcpkg.bat
 
     cd /d c:\projects\CommandTrayHost
 
@@ -79,4 +79,7 @@ deploy:
     branch: release
     appveyor_repo_tag: false        # deploy on tag push only
 
-cache: c:\tools\vcpkg\  -> vcpkg_cache.txt
+cache: 
+  - c:\tools\vcpkg\installed\  -> vcpkg_cache.txt
+  - c:\tools\vcpkg\ports\  -> vcpkg_cache.txt
+  - c:\tools\vcpkg\vcpkg.exe  -> vcpkg_cache.txt
