@@ -16,6 +16,8 @@ install:
 - cmd: >-
     cd /d c:\tools\vcpkg
 
+    git reset --hard
+
     git pull
 
     bootstrap-vcpkg.bat
@@ -80,6 +82,21 @@ deploy:
     appveyor_repo_tag: false        # deploy on tag push only
 
 cache: 
-  - c:\tools\vcpkg\installed\  -> vcpkg_cache.txt
-  - c:\tools\vcpkg\ports\  -> vcpkg_cache.txt
-  - c:\tools\vcpkg\vcpkg.exe  -> vcpkg_cache.txt
+  - c:\tools\vcpkg\.git\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\.gitattributes -> vcpkg_cache.txt
+  - c:\tools\vcpkg\.gitignore -> vcpkg_cache.txt
+  - c:\tools\vcpkg\.vcpkg-root -> vcpkg_cache.txt
+  - c:\tools\vcpkg\bootstrap-vcpkg.bat -> vcpkg_cache.txt
+  - c:\tools\vcpkg\buildtrees\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\CHANGELOG.md -> vcpkg_cache.txt
+  - c:\tools\vcpkg\CONTRIBUTING.md -> vcpkg_cache.txt
+  - c:\tools\vcpkg\docs\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\downloads\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\installed\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\LICENSE.txt -> vcpkg_cache.txt
+  - c:\tools\vcpkg\packages\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\ports\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\README.md -> vcpkg_cache.txt
+  - c:\tools\vcpkg\scripts\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\triplets\ -> vcpkg_cache.txt
+  - c:\tools\vcpkg\vcpkg.exe -> vcpkg_cache.txt
