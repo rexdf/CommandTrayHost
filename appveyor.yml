@@ -16,9 +16,9 @@ install:
 - cmd: >-
     cd /d c:\tools\vcpkg
 
-    git pull
+    rem git pull
 
-    bootstrap-vcpkg.bat
+    rem bootstrap-vcpkg.bat
 
     cd /d c:\projects\CommandTrayHost
 
