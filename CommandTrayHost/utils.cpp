@@ -375,9 +375,9 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 		root.at(query_string);
 	}
 #ifdef _DEBUG
-	catch (std::out_of_range& e)
+	catch (nlohmann::json::out_of_range& e)
 #else
-	catch (std::out_of_range&)
+	catch (nlohmann::json::out_of_range&)
 #endif
 	{
 		LOGMESSAGE(L"out_of_range %S\n", e.what());

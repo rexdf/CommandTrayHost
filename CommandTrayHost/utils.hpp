@@ -25,9 +25,9 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 		out = root.at(query_string);
 	}
 #ifdef _DEBUG
-	catch (std::out_of_range& e)
+	catch (nlohmann::json::out_of_range& e)
 #else
-	catch (std::out_of_range&)
+	catch (nlohmann::json::out_of_range&)
 #endif
 	{
 		LOGMESSAGE(L"%S %S out_of_range %S\n", caller_fuc_name, query_string, e.what());
