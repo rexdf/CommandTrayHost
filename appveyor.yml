@@ -79,4 +79,4 @@ deploy:
     branch: release
     appveyor_repo_tag: false        # deploy on tag push only
 
-cache: c:\tools\vcpkg\installed\  -> vcpkg_cache.txt
+cache: c:\tools\vcpkg\  -> vcpkg_cache.txt
