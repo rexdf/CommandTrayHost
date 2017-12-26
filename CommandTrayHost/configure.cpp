@@ -1048,6 +1048,7 @@ int configure_reader(std::string& out)
 				//check for config item
 				if (enable_hot_reload)
 				{
+					config_i_unchanged = true;
 					if (cnt > (*global_configs_pointer).size())
 					{
 						config_i_unchanged = false;
@@ -2069,6 +2070,10 @@ void start_all(HANDLE ghJob, bool force)
 	for (auto& i : (*global_configs_pointer))
 	{
 		cache_config_cursor++;
+		if (json_object_has_member(i, "running") && i["running"].get<bool>())
+		{
+			continue;
+		}
 		if (force)
 		{
 			bool ignore_all = false;
@@ -2081,17 +2086,9 @@ void start_all(HANDLE ghJob, bool force)
 			{
 				i["enabled"] = true;
 			}
-			if (json_object_has_member(i, "running") && i["running"].get<bool>())
-			{
-				continue;
-			}
 		}
 		else
 		{
-			if (json_object_has_member(i, "running") && i["running"].get<bool>())
-			{
-				continue;
-			}
 			if (json_object_has_member(i, "crontab_config") && i["crontab_config"]["enabled"])
 			{
 				LOGMESSAGE(L"i[crontab_config][enabled]\n");
