@@ -116,8 +116,8 @@ bool is_cache_not_expired(bool is_from_flush)
 				:
 				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 					L" cache\n\nChoose No to keep expired cache.").c_str(),
-					(is_from_flush && global_stat != nullptr) ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
-				is_from_flush ? MB_YESNOCANCEL : MB_YESNO
+				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+				(is_from_flush && global_stat != nullptr) ? MB_YESNOCANCEL : MB_YESNO
 			);
 			if (IDNO == result || IDCANCEL == result)
 			{
