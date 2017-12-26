@@ -1049,7 +1049,7 @@ int configure_reader(std::string& out)
 				if (enable_hot_reload)
 				{
 					config_i_unchanged = true;
-					if (cnt > (*global_configs_pointer).size())
+					if (cnt > (int)(*global_configs_pointer).size())
 					{
 						config_i_unchanged = false;
 					}
@@ -1884,7 +1884,7 @@ void update_hwnd_all()
 				if (start_show_silent && i["show"] == true && FALSE == IsWindowVisible(hWnd))
 				{
 					ShowWindow(hWnd, SW_SHOW);
-					SetForegroundWindow(hWnd);
+					//SetForegroundWindow(hWnd);
 				}
 			}
 		}
