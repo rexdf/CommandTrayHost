@@ -1881,7 +1881,7 @@ void update_hwnd_all()
 			}
 			else
 			{
-				if (start_show_silent && i["show"] == true)
+				if (start_show_silent && i["show"] == true && FALSE == IsWindowVisible(hWnd))
 				{
 					ShowWindow(hWnd, SW_SHOW);
 					SetForegroundWindow(hWnd);
