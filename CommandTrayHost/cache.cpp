@@ -108,7 +108,7 @@ bool is_cache_not_expired(bool is_from_flush)
 				isZHCN ? (is_from_flush ?
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
 					L"\n\n选择 否 则保留缓存数据，下次启动CommandTrayHost才加载config.json"
-					L"\n\n选择 取消 则重新加载配置，但是并不删除缓存"
+					L"\n\n选择 取消 则重新加载配置，但是并不删除缓存,正在运行的程序不会被关闭"
 					:
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
 					L"\n\n选择 否 则保留缓存数据"
@@ -148,7 +148,7 @@ bool is_cache_not_expired(bool is_from_flush)
 						}
 					}
 					enable_cache = false;
-					kill_all();
+					if (IDYES == result)kill_all();
 					extern HANDLE ghJob;
 					extern HICON gHicon;
 					if (NULL == init_global(ghJob, gHicon))

@@ -1043,7 +1043,7 @@ int configure_reader(std::string& out)
 					if (cnt > (*global_configs_pointer).size()) {
 						config_i_unchanged = false;
 					}
-					_global_config_i_ref = &(global_configs_pointer[cnt]);
+					_global_config_i_ref = &((*global_configs_pointer)[cnt]);
 					config_i_unchanged = (*_global_config_i_ref)["running"];
 				}
 				if (false == check_rapidjson_object(
@@ -1062,7 +1062,7 @@ int configure_reader(std::string& out)
 				}
 				if (enable_hot_reload && config_i_unchanged) // check running is true, cnt>=current
 				{
-					auto& config_i_ref = global_configs_pointer[cnt];
+					//auto& config_i_ref = (*global_configs_pointer)[cnt];
 					/*i["running"] = false;
 					i["handle"] = 0;
 					i["pid"] = -1;
@@ -1070,13 +1070,13 @@ int configure_reader(std::string& out)
 					i["win_num"] = 0;
 					i["show"] = false;
 					i["en_job"] = false;*/
-					m.AddMember("running", config_i_ref.get<bool>(), allocator);
-					m.AddMember("handle", config_i_ref.get<int64_t>(), allocator);
-					m.AddMember("pid", config_i_ref.get<int64_t>(), allocator);
-					m.AddMember("hwnd", config_i_ref.get<int64_t>(), allocator);
-					m.AddMember("win_num", config_i_ref.get<int>(), allocator);
-					m.AddMember("show", config_i_ref.get<bool>(), allocator);
-					m.AddMember("en_job", config_i_ref.get<bool>(), allocator);
+					m.AddMember("running", (*_global_config_i_ref)["running"].get<bool>(), allocator);
+					m.AddMember("handle", (*_global_config_i_ref)["handle"].get<int64_t>(), allocator);
+					m.AddMember("pid", (*_global_config_i_ref)["pid"].get<int64_t>(), allocator);
+					m.AddMember("hwnd", (*_global_config_i_ref)["hwnd"].get<int64_t>(), allocator);
+					m.AddMember("win_num", (*_global_config_i_ref)["win_num"].get<int>(), allocator);
+					m.AddMember("show", (*_global_config_i_ref)["show"].get<bool>(), allocator);
+					m.AddMember("en_job", (*_global_config_i_ref)["en_job"].get<bool>(), allocator);
 				}
 				cnt++;
 			}
@@ -2039,8 +2039,8 @@ void handle_crontab(int idx)
 		if (json_object_has_member(crontab_ref, "log"))
 		{
 			crontab_log(crontab_ref, log_time_cur, log_time_next, config_i_ref["name"].get<std::string>().c_str(), log_msg, log_cron_msg, log_count, 0);
+		}
 	}
-}
 	else
 	{
 		msg_prompt(L"Crontab has no crontab_config! Please report this windows screenshot to author!",
@@ -2053,9 +2053,10 @@ void handle_crontab(int idx)
 void start_all(HANDLE ghJob, bool force)
 {
 	//int cmd_idx = 0;
-	cache_config_cursor = 0;
+	cache_config_cursor = -1;
 	for (auto& i : (*global_configs_pointer))
 	{
+		cache_config_cursor++;
 		if (force)
 		{
 			bool ignore_all = false;
@@ -2071,6 +2072,10 @@ void start_all(HANDLE ghJob, bool force)
 		}
 		else
 		{
+			if (json_object_has_member(i, "running") && i["running"].get<bool>())
+			{
+				continue;
+			}
 			if (json_object_has_member(i, "crontab_config") && i["crontab_config"]["enabled"])
 			{
 				LOGMESSAGE(L"i[crontab_config][enabled]\n");
@@ -2099,7 +2104,6 @@ void start_all(HANDLE ghJob, bool force)
 			create_process(i, ghJob);
 		}
 		//cmd_idx++;
-		cache_config_cursor++;
 	}
 	if (enable_cache && false == is_cache_valid)
 	{
@@ -2397,7 +2401,7 @@ void create_process(
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
 #endif
-				}
+	}
 
 	bool not_host_by_commandtrayhost = false, not_monitor_by_commandtrayhost = false;
 
@@ -2716,7 +2720,7 @@ void create_process(
 	{
 		jsp["enabled"] = false;
 	}
-			}
+}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
@@ -2976,7 +2980,7 @@ void kill_all(bool is_exit/* = true*/)
 	{
 		flush_cache(/*is_exit*/);
 	}
-				}
+}
 
 // https://stackoverflow.com/questions/15913202/add-application-to-startup-registry
 BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
@@ -3102,9 +3106,9 @@ BOOL DisableStartUp2(PCWSTR valueName)
 		{
 			RegCloseKey(hKey);
 			hKey = NULL;
-}
+		}
 		return TRUE;
-}
+	}
 #else
 	if (ERROR_SUCCESS == RegDeleteKeyValue(
 		HKEY_CURRENT_USER,
@@ -3127,7 +3131,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-			}
+}
 
 BOOL DisableStartUp()
 {
@@ -3348,8 +3352,8 @@ bool is_another_instance_running()
 			{
 				CloseHandle(ghMutex);
 				ghMutex = NULL;
+			}
 		}
-	}
 		else
 		{
 			ret = true;
@@ -3357,9 +3361,9 @@ bool is_another_instance_running()
 
 		ghMutex = m_hMutex;
 		LOGMESSAGE(L"%d ghMutex: 0x%x\n", ret, ghMutex);
-}
-	return ret;
 	}
+	return ret;
+}
 
 //https://stackoverflow.com/questions/23814979/c-windows-how-to-get-process-pid-from-its-path
 BOOL GetProcessName(LPTSTR szFilename, DWORD dwSize, DWORD dwProcID)
