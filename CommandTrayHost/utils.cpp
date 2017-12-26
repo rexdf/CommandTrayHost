@@ -301,39 +301,66 @@ void rotate_file(PCWSTR filename)
 	msg_prompt(L"There are too many log files, Please delete or move them elsewhere.", L"Logrotate error", MB_OK);
 }
 
-void crontab_log(const nlohmann::json& jsp,
+/*
+ * Make sure jsp has "crontab_config", before call crontab_log
+ * @param time_cur,current time.
+ * @param time_next,next schedule time. If both are 0, just output log_msg & cron_msg
+ */
+void crontab_log(const nlohmann::json& jsp_crontab_config,
 	time_t time_cur,
 	time_t time_next,
+	PCSTR name,
 	PCSTR log_msg,
 	PCSTR cron_msg,
-	int log_count
+	int log_count,
+	int log_level_limit
 )
 {
-	if (json_object_has_member(jsp, "crontab_config"))
+	//if (json_object_has_member(jsp, "crontab_config"))
 	{
-		auto& crontab_config_ref = jsp["crontab_config"];
+		//auto& crontab_config_ref = jsp["crontab_config"];
+		int log_level = jsp_crontab_config["log_level"];
+		if (log_level < log_level_limit) { return; }
 		const size_t buffer_len = 256;
 		char buffer[buffer_len];
 		size_t idx = 0, len;
 		tm t1;
+		bool is_crontab_trigger_msg = true;
+		if (time_cur == 0)
+		{
+			time_cur = time(NULL);
+			if (0 == time_next)is_crontab_trigger_msg = false;
+		}
 		localtime_s(&t1, &time_cur);
 		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d %H:%M:%S ", &t1);
-		printf_to_bufferA(buffer, buffer_len - idx, idx,
-			"[%s] [%s] [left count: %d] [%s]",
-			jsp["name"].get<std::string>().c_str(),
-			log_msg,
-			log_count,
-			//log_count == 0 ? " infinite" : "",
-			cron_msg
-		);
-		if (time_next)
+		if (is_crontab_trigger_msg)
 		{
-			localtime_s(&t1, &time_next);
-			len = strftime(buffer + idx, ARRAYSIZE(buffer), " %Y-%m-%d %H:%M:%S ", &t1);
-			idx += len;
+			printf_to_bufferA(buffer, buffer_len - idx, idx,
+				"[%s] [%s] [left count: %d] [%s]",
+				name,
+				log_msg,
+				log_count,
+				//log_count == 0 ? " infinite" : "",
+				cron_msg
+			);
+			if (time_next)
+			{
+				localtime_s(&t1, &time_next);
+				len = strftime(buffer + idx, ARRAYSIZE(buffer), " %Y-%m-%d %H:%M:%S ", &t1);
+				idx += len;
+			}
+		}
+		else
+		{
+			printf_to_bufferA(buffer, buffer_len - idx, idx,
+				"[%s] [%s] [%s]",
+				name,
+				log_msg,
+				cron_msg
+			);
 		}
 
-		std::string crontab_log_filename = crontab_config_ref["log"];
+		std::string crontab_log_filename = jsp_crontab_config["log"];
 		std::wstring crontab_log_filename_w = utf8_to_wstring(crontab_log_filename);
 		if (TRUE == PathFileExists(crontab_log_filename_w.c_str()) && FileSize(crontab_log_filename_w.c_str()) > 1024 * 1024 * 10)
 		{

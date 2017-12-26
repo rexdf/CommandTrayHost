@@ -1878,7 +1878,7 @@ void handle_crontab(int idx)
 			if (to_start)
 			{
 				config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob);
+				create_process(config_i_ref, ghJob, true);
 				log_msg = "method:start started.";
 				//crontab_write_log = true;
 			}
@@ -1893,13 +1893,13 @@ void handle_crontab(int idx)
 			if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
 			{
 				disable_enable_menu(config_i_ref, ghJob);
-				log_msg = "method:kill stopped.";
+				log_msg = "method:stop killed.";
 				//crontab_write_log = true;
 			}
 			if (crontab_method == "restart")
 			{
 				config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob, false);
+				create_process(config_i_ref, ghJob, false, true);
 				log_msg = "method:restart done.";
 				//crontab_write_log = true;
 			}
@@ -1939,12 +1939,12 @@ void handle_crontab(int idx)
 		else
 		{
 			crontab_ref["enabled"] = false;
-			log_cron_msg = "count limited";
+			log_cron_msg = "count limited,stopped.";
 			log_count = -1;
 		}
 		if (json_object_has_member(crontab_ref, "log"))
 		{
-			crontab_log(config_i_ref, log_time_cur, log_time_next, log_msg, log_cron_msg, log_count);
+			crontab_log(crontab_ref, log_time_cur, log_time_next, config_i_ref["name"].get<std::string>().c_str(), log_msg, log_cron_msg, log_count, 0);
 		}
 	}
 	else
@@ -2248,7 +2248,8 @@ void create_process(
 	nlohmann::json& jsp, // we may update js
 	//int cmd_idx,
 	const HANDLE& ghJob,
-	bool runas_admin
+	bool runas_admin,
+	bool log_crontab
 )
 {
 	//必须先用wstring接住，不然作用域会消失
@@ -2440,6 +2441,20 @@ void create_process(
 			require_admin = true;
 			start_show = true;
 		}
+	}
+
+	if (log_crontab)
+	{
+		auto& crontab_ref = jsp["crontab_config"];
+		const size_t buffer_len = 256;
+		char buffer[buffer_len];
+		size_t idx = 0, len;
+		printf_to_bufferA(buffer, buffer_len - idx, idx,
+			"si.wShowWindow:%s start_show:%s",
+			si.wShowWindow == SW_SHOW ? "SW_SHOW" : "SW_HIDE",
+			start_show ? "true" : "false"
+		);
+		crontab_log(crontab_ref, 0, 0, jsp["name"].get<std::string>().c_str(), buffer, "", 0, 1);
 	}
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
@@ -2891,7 +2906,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-	}
+}
 
 	if (fSuccess)
 	{

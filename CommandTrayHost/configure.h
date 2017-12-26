@@ -31,7 +31,7 @@ void get_command_submenu(std::vector<HMENU>&);
 int init_global(HANDLE&, HICON&);
 bool init_cth_path();
 
-void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false);
+void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false, bool log_crontab = false);
 void show_hide_toggle(nlohmann::json& jsp);
 void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 

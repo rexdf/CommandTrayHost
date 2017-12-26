@@ -80,7 +80,7 @@ Windows命令行程序系统托盘管理工具
             "enabled": true
             // 可选
             "crontab_config": { // crontab配置
-                "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考上面8
+                "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考Linux
                 "method": "start", // 支持的有 start restart stop
                 "count": 0, // 0 表示不只限制，大于0的整数，表示运行多少次就不运行了
                 // 可选

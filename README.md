@@ -82,7 +82,7 @@ example configure
                 "count": 0, // times to run, 0 infinite
                 // Optional
                 "enabled": true,
-                "log": "commandtrayhost.log",
+                "log": "commandtrayhost.log", // comment out this line to disable logging
                 "log_level": 0, // log level 0 1 2
             },
         },
