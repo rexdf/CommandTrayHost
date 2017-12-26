@@ -2584,6 +2584,7 @@ void create_process(
 			//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 			//jsp["win_num"] = static_cast<int>(num_of_windows);
 			jsp["running"] = true;
+			jsp["enabled"] = true;
 			//if (json_object_has_member(jsp, "alpha"))
 			//{
 			//	set_wnd_alpha(hWnd, jsp["alpha"]);

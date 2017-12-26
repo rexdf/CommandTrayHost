@@ -102,8 +102,8 @@ bool is_cache_not_expired(bool is_from_flush)
 		{
 			//bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
 			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
-			extern HWND hWnd;
-			SetForegroundWindow(hWnd);
+			//extern HWND hWnd;
+			//SetForegroundWindow(hWnd);
 			const int result = msg_prompt(//NULL,
 				isZHCN ? ((is_from_flush && global_stat != nullptr) ?
 					L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
