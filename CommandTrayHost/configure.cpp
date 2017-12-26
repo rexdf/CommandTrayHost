@@ -2081,6 +2081,10 @@ void start_all(HANDLE ghJob, bool force)
 			{
 				i["enabled"] = true;
 			}
+			if (json_object_has_member(i, "running") && i["running"].get<bool>())
+			{
+				continue;
+			}
 		}
 		else
 		{
