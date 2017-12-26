@@ -2448,13 +2448,13 @@ void create_process(
 		auto& crontab_ref = jsp["crontab_config"];
 		const size_t buffer_len = 256;
 		char buffer[buffer_len];
-		size_t idx = 0, len;
+		size_t idx = 0;
 		printf_to_bufferA(buffer, buffer_len - idx, idx,
 			"si.wShowWindow:%s start_show:%s",
 			si.wShowWindow == SW_SHOW ? "SW_SHOW" : "SW_HIDE",
 			start_show ? "true" : "false"
 		);
-		crontab_log(crontab_ref, 0, 0, jsp["name"].get<std::string>().c_str(), buffer, "", 0, 1);
+		crontab_log(crontab_ref, 0, 0, jsp["name"].get<std::string>().c_str(), buffer, __FUNCTION__, 0, 1);
 	}
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
