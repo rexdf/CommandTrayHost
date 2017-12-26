@@ -78,12 +78,13 @@ example configure
             // Optional
             "crontab_config": { 
                 "crontab": "8 */2 15-16 29 2 *", 
-                "method": "start", // start restart stop
+                "method": "start", // start restart stop start_count_stop restart_count_stop
                 "count": 0, // times to run, 0 infinite
                 // Optional
                 "enabled": true,
                 "log": "commandtrayhost.log", // comment out this line to disable logging
                 "log_level": 0, // log level 0 1 2
+                "start_show": false, // comment out to use cache
             },
         },
         {
@@ -204,7 +205,7 @@ example configure
 }
 ```
 
-**Tips1**: `"cmd"` must contain `.exe`. If you want to run a bat, you can use `cmd.exe /c`.
+**Tips1**: `"cmd"` must contain `.exe`. If you want to run a bat, you can use `cmd.exe /c` or `cmd.exe /k`.
 
 **Tips2**: If you don't need privileged child, you can remove all `"require_admin"`.
 - CommandTrayHost run as an unprivileged user: you can run a privileged child process and restart it, but you cannot hide/show it. Because of User Interface Privilege Isolation.

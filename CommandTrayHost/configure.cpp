@@ -126,12 +126,13 @@ bool initial_configure()
             // 可选
             "crontab_config": { // crontab配置
                 "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考上面8
-                "method": "start", // 支持的有 start restart stop
+                "method": "start", // 支持的有 start restart stop start_count_stop restart_count_stop，最后两个表示count次数的最后一个会执行stop
                 "count": 0, // 0 表示infinite不只限制，大于0的整数，表示运行多少次就不运行了
                 // 可选
                 "enabled": true,
                 "log": "commandtrayhost.log", // 日志文件名,注释掉本行就禁掉log了
                 "log_level": 0, // log级别，缺省默认为0。0为仅仅记录crontab触发记录，1附加启动时的信息，2附加下次触发的信息
+                "start_show": false,  // 注释掉的话，使用cache值(如果有)，cache禁用的状态下的默认值是false
             },
         },
         {
@@ -263,12 +264,13 @@ bool initial_configure()
             // Optional
             "crontab_config": { 
                 "crontab": "8 */2 15-16 29 2 *", 
-                "method": "start", // start restart stop
+                "method": "start", // start restart stop start_count_stop restart_count_stop
                 "count": 0, // times to run, 0 infinite
                 // Optional
                 "enabled": true,
                 "log": "commandtrayhost.log",
                 "log_level": 0, // log level 0 1 2
+                "start_show": false, // comment out to use cache
             },
         },
         {
@@ -683,7 +685,12 @@ int configure_reader(std::string& out)
 		{ "method", iStringType,false,[](Value& val, PCSTR name)->bool {
 			if (!val["enabled"].GetBool())return true;
 			const char* method = val[name].GetString();
-			if (0 == StrCmpA(method,"restart") || 0 == StrCmpA(method, "start") || 0 == StrCmpA(method, "stop"))
+			if (0 == StrCmpA(method,"restart")
+				|| 0 == StrCmpA(method, "start")
+				|| 0 == StrCmpA(method, "stop")
+				|| 0 == StrCmpA(method, "start_count_stop")
+				|| 0 == StrCmpA(method, "restart_count_stop")
+				)
 			{
 				return true;
 			}
@@ -695,6 +702,7 @@ int configure_reader(std::string& out)
 			if (count < 0)return false;
 			return true;
 		} },
+		{ "start_show", iBoolType, true, nullptr },
 		{ "log", iStringType, true, [](Value& val, PCSTR name)->bool {
 			if (val["log"].GetStringLength() == 0)
 			{
@@ -715,13 +723,28 @@ int configure_reader(std::string& out)
 		} },
 	};
 
+	//hot reloading
+	bool config_i_unchanged, enable_hot_reload = (global_stat != nullptr);
+	nlohmann::json* _global_config_i_ref = nullptr;
+	auto lambda_check_hot_reload_unchanged = [&enable_hot_reload, &_global_config_i_ref, &config_i_unchanged](Value& val, PCSTR name)->bool {
+		if (enable_hot_reload && config_i_unchanged)
+		{
+			if ((*_global_config_i_ref)[name].get<std::string>() != val[name].GetString())
+			{
+				config_i_unchanged = false;
+			}
+		}
+		return true;
+	};
+	LOGMESSAGE(L"enable_hot_reload:%d\n", enable_hot_reload);
+
 	//type check for items in configs
 	const RapidJsonObjectChecker config_items[] = {
 		//must exist
-		{ "name", iStringType, false, nullptr, nullptr }, //must be zero index in config_items[]
-		{ "path", iStringType, false, nullptr },
-		{ "cmd", iStringType, false, nullptr },
-		{ "working_directory", iStringType, false, nullptr },
+		{ "name", iStringType, false, lambda_check_hot_reload_unchanged, nullptr }, //must be zero index in config_items[]
+		{ "path", iStringType, false, lambda_check_hot_reload_unchanged },
+		{ "cmd", iStringType, false, lambda_check_hot_reload_unchanged },
+		{ "working_directory", iStringType, false, lambda_check_hot_reload_unchanged },
 		{ "addition_env_path", iStringType, false, nullptr },
 		{ "use_builtin_console", iBoolType, false, nullptr },
 		{ "is_gui", iBoolType, false, nullptr },
@@ -959,7 +982,7 @@ int configure_reader(std::string& out)
 			return true;
 		}},
 
-		{ "configs", iArrayType, false, [&cnt,&config_items,&config_i_pointer](Value& val,PCSTR name)->bool {
+		{ "configs", iArrayType, false, [&cnt,&config_items,&config_i_pointer,&enable_hot_reload,&config_i_unchanged,&_global_config_i_ref,&allocator](Value& val,PCSTR name)->bool {
 			for (auto& m : val[name].GetArray())
 			{
 
@@ -1015,6 +1038,14 @@ int configure_reader(std::string& out)
 				}
 				config_i_pointer = &m; // very bad method, but have to
 				//check for config item
+				if (enable_hot_reload)
+				{
+					if (cnt > (*global_configs_pointer).size()) {
+						config_i_unchanged = false;
+					}
+					_global_config_i_ref = &(global_configs_pointer[cnt]);
+					config_i_unchanged = (*_global_config_i_ref)["running"];
+				}
 				if (false == check_rapidjson_object(
 					m,
 					config_items,
@@ -1029,7 +1060,24 @@ int configure_reader(std::string& out)
 					//SAFE_RETURN_VAL_FREE_FCLOSE(readBuffer, fp, NULL);
 					return false;
 				}
-
+				if (enable_hot_reload && config_i_unchanged) // check running is true, cnt>=current
+				{
+					auto& config_i_ref = global_configs_pointer[cnt];
+					/*i["running"] = false;
+					i["handle"] = 0;
+					i["pid"] = -1;
+					i["hwnd"] = 0;
+					i["win_num"] = 0;
+					i["show"] = false;
+					i["en_job"] = false;*/
+					m.AddMember("running", config_i_ref.get<bool>(), allocator);
+					m.AddMember("handle", config_i_ref.get<int64_t>(), allocator);
+					m.AddMember("pid", config_i_ref.get<int64_t>(), allocator);
+					m.AddMember("hwnd", config_i_ref.get<int64_t>(), allocator);
+					m.AddMember("win_num", config_i_ref.get<int>(), allocator);
+					m.AddMember("show", config_i_ref.get<bool>(), allocator);
+					m.AddMember("en_job", config_i_ref.get<bool>(), allocator);
+				}
 				cnt++;
 			}
 			return true;
@@ -1582,13 +1630,16 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	}
 	for (auto& i : *global_configs_pointer)
 	{
-		i["running"] = false;
-		i["handle"] = 0;
-		i["pid"] = -1;
-		i["hwnd"] = 0;
-		i["win_num"] = 0;
-		i["show"] = false;
-		i["en_job"] = false;
+		if (!json_object_has_member(i, "running"))
+		{
+			i["running"] = false;
+			i["handle"] = 0;
+			i["pid"] = -1;
+			i["hwnd"] = 0;
+			i["win_num"] = 0;
+			i["show"] = false;
+			i["en_job"] = false;
+		}
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
 		TCHAR commandLine[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
@@ -1860,9 +1911,10 @@ void handle_crontab(int idx)
 		bool enable_cache_backup = enable_cache;
 		enable_cache = false;
 
-		if (crontab_method == "start")
+		bool to_start;
+		if (crontab_method.compare(0, ARRAYSIZE("start") - 1, "start") == 0)
 		{
-			bool to_start = true;
+			to_start = true;
 
 			if (config_i_ref["running"])
 			{
@@ -1877,8 +1929,8 @@ void handle_crontab(int idx)
 			}
 			if (to_start)
 			{
-				config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob, true);
+				/*config_i_ref["enabled"] = true;
+				create_process(config_i_ref, ghJob, true);*/
 				log_msg = "method:start started.";
 				//crontab_write_log = true;
 			}
@@ -1890,19 +1942,49 @@ void handle_crontab(int idx)
 		else if (crontab_method == "stop")*/
 		else
 		{
+			to_start = false;
 			if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
 			{
 				disable_enable_menu(config_i_ref, ghJob);
 				log_msg = "method:stop killed.";
 				//crontab_write_log = true;
 			}
-			if (crontab_method == "restart")
+			if (crontab_method.compare(0, ARRAYSIZE("restart") - 1, "restart") == 0) // should I minus 1
 			{
-				config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob, false, true);
+				to_start = true;
+				/*config_i_ref["enabled"] = true;
+				create_process(config_i_ref, ghJob, false, true);*/
 				log_msg = "method:restart done.";
 				//crontab_write_log = true;
 			}
+		}
+		if (to_start)
+		{
+			config_i_ref["enabled"] = true;
+			bool start_show = false, config_i_start_show_backup = false;
+			if (json_object_has_member(crontab_ref, "start_show"))
+			{
+				start_show = crontab_ref["start_show"];
+			}
+			else
+			{
+				if (enable_cache_backup && !disable_cache_show)
+				{
+					auto& ref = (*global_cache_configs_pointer)[idx];
+					if (check_cache_valid(ref["valid"].get<int>(), cShow))
+					{
+						start_show = ref["start_show"];
+						LOGMESSAGE(L"start_show cache hit!");
+					}
+				}
+			}
+			if (json_object_has_member(config_i_ref, "start_show"))
+			{
+				config_i_start_show_backup = config_i_ref["start_show"];
+			}
+			config_i_ref["start_show"] = start_show;
+			create_process(config_i_ref, ghJob, false, true);
+			config_i_ref["start_show"] = config_i_start_show_backup;
 		}
 		enable_cache = enable_cache_backup;
 
@@ -1939,14 +2021,26 @@ void handle_crontab(int idx)
 		else
 		{
 			crontab_ref["enabled"] = false;
-			log_cron_msg = "count limited,stopped.";
+
 			log_count = -1;
+			// *_stop
+			size_t crontab_method_len = crontab_method.length();
+			if (crontab_method.compare(crontab_method_len - ARRAYSIZE("_stop"), ARRAYSIZE("_stop"), "_stop") == 0)
+			{
+				config_i_ref["enabled"] = true;
+				disable_enable_menu(config_i_ref, ghJob);
+				log_cron_msg = "count limited,crontab stopped. program stopped.";
+			}
+			else
+			{
+				log_cron_msg = "count limited,crontab stopped.";
+			}
 		}
 		if (json_object_has_member(crontab_ref, "log"))
 		{
 			crontab_log(crontab_ref, log_time_cur, log_time_next, config_i_ref["name"].get<std::string>().c_str(), log_msg, log_cron_msg, log_count, 0);
-		}
 	}
+}
 	else
 	{
 		msg_prompt(L"Crontab has no crontab_config! Please report this windows screenshot to author!",
@@ -2303,7 +2397,7 @@ void create_process(
 #else
 		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
 #endif
-	}
+				}
 
 	bool not_host_by_commandtrayhost = false, not_monitor_by_commandtrayhost = false;
 
@@ -2622,7 +2716,7 @@ void create_process(
 	{
 		jsp["enabled"] = false;
 	}
-}
+			}
 
 void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 {
@@ -2882,7 +2976,7 @@ void kill_all(bool is_exit/* = true*/)
 	{
 		flush_cache(/*is_exit*/);
 	}
-}
+				}
 
 // https://stackoverflow.com/questions/15913202/add-application-to-startup-registry
 BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
@@ -2906,7 +3000,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR pszAppName)
 		lResult = RegGetValue(hKey, NULL, pszAppName, RRF_RT_REG_SZ, &dwRegType, szPathToExe_reg, &dwSize);
 #endif
 		fSuccess = (lResult == ERROR_SUCCESS);
-}
+	}
 
 	if (fSuccess)
 	{
@@ -3008,9 +3102,9 @@ BOOL DisableStartUp2(PCWSTR valueName)
 		{
 			RegCloseKey(hKey);
 			hKey = NULL;
-		}
+}
 		return TRUE;
-	}
+}
 #else
 	if (ERROR_SUCCESS == RegDeleteKeyValue(
 		HKEY_CURRENT_USER,
@@ -3033,7 +3127,7 @@ BOOL DisableStartUp2(PCWSTR valueName)
 #endif
 		return FALSE;
 	}
-}
+			}
 
 BOOL DisableStartUp()
 {
@@ -3254,8 +3348,8 @@ bool is_another_instance_running()
 			{
 				CloseHandle(ghMutex);
 				ghMutex = NULL;
-			}
 		}
+	}
 		else
 		{
 			ret = true;
@@ -3263,9 +3357,9 @@ bool is_another_instance_running()
 
 		ghMutex = m_hMutex;
 		LOGMESSAGE(L"%d ghMutex: 0x%x\n", ret, ghMutex);
-	}
-	return ret;
 }
+	return ret;
+	}
 
 //https://stackoverflow.com/questions/23814979/c-windows-how-to-get-process-pid-from-its-path
 BOOL GetProcessName(LPTSTR szFilename, DWORD dwSize, DWORD dwProcID)

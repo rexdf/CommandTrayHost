@@ -1148,6 +1148,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S", &t2);
 		LOGMESSAGE(L"t2:%S %f\n", buffer, dif);
 		LOGMESSAGE(L"%lld\n", ((time_t)-1));
+		LOGMESSAGE(L"ARRAYSIZE %d\n", ARRAYSIZE("start") - 1);
 	}
 #endif
 	while (GetMessage(&msg, NULL, 0, 0) > 0)

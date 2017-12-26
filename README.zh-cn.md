@@ -81,12 +81,13 @@ Windows命令行程序系统托盘管理工具
             // 可选
             "crontab_config": { // crontab配置
                 "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考Linux
-                "method": "start", // 支持的有 start restart stop
+                "method": "start", // 支持的有 start restart stop start_count_stop restart_count_stop，最后两个表示count次数的最后一个会执行stop
                 "count": 0, // 0 表示不只限制，大于0的整数，表示运行多少次就不运行了
                 // 可选
                 "enabled": true,
                 "log": "commandtrayhost.log", // 日志文件名,注释掉本行就禁掉log了
                 "log_level": 0, // log级别，缺省默认为0。0为仅仅记录crontab触发记录，1附加启动时的信息，2附加下次触发的信息
+                "start_show": false,  // 注释掉的话，使用cache值(如果有)，cache禁用的状态下的默认值是false
             },
         },
         {
@@ -207,7 +208,7 @@ Windows命令行程序系统托盘管理工具
 }
 ```
 
-**提示1**: `"cmd"`必须包含`.exe`.如果要运行批处理.bat, 可以使用 `cmd.exe /c`.
+**提示1**: `"cmd"`必须包含`.exe`.如果要运行批处理.bat, 可以使用 `cmd.exe /c`或者`cmd.exe /k`.
 
 **提示2**: 管理员比较复杂，如果不是真的需要。配置中不要出现任何`require_admin`。 
 简而言之：
