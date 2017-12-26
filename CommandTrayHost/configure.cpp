@@ -731,6 +731,14 @@ int configure_reader(std::string& out)
 		{
 			if ((*_global_config_i_ref)[name].get<std::string>() != val[name].GetString())
 			{
+				int64_t handle = (*_global_config_i_ref)["handle"];
+				int64_t pid = (*_global_config_i_ref)["pid"];
+#ifdef _DEBUG
+				std::string name_A = (*_global_config_i_ref)["name"];
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name_A).c_str(), false);
+#else
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
+#endif
 				config_i_unchanged = false;
 			}
 		}
@@ -741,7 +749,7 @@ int configure_reader(std::string& out)
 	//type check for items in configs
 	const RapidJsonObjectChecker config_items[] = {
 		//must exist
-		{ "name", iStringType, false, lambda_check_hot_reload_unchanged, nullptr }, //must be zero index in config_items[]
+		{ "name", iStringType, false, nullptr, nullptr }, //must be zero index in config_items[]
 		{ "path", iStringType, false, lambda_check_hot_reload_unchanged },
 		{ "cmd", iStringType, false, lambda_check_hot_reload_unchanged },
 		{ "working_directory", iStringType, false, lambda_check_hot_reload_unchanged },
@@ -1040,11 +1048,15 @@ int configure_reader(std::string& out)
 				//check for config item
 				if (enable_hot_reload)
 				{
-					if (cnt > (*global_configs_pointer).size()) {
+					if (cnt > (*global_configs_pointer).size())
+					{
 						config_i_unchanged = false;
 					}
-					_global_config_i_ref = &((*global_configs_pointer)[cnt]);
-					config_i_unchanged = (*_global_config_i_ref)["running"];
+					if (config_i_unchanged)
+					{
+						_global_config_i_ref = &((*global_configs_pointer)[cnt]);
+						config_i_unchanged = (*_global_config_i_ref)["running"];
+					}
 				}
 				if (false == check_rapidjson_object(
 					m,

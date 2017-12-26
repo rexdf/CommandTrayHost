@@ -105,10 +105,10 @@ bool is_cache_not_expired(bool is_from_flush)
 			extern HWND hWnd;
 			SetForegroundWindow(hWnd);
 			const int result = msg_prompt(//NULL,
-				isZHCN ? (is_from_flush ?
-					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
-					L"\n\n选择 否 则保留缓存数据，下次启动CommandTrayHost才加载config.json"
-					L"\n\n选择 取消 则重新加载配置，但是并不删除缓存,正在运行的程序不会被关闭"
+				isZHCN ? ((is_from_flush && global_stat != nullptr) ?
+					L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
+					L"\n\n选择 否 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
+					L"\n\n选择 取消 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
 					:
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
 					L"\n\n选择 否 则保留缓存数据"
@@ -116,7 +116,7 @@ bool is_cache_not_expired(bool is_from_flush)
 				:
 				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 					L" cache\n\nChoose No to keep expired cache.").c_str(),
-				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					(is_from_flush && global_stat != nullptr) ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
 				is_from_flush ? MB_YESNOCANCEL : MB_YESNO
 			);
 			if (IDNO == result || IDCANCEL == result)
