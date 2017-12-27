@@ -1,9 +1,9 @@
 ﻿#include "stdafx.h"
+#include "CommandTrayHost.h"
 #include "utils.hpp"
 #include "configure.h"
 #include "language.h"
 #include "cache.h"
-#include "CommandTrayHost.h"
 
 
 extern bool is_runas_admin;
@@ -76,7 +76,7 @@ bool initial_configure()
      *    例子 0 1,11,21 * * * 每小时的1分 11分 21分运行一次
      *    例子 0 2/10 12-14 * * * 12点到14点，每小时从2分钟开始每10分钟运行一次
      *    日志文件超过10M会进行rotate，最多支持rotate文件数为500
-     *    由于Windows系统的Timer的限制，如果大约24天不重启电脑，对于24天以后才第一次运行的crontab会有问题。
+     *    由于Windows系统的Timer的限制，如果大约24天不重启(电脑或者CommandTrayHost)，对于计划在24天以后才会第一次运行的crontab会有问题。
      */
     "configs": [
         {
@@ -604,7 +604,7 @@ int configure_reader(std::string& out)
 		return true;
 	};
 	auto lambda_config_hotkey = [&show_hotkey_in_menu, &cnt, &config_hotkey_items_idx, &current_hotkey_success](Value& val, PCSTR name)->bool {
-		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
+		/*int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt;
 		if (0 == config_hotkey_items_idx)
 		{
 			id += 1;
@@ -620,7 +620,8 @@ int configure_reader(std::string& out)
 		else if (3 == config_hotkey_items_idx)
 		{
 			id += 5;
-		}
+		}*/
+		int id = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cnt + config_hotkey_items_idx + 2;
 		bool ret = registry_hotkey(
 			val[name].GetString(),
 			id,
@@ -769,7 +770,7 @@ int configure_reader(std::string& out)
 		{ "ignore_all", iBoolType, true, nullptr },
 		//{ "menu", iNullType, true, nullptr, lambda_remove_menu },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&config_hotkey_items_idx,&config_hotkey_items,&show_hotkey_in_menu,&lambda_remove_menu](Value& val, PCSTR name)->bool {
-			if (global_stat == nullptr && enable_hotkey)
+			if (enable_hotkey)
 			{
 				if (show_hotkey_in_menu)
 				{
@@ -890,7 +891,7 @@ int configure_reader(std::string& out)
 		return true;
 	};
 	auto lambda_global_hotkey = [&show_hotkey_in_menu, &global_hotkey_idx, &current_hotkey_success](const Value& val, PCSTR name)->bool {
-		const int global_hotkey_idxs[] = {
+		/*const int global_hotkey_idxs[] = {
 			WM_TASKBARNOTIFY_MENUITEM_DISABLEALL , // order is important, commandtrayhost marked word: 4bfsza3ay
 			WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
 			WM_TASKBARNOTIFY_MENUITEM_HIDEALL,
@@ -903,11 +904,11 @@ int configure_reader(std::string& out)
 			WM_HOTKEY_ADD_ALPHA,
 			WM_HOTKEY_MINUS_ALPHA,
 			WM_HOTKEY_TOPMOST,
-		};
+		};*/
 		const int index_of_left_click = 7;
 		bool ret = registry_hotkey(
 			val[name].GetString(),
-			global_hotkey_idxs[global_hotkey_idx],
+			hotkey_ids_global_section[global_hotkey_idx],
 			(utf8_to_wstring(name) + L" hotkey setting error!").c_str()
 		);
 		if (show_hotkey_in_menu && ret && global_hotkey_idx < index_of_left_click)
@@ -918,7 +919,7 @@ int configure_reader(std::string& out)
 		return true;
 	};
 
-	const RapidJsonObjectChecker global_hotkey_itms[] = {
+	const RapidJsonObjectChecker global_hotkey_itms[] = { // order is important, commandtrayhost marked word: 4bfsza3ay
 		{ "disable_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 		{ "enable_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 		{ "hide_all", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
@@ -1170,7 +1171,7 @@ int configure_reader(std::string& out)
 		{ "config_menu", iNullType, true, nullptr, lambda_remove_menu },
 		{ "hotkey", iObjectType, true, [&enable_hotkey,&global_hotkey_itms,&allocator](Value& val,PCSTR name)->bool {
 			bool ret = true;
-			if (global_stat == nullptr && enable_hotkey)
+			if (enable_hotkey)
 			{
 				//Value v(true, allocator);
 				//val[name].AddMember("a", true, allocator);
@@ -2071,10 +2072,7 @@ void start_all(HANDLE ghJob, bool force)
 	for (auto& i : (*global_configs_pointer))
 	{
 		cache_config_cursor++;
-		if (json_object_has_member(i, "running") && i["running"].get<bool>())
-		{
-			continue;
-		}
+
 		if (force)
 		{
 			bool ignore_all = false;
@@ -2111,6 +2109,10 @@ void start_all(HANDLE ghJob, bool force)
 					}
 				}
 			}
+		}
+		if (json_object_has_member(i, "running") && i["running"].get<bool>())
+		{
+			continue;
 		}
 		bool is_enabled = i["enabled"];
 		if (is_enabled)
@@ -2683,6 +2685,7 @@ void create_process(
 						//jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 						//jsp["win_num"] = static_cast<int>(num_of_windows);
 						jsp["running"] = true;
+						jsp["enabled"] = true;
 						//if (start_show) show_hide_toggle(jsp);
 						// Run as administrator then donot cache
 						//update_cache_enabled_start_show(true, start_show);
@@ -2926,17 +2929,94 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 }
 
+void unregisterhotkey_killtimer_all()
+{
+	bool enable_hotkey = true;
+#ifdef _DEBUG
+	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey", __FUNCTION__);
+#else
+	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey");
+#endif
+	if (enable_hotkey && json_object_has_member(global_stat, "hotkey"))
+	{
+		const char* hotkey_name_global[] = {
+			"disable_all",
+			"enable_all",
+			"hide_all",
+			"show_all",
+			"restart_all",
+			"elevate",
+			"exit",
+			"left_click",
+			"right_click",
+			"add_alpha",
+			"minus_alpha",
+			"topmost",
+		};
+		auto& global_hotkey_ref = global_stat["hotkey"];
+		for (int i = 0; i < ARRAYSIZE(hotkey_name_global); i++)
+		{
+			if (json_object_has_member(global_hotkey_ref, hotkey_name_global[i]))
+			{
+				extern HWND hWnd;
+				UnregisterHotKey(hWnd, hotkey_ids_global_section[i]);
+				LOGMESSAGE(L"UnregisterHotKey hWnd:0x%x id:", hWnd, hotkey_ids_global_section[i]);
+			}
+		}
+	}
+	cache_config_cursor = -1;
+	for (auto& itm : (*global_configs_pointer))
+	{
+		cache_config_cursor++; // for continue
+		if (json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
+		{
+			extern HWND hWnd;
+			KillTimer(hWnd, VM_TIMER_BASE + cache_config_cursor);
+		}
+		if (enable_hotkey && json_object_has_member(itm, "hotkey"))
+		{
+			const char* hotkey_name_config_i[] = {
+				"hide_show",
+				"disable_enable",
+				"restart",
+				"elevate",
+			};
+			/*const int hotkey_ids_config_i[] = {
+				1,
+				3,
+				4,
+				5,
+			};*/
+			const int hotkey_ids_base_config_i = WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + 0x10 * cache_config_cursor;
+			auto& config_i_hotkey_ref = itm["hotkey"];
+			for (int i = 0; i < ARRAYSIZE(hotkey_name_config_i); i++)
+			{
+				if (json_object_has_member(config_i_hotkey_ref, hotkey_name_config_i[i]))
+				{
+					extern HWND hWnd;
+					//UnregisterHotKey(hWnd, hotkey_ids_base_config_i+hotkey_ids_config_i[i]);
+					UnregisterHotKey(hWnd, hotkey_ids_base_config_i + 2 + i);
+					LOGMESSAGE(L"i UnregisterHotKey hWnd:0x%x id:", hWnd, hotkey_ids_base_config_i + 2 + i);
+				}
+			}
+		}
+	}
+}
+
 void kill_all(bool is_exit/* = true*/)
 {
 	cache_config_cursor = -1;
 	for (auto& itm : (*global_configs_pointer))
 	{
 		cache_config_cursor++; // for continue
-		if (is_exit && json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
+		/*if (is_exit)
 		{
-			extern HWND hWnd;
-			KillTimer(hWnd, VM_TIMER_BASE + cache_config_cursor);
-		}
+			if (json_object_has_member(itm, "crontab_config") && itm["crontab_config"]["enabled"])
+			{
+				extern HWND hWnd;
+				KillTimer(hWnd, VM_TIMER_BASE + cache_config_cursor);
+			}
+		}*/
 		bool is_running = itm["running"];
 		/*if (is_exit)
 		{

@@ -26,6 +26,21 @@ enum GloabalMenuNameIndx
 	mHelp,
 };
 
+const int hotkey_ids_global_section[] = {
+	WM_TASKBARNOTIFY_MENUITEM_DISABLEALL , // order is important, commandtrayhost marked word: 4bfsza3ay
+	WM_TASKBARNOTIFY_MENUITEM_ENABLEALL,
+	WM_TASKBARNOTIFY_MENUITEM_HIDEALL,
+	WM_TASKBARNOTIFY_MENUITEM_SHOWALL,
+	WM_TASKBARNOTIFY_MENUITEM_RESTARTALL,
+	WM_TASKBARNOTIFY_MENUITEM_ELEVATE,
+	WM_TASKBARNOTIFY_MENUITEM_EXIT,
+	WM_HOTKEY_LEFT_CLICK, //left click
+	WM_HOTKEY_RIGHT_CLICK, //right click
+	WM_HOTKEY_ADD_ALPHA,
+	WM_HOTKEY_MINUS_ALPHA,
+	WM_HOTKEY_TOPMOST,
+};
+
 void get_command_submenu(std::vector<HMENU>&);
 //int init_global(HANDLE&, PWSTR, int&);
 int init_global(HANDLE&, HICON&);
@@ -41,6 +56,7 @@ void hideshow_all(bool is_hideall = true);
 void start_all(HANDLE, bool force = false);
 void restart_all(HANDLE);
 void update_hwnd_all();
+void unregisterhotkey_killtimer_all();
 void kill_all(bool is_exit = true);
 void left_click_toggle();
 

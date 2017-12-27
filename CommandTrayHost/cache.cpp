@@ -1,10 +1,10 @@
 ﻿#include "stdafx.h"
+#include "CommandTrayHost.h"
 #include "cache.h"
 #include "language.h"
 //#include "configure.h"
 #include "utils.hpp"
 #include "configure.h"
-#include "CommandTrayHost.h"
 
 extern nlohmann::json global_stat;
 extern nlohmann::json* global_cache_configs_pointer;
@@ -106,7 +106,7 @@ bool is_cache_not_expired(bool is_from_flush)
 			//SetForegroundWindow(hWnd);
 			const int result = msg_prompt(//NULL,
 				isZHCN ? ((is_from_flush && global_stat != nullptr) ?
-					L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。热键不支持热加载。"
+					L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。"
 					L"\n\n选择 否 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
 					L"\n\n选择 取消 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
 					:
@@ -149,6 +149,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					}
 					enable_cache = false;
 					if (IDYES == result)kill_all();
+					unregisterhotkey_killtimer_all();
 					extern HANDLE ghJob;
 					extern HICON gHicon;
 					if (NULL == init_global(ghJob, gHicon))
@@ -159,7 +160,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					}
 					start_all(ghJob);
 					DeleteTrayIcon();
-					ShowTrayIcon(L"", NIM_ADD);
+					ShowTrayIcon(CONFIG_FILENAMEW L" has been reloaded.", NIM_ADD);
 					//enable_cache = false;
 					return false;
 				}
