@@ -54,6 +54,7 @@ DWORD WINAPI WatchDirectory(LPVOID lpParam)
 			//is_cache_not_expired(true, true);
 			extern HWND hWnd;
 			SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
+			Sleep(500);
 			//PostMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
 			if (FindNextChangeNotification(dwChangeHandles) == FALSE)
 			{

@@ -55,7 +55,7 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 			RETURN_LEAVECRITIALCAL(true);
 		}
 	}
-	if (TRUE != PathFileExists(cache_filename))
+	if (enable_cache && TRUE != PathFileExists(cache_filename))
 	{
 		if (is_from_flush && global_stat != nullptr)
 		{
@@ -87,9 +87,13 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 	HANDLE json_hFile = CreateFile(json_filename, GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
-	HANDLE cache_hFile = CreateFile(cache_filename, GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE cache_hFile = nullptr;
+	if (enable_cache)
+	{
+		cache_hFile = CreateFile(cache_filename, GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
+	}
 
 #define CLOSE_CREATEFILE(fp) { \
 	if(fp)CloseHandle(fp); \
@@ -98,24 +102,24 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 
 #define RETURN_AND_CLOSE_CREATEFILE(ret) { \
 	CLOSE_CREATEFILE(json_hFile);\
-	CLOSE_CREATEFILE(cache_hFile);\
+	if(enable_cache)CLOSE_CREATEFILE(cache_hFile);\
 	RETURN_LEAVECRITIALCAL(ret); \
 }
-	if (!json_hFile || !cache_hFile)
+	if (!json_hFile || (enable_cache && !cache_hFile))
 	{
 		LOGMESSAGE(L"CreateFile failed\n");
 		RETURN_AND_CLOSE_CREATEFILE(false);
 	}
 	FILETIME json_write_timestamp, cache_write_timestamp;
 	if (!GetFileTime(json_hFile, NULL, NULL, &json_write_timestamp) ||
-		!GetFileTime(cache_hFile, NULL, NULL, &cache_write_timestamp))
+		(enable_cache && !GetFileTime(cache_hFile, NULL, NULL, &cache_write_timestamp)))
 	{
 		LOGMESSAGE(L"GetFileTime failed\n");
 		RETURN_AND_CLOSE_CREATEFILE(false);
 	}
 	CLOSE_CREATEFILE(json_hFile);
-	CLOSE_CREATEFILE(cache_hFile);
-	if (CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0)
+	if (enable_cache)CLOSE_CREATEFILE(cache_hFile);
+	if (!enable_cache || (enable_cache && CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0))
 	{
 		LOGMESSAGE(L"json_write_timestamp is later than cache_write_timestamp\n");
 		bool return_val = false;
@@ -149,7 +153,7 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 			{
 				result = is_reloading_config ? IDCANCEL : IDNO;
 			}
-			if (IDNO == result || IDCANCEL == result)
+			if (enable_cache && (IDNO == result || IDCANCEL == result))
 			{
 				return_val = true;
 				if (global_stat == nullptr || IDCANCEL == result)
