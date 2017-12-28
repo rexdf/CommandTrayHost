@@ -86,7 +86,7 @@ void makeSingleInstance3();
 	DeleteTrayIcon(); \
 	if (gHicon)DestroyIcon(gHicon); \
 	gHicon = NULL; \
-	if(enable_critialsection)DeleteCriticalSection(&CriticalSection); \
+	/*if(enable_critialsection)DeleteCriticalSection(&CriticalSection);*/ \
 	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x where:%d\n",ghMutex,where); \
 }
 

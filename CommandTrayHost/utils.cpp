@@ -521,7 +521,7 @@ int msg_prompt(
 {
 	extern HWND hWnd;
 	SetForegroundWindow(hWnd);
-	return MessageBox(NULL, lpText, lpCaption, uType);
+	return MessageBox(hWnd, lpText, lpCaption, uType);
 }
 
 BOOL get_hicon(PCWSTR filename, int icon_size, HICON& hIcon, bool share)

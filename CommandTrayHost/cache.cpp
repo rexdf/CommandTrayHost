@@ -2,7 +2,6 @@
 #include "CommandTrayHost.h"
 #include "cache.h"
 #include "language.h"
-//#include "configure.h"
 #include "utils.hpp"
 #include "configure.h"
 
@@ -22,24 +21,25 @@ extern bool is_cache_valid;
 extern bool auto_hot_reloading_config;
 
 extern BOOL isZHCN, isENUS;
-extern CRITICAL_SECTION CriticalSection;
-extern bool enable_critialsection;
+//extern CRITICAL_SECTION CriticalSection;
+//extern bool enable_critialsection;
 
 bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 {
-	if (enable_critialsection)
+	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
+	/*if (enable_critialsection)
 	{
 		EnterCriticalSection(&CriticalSection);
 		if(is_from_flush)
 		{
 			LOGMESSAGE(L"EnterCriticalSection\n");
 		}
-	}
+	}*/
 	PCWSTR json_filename = CONFIG_FILENAMEW;
 	PCWSTR cache_filename = CACHE_FILENAMEW;
 
 #define RETURN_LEAVECRITIALCAL(val) { \
-	if(enable_critialsection)LeaveCriticalSection(&CriticalSection); \
+	/*if(enable_critialsection)LeaveCriticalSection(&CriticalSection);*/ \
 	return val; \
 }
 
@@ -113,6 +113,8 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 		LOGMESSAGE(L"GetFileTime failed\n");
 		RETURN_AND_CLOSE_CREATEFILE(false);
 	}
+	CLOSE_CREATEFILE(json_hFile);
+	CLOSE_CREATEFILE(cache_hFile);
 	if (CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0)
 	{
 		LOGMESSAGE(L"json_write_timestamp is later than cache_write_timestamp\n");
@@ -165,8 +167,7 @@ bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 				else
 				{
 					LOGMESSAGE(L"IDYES\n");
-					CLOSE_CREATEFILE(json_hFile);
-					CLOSE_CREATEFILE(cache_hFile);
+
 					enable_cache = false;
 					/*if (is_from_other_thread)
 					{

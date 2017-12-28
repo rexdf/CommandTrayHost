@@ -22,8 +22,8 @@ nlohmann::json* global_groups_pointer;
 HANDLE ghJob;
 HANDLE ghMutex;
 HICON gHicon;
-CRITICAL_SECTION CriticalSection;
-bool enable_critialsection;
+//CRITICAL_SECTION CriticalSection;
+//bool enable_critialsection;
 //WCHAR szHIcon[MAX_PATH * 2];
 //int icon_size;
 bool is_runas_admin;
@@ -1120,7 +1120,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return FALSE;
 	}
 
-	if (!InitializeCriticalSectionAndSpinCount(&CriticalSection,
+	/*if (!InitializeCriticalSectionAndSpinCount(&CriticalSection,
 		0x00000400))
 	{
 		msg_prompt(L"InitializeCriticalSectionAndSpinCount failed!", L"Error");
@@ -1129,7 +1129,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	else
 	{
 		enable_critialsection = true;
-	}
+	}*/
 
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
 	if (NULL == init_global(ghJob, gHicon))
