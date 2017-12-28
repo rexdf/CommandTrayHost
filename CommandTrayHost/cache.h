@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-bool is_cache_not_expired(bool is_from_flush = false);
+bool is_cache_not_expired(bool is_from_flush = false, bool is_from_other_thread = false);
 
 bool flush_cache(/*bool is_exist = false*/);
 

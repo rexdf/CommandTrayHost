@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "filewatcher.h"
-#include "cache.h"
+//#include "cache.h"
+#include "CommandTrayHost.h"
 
 //void WatchDirectory(LPTSTR lpDir)
 DWORD WINAPI WatchDirectory(LPVOID lpParam)
@@ -50,7 +51,9 @@ DWORD WINAPI WatchDirectory(LPVOID lpParam)
 			// Refresh this directory and restart the notification.
 
 			LOGMESSAGE(L"%s\n", reinterpret_cast<PCWSTR>(lpParam));
-			is_cache_not_expired();
+			//is_cache_not_expired(true, true);
+			extern HWND hWnd;
+			SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB, NULL);
 			if (FindNextChangeNotification(dwChangeHandles) == FALSE)
 			{
 				return GetLastError();

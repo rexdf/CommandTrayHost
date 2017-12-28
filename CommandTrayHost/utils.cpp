@@ -220,6 +220,7 @@ bool registry_hotkey(const char* s, int id, PCWSTR msg, bool show_error)
 		return false;
 	}
 	LOGMESSAGE(L"%s hWnd:0x%x id:0x%x fsModifiers:0x%x vk:0x%x\n", msg, hWnd, id, fsModifiers, vk);
+	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
 	if (0 == RegisterHotKey(hWnd, id, fsModifiers, vk))
 	{
 		errno_t error_code = GetLastError();

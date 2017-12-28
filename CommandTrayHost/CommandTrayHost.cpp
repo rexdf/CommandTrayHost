@@ -895,6 +895,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB)
+		{
+			//unregisterhotkey_killtimer_all();
+			is_cache_not_expired(true);
+		}
 		else
 		{
 			LOGMESSAGE(L"%x Clicked\n", nID);
@@ -1141,7 +1146,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();
-	
+
 #ifdef _DEBUG
 	{
 		cron_expr expr;

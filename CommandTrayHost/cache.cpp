@@ -25,7 +25,7 @@ extern BOOL isZHCN, isENUS;
 extern CRITICAL_SECTION CriticalSection;
 extern bool enable_critialsection;
 
-bool is_cache_not_expired(bool is_from_flush)
+bool is_cache_not_expired(bool is_from_flush,bool is_from_other_thread)
 {
 	if (enable_critialsection)EnterCriticalSection(&CriticalSection);
 	PCWSTR json_filename = CONFIG_FILENAMEW;
@@ -117,10 +117,11 @@ bool is_cache_not_expired(bool is_from_flush)
 			//extern HWND hWnd;
 			//SetForegroundWindow(hWnd);
 			int result;
+			bool is_reloading_config = is_from_flush && global_stat != nullptr;
 			if (!auto_hot_reloading_config)
 			{
 				result = msg_prompt(//NULL,
-					isZHCN ? ((is_from_flush && global_stat != nullptr) ?
+					isZHCN ? (is_reloading_config ?
 						L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。"
 						L"\n\n选择 否 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
 						L"\n\n选择 取消 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
@@ -132,12 +133,12 @@ bool is_cache_not_expired(bool is_from_flush)
 					translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
 						L" cache\n\nChoose No to keep expired cache.").c_str(),
 					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
-					(is_from_flush && global_stat != nullptr) ? MB_YESNOCANCEL : MB_YESNO
+					is_reloading_config ? MB_YESNOCANCEL : MB_YESNO
 				);
 			}
 			else
 			{
-				result = (is_from_flush && global_stat != nullptr) ? IDCANCEL : IDNO;
+				result = is_reloading_config ? IDCANCEL : IDNO;
 			}
 			if (IDNO == result || IDCANCEL == result)
 			{
@@ -160,6 +161,16 @@ bool is_cache_not_expired(bool is_from_flush)
 					CLOSE_CREATEFILE(json_hFile);
 					CLOSE_CREATEFILE(cache_hFile);
 					enable_cache = false;
+					if (is_from_other_thread)
+					{
+						LOGMESSAGE(L"is_from_other_thread GetCurrentThreadId:%d\n", GetCurrentThreadId());
+						extern HWND hWnd;
+						SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB, NULL);
+					}
+					else
+					{
+						unregisterhotkey_killtimer_all();
+					}
 					if (IDYES == result)
 					{
 						if (NULL == DeleteFile(CACHE_FILENAMEW))
@@ -169,7 +180,6 @@ bool is_cache_not_expired(bool is_from_flush)
 						}
 						kill_all();
 					}
-					unregisterhotkey_killtimer_all();
 					extern HANDLE ghJob;
 					extern HICON gHicon;
 					if (NULL == init_global(ghJob, gHicon))

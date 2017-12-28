@@ -2939,8 +2939,13 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 }
 
+/*
+ * Not thread safe
+ * Frees a hot key previously registered by the *calling thread*.
+ */
 void unregisterhotkey_killtimer_all()
 {
+	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
 	bool enable_hotkey = true;
 #ifdef _DEBUG
 	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey", __FUNCTION__);
@@ -2970,7 +2975,11 @@ void unregisterhotkey_killtimer_all()
 			{
 				extern HWND hWnd;
 				UnregisterHotKey(hWnd, hotkey_ids_global_section[i]);
-				LOGMESSAGE(L"UnregisterHotKey hWnd:0x%x id:", hWnd, hotkey_ids_global_section[i]);
+				LOGMESSAGE(L"UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x", 
+					hWnd, 
+					hotkey_ids_global_section[i],
+					GetLastError()
+				);
 			}
 		}
 	}
@@ -3006,7 +3015,11 @@ void unregisterhotkey_killtimer_all()
 					extern HWND hWnd;
 					//UnregisterHotKey(hWnd, hotkey_ids_base_config_i+hotkey_ids_config_i[i]);
 					UnregisterHotKey(hWnd, hotkey_ids_base_config_i + 2 + i);
-					LOGMESSAGE(L"i UnregisterHotKey hWnd:0x%x id:", hWnd, hotkey_ids_base_config_i + 2 + i);
+					LOGMESSAGE(L"i UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x", 
+						hWnd, 
+						hotkey_ids_base_config_i + 2 + i,
+						GetLastError()
+					);
 				}
 			}
 		}
