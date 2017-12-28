@@ -53,7 +53,8 @@ DWORD WINAPI WatchDirectory(LPVOID lpParam)
 			LOGMESSAGE(L"%s\n", reinterpret_cast<PCWSTR>(lpParam));
 			//is_cache_not_expired(true, true);
 			extern HWND hWnd;
-			SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB, NULL);
+			SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
+			//PostMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
 			if (FindNextChangeNotification(dwChangeHandles) == FALSE)
 			{
 				return GetLastError();

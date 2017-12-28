@@ -895,7 +895,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
-		else if (nID == WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB)
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID)
 		{
 			//unregisterhotkey_killtimer_all();
 			is_cache_not_expired(true);

@@ -25,9 +25,16 @@ extern BOOL isZHCN, isENUS;
 extern CRITICAL_SECTION CriticalSection;
 extern bool enable_critialsection;
 
-bool is_cache_not_expired(bool is_from_flush,bool is_from_other_thread)
+bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
 {
-	if (enable_critialsection)EnterCriticalSection(&CriticalSection);
+	if (enable_critialsection)
+	{
+		EnterCriticalSection(&CriticalSection);
+		if(is_from_flush)
+		{
+			LOGMESSAGE(L"EnterCriticalSection\n");
+		}
+	}
 	PCWSTR json_filename = CONFIG_FILENAMEW;
 	PCWSTR cache_filename = CACHE_FILENAMEW;
 
@@ -161,7 +168,7 @@ bool is_cache_not_expired(bool is_from_flush,bool is_from_other_thread)
 					CLOSE_CREATEFILE(json_hFile);
 					CLOSE_CREATEFILE(cache_hFile);
 					enable_cache = false;
-					if (is_from_other_thread)
+					/*if (is_from_other_thread)
 					{
 						LOGMESSAGE(L"is_from_other_thread GetCurrentThreadId:%d\n", GetCurrentThreadId());
 						extern HWND hWnd;
@@ -170,7 +177,8 @@ bool is_cache_not_expired(bool is_from_flush,bool is_from_other_thread)
 					else
 					{
 						unregisterhotkey_killtimer_all();
-					}
+					}*/
+					unregisterhotkey_killtimer_all();
 					if (IDYES == result)
 					{
 						if (NULL == DeleteFile(CACHE_FILENAMEW))
