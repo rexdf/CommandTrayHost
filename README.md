@@ -175,7 +175,7 @@ example configure
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost
     "enable_cache": true,
-    "conform_cache_expire": true,
+    "conform_cache_expire": true, // hot reloading will be disabled, when setting it to false
     "disable_cache_position": false,
     "disable_cache_size": false,
     "disable_cache_enabled": true,

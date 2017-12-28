@@ -1168,14 +1168,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		LOGMESSAGE(L"ARRAYSIZE %d\n", ARRAYSIZE("start") - 1);
 	}
 #endif
-	HANDLE filewatch_thread;
-	if (!CreateFileWatch(szPathToExeDir, filewatch_thread))
+	if (conform_cache_expire)
 	{
-		msg_prompt(L"filewatch failed!", L"create thread failed");
-	}
-	else
-	{
-		CloseHandle(filewatch_thread);
+		HANDLE filewatch_thread;
+		if (!CreateFileWatch(szPathToExeDir, filewatch_thread))
+		{
+			msg_prompt(L"filewatch failed!", L"create thread failed");
+		}
+		else
+		{
+			CloseHandle(filewatch_thread);
+		}
 	}
 	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{

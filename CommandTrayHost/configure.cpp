@@ -322,7 +322,7 @@ bool initial_configure()
         1
     ], // left click on tray icon, hide/show configs index. Empty to hide/show CommandTrayHost 
     "enable_cache": true,
-    "conform_cache_expire": true,
+    "conform_cache_expire": true, // hot reloading will be disabled, when setting it to false
     "disable_cache_position": false, // enable cache console windows position
     "disable_cache_size": false, // enable cache console windows size
     "disable_cache_enabled": true, // disable cache enable/disable status of command line
