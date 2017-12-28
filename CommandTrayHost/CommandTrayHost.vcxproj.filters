@@ -48,6 +48,9 @@
     <ClInclude Include="..\third_party\ccronexpr\ccronexpr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="filewatcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -69,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\third_party\ccronexpr\ccronexpr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filewatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

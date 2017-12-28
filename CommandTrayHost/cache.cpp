@@ -19,13 +19,23 @@ extern bool disable_cache_enabled;
 extern bool disable_cache_show;
 extern bool disable_cache_alpha;
 extern bool is_cache_valid;
+extern bool auto_hot_reloading_config;
 
 extern BOOL isZHCN, isENUS;
+extern CRITICAL_SECTION CriticalSection;
+extern bool enable_critialsection;
 
 bool is_cache_not_expired(bool is_from_flush)
 {
+	if (enable_critialsection)EnterCriticalSection(&CriticalSection);
 	PCWSTR json_filename = CONFIG_FILENAMEW;
 	PCWSTR cache_filename = CACHE_FILENAMEW;
+
+#define RETURN_LEAVECRITIALCAL(val) { \
+	if(enable_critialsection)LeaveCriticalSection(&CriticalSection); \
+	return val; \
+}
+
 	if (TRUE != PathFileExists(json_filename))
 	{
 		extern HANDLE ghJob;
@@ -34,7 +44,8 @@ bool is_cache_not_expired(bool is_from_flush)
 		{
 			//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 			//enable_cache = true;
-			return true;
+			//return true;
+			RETURN_LEAVECRITIALCAL(true);
 		}
 	}
 	if (TRUE != PathFileExists(cache_filename))
@@ -45,7 +56,7 @@ bool is_cache_not_expired(bool is_from_flush)
 			{
 				const int result = msg_prompt(//NULL,
 					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则临时禁用缓存"
-					L"\n\n选择 否 则继续缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 缓存可能会错位"
+					L"\n\n选择 否 则继续缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 使用内存的缓存"
 					:
 					translate_w2w(L"You just Delete " CONFIG_FILENAMEW L"\n\nChoose Yes to clear"
 						L" cache\n\nChoose No to keep expired cache.").c_str(),
@@ -63,7 +74,8 @@ bool is_cache_not_expired(bool is_from_flush)
 			}
 		}
 		LOGMESSAGE(L"PathFileExists failed\n");
-		return false;
+		//return false;
+		RETURN_LEAVECRITIALCAL(false);
 	}
 	HANDLE json_hFile = CreateFile(json_filename, GENERIC_READ,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
@@ -80,7 +92,7 @@ bool is_cache_not_expired(bool is_from_flush)
 #define RETURN_AND_CLOSE_CREATEFILE(ret) { \
 	CLOSE_CREATEFILE(json_hFile);\
 	CLOSE_CREATEFILE(cache_hFile);\
-	return ret; \
+	RETURN_LEAVECRITIALCAL(ret); \
 }
 	if (!json_hFile || !cache_hFile)
 	{
@@ -104,21 +116,29 @@ bool is_cache_not_expired(bool is_from_flush)
 			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
 			//extern HWND hWnd;
 			//SetForegroundWindow(hWnd);
-			const int result = msg_prompt(//NULL,
-				isZHCN ? ((is_from_flush && global_stat != nullptr) ?
-					L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。"
-					L"\n\n选择 否 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
-					L"\n\n选择 取消 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
+			int result;
+			if (!auto_hot_reloading_config)
+			{
+				result = msg_prompt(//NULL,
+					isZHCN ? ((is_from_flush && global_stat != nullptr) ?
+						L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。"
+						L"\n\n选择 否 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
+						L"\n\n选择 取消 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
+						:
+						L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
+						L"\n\n选择 否 则保留缓存数据"
+						)
 					:
-					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
-					L"\n\n选择 否 则保留缓存数据"
-					)
-				:
-				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
-					L" cache\n\nChoose No to keep expired cache.").c_str(),
-				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
-				(is_from_flush && global_stat != nullptr) ? MB_YESNOCANCEL : MB_YESNO
-			);
+					translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
+						L" cache\n\nChoose No to keep expired cache.").c_str(),
+					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					(is_from_flush && global_stat != nullptr) ? MB_YESNOCANCEL : MB_YESNO
+				);
+			}
+			else
+			{
+				result = (is_from_flush && global_stat != nullptr) ? IDCANCEL : IDNO;
+			}
 			if (IDNO == result || IDCANCEL == result)
 			{
 				return_val = true;
@@ -139,6 +159,7 @@ bool is_cache_not_expired(bool is_from_flush)
 					LOGMESSAGE(L"IDYES\n");
 					CLOSE_CREATEFILE(json_hFile);
 					CLOSE_CREATEFILE(cache_hFile);
+					enable_cache = false;
 					if (IDYES == result)
 					{
 						if (NULL == DeleteFile(CACHE_FILENAMEW))
@@ -146,9 +167,8 @@ bool is_cache_not_expired(bool is_from_flush)
 							LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
 							msg_prompt(/*NULL,*/ L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
 						}
+						kill_all();
 					}
-					enable_cache = false;
-					if (IDYES == result)kill_all();
 					unregisterhotkey_killtimer_all();
 					extern HANDLE ghJob;
 					extern HICON gHicon;
@@ -156,13 +176,15 @@ bool is_cache_not_expired(bool is_from_flush)
 					{
 						//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 						//enable_cache = true;
-						return true;
+						//return true;
+						RETURN_LEAVECRITIALCAL(true);
 					}
 					start_all(ghJob);
 					DeleteTrayIcon();
 					ShowTrayIcon(CONFIG_FILENAMEW L" has been reloaded.", NIM_ADD);
 					//enable_cache = false;
-					return false;
+					//return false;
+					RETURN_LEAVECRITIALCAL(false);
 				}
 
 			}

@@ -31,11 +31,14 @@ extern bool start_show_silent;
 extern bool is_cache_valid;
 extern int cache_config_cursor;
 
+extern bool auto_hot_reloading_config;
+
 extern bool repeat_mod_hotkey;
 extern int global_hotkey_alpha_step;
 
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
+extern TCHAR szPathToExeDir[MAX_PATH * 10];
 //extern WCHAR szWindowClass[36];
 //extern HINSTANCE hInst;
 
@@ -153,7 +156,7 @@ bool initial_configure()
     "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size": 256, // 图标尺寸 可以用值有256 32 16
     "lang": "auto", // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
-    "groups": [ // groups的值是一个数组，可以有两种类型，一种为数值，一种为object。object代表下级菜单。object必须有name字段
+    "groups": [ // groups的值是一个数组(方括号)，可以有两种类型，一种为数值，一种为object(花括号)。object代表下级菜单。最多可以40层嵌套。object必须有name字段
         {
             "name": "cmd例子分组1", // 分级菜单的名字
             "groups": [
@@ -180,7 +183,7 @@ bool initial_configure()
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始.空数组或者注释掉，则显示CommandTrayHost本体
     "enable_cache": true, // 启用cache
-    "conform_cache_expire": true, // 是否弹窗让用户确认是否清空缓存
+    "conform_cache_expire": true, // CommandTrayHost是否检查cache文件和配置文件，设为false时热加载被禁用
     "disable_cache_position": false, // 禁止缓存窗口位置
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
@@ -206,6 +209,7 @@ bool initial_configure()
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
+    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击清空缓存弹窗的取消或者否
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -344,6 +348,7 @@ bool initial_configure()
     "show_hotkey_in_menu": true,
     "enable_hotkey": true,
     "start_show_silent": true,
+    "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No or Cancel
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -945,6 +950,7 @@ int configure_reader(std::string& out)
 	repeat_mod_hotkey = false;
 	start_show_silent = true;
 	global_hotkey_alpha_step = 5;
+	auto_hot_reloading_config = false;
 
 	int cache_option_pointer_idx = 0;
 	bool* const cache_option_value_pointer[] = {
@@ -980,6 +986,10 @@ int configure_reader(std::string& out)
 #else
 			enable_hotkey = val[name].GetBool();
 #endif
+			return true;
+		} },
+		{ "auto_hot_reloading_config", iBoolType, true, [](const Value& val,PCSTR name)->bool {
+			auto_hot_reloading_config = val[name].GetBool();
 			return true;
 		} },
 		{ "show_hotkey_in_menu", iBoolType, true, [&show_hotkey_in_menu](const Value& val,PCSTR name)->bool {
@@ -3350,6 +3360,8 @@ void ElevateNow()
 				kill_all(js);
 				DeleteTrayIcon();*/
 				extern HICON gHicon;
+				extern CRITICAL_SECTION CriticalSection;
+				extern bool enable_critialsection;
 				CLEANUP_BEFORE_QUIT(1);
 				_exit(1);  // Quit itself
 			}
@@ -3398,6 +3410,11 @@ bool init_cth_path()
 	{
 		return false;
 	}
+	if (FAILED(StringCchCopy(szPathToExeDir, ARRAYSIZE(szPathToExeDir), szPathToExe)))
+	{
+		return false;
+	}
+	*wcsrchr(szPathToExeDir, L'\\') = 0;
 	if (FAILED(StringCchCopy(szPathToExeToken, ARRAYSIZE(szPathToExeToken), szPathToExe)))
 	{
 		return false;

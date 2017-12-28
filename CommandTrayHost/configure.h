@@ -81,10 +81,12 @@ void makeSingleInstance3();
 //#define  CLEANUP_BEFORE_QUIT() {delete_lockfile();kill_all();DeleteTrayIcon();}
 #define  CLEANUP_BEFORE_QUIT(where) {\
 	kill_all(); \
+	unregisterhotkey_killtimer_all(); \
 	CLEAN_MUTEX(); \
 	DeleteTrayIcon(); \
 	if (gHicon)DestroyIcon(gHicon); \
 	gHicon = NULL; \
+	if(enable_critialsection)DeleteCriticalSection(&CriticalSection); \
 	LOGMESSAGE(L"CLEANUP_BEFORE_QUIT ghMutex:0x%x where:%d\n",ghMutex,where); \
 }
 

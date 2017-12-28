@@ -177,7 +177,7 @@ Windows命令行程序系统托盘管理工具
         1
     ], // 左键单击显示/隐藏程序 configs序号，从0开始. 空数组或者注释掉，则显示CommandTrayHost本体
     "enable_cache": true, // 启用cache
-    "conform_cache_expire": true, // 是否弹窗让用户确认是否清空缓存
+    "conform_cache_expire": true, // CommandTrayHost是否检查cache文件和配置文件，设为false时热加载被禁用
     "disable_cache_position": false, // 禁止缓存窗口位置
     "disable_cache_size": false, // 禁止缓存窗口大小
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
@@ -205,6 +205,7 @@ Windows命令行程序系统托盘管理工具
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
+    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击清空缓存弹窗的取消或者否
 }
 ```
 

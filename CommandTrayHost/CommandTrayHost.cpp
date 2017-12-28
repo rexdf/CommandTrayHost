@@ -4,6 +4,7 @@
 #include "language.h"
 #include "cache.h"
 #include "utils.hpp"
+#include "filewatcher.h"
 
 #ifndef __cplusplus
 #undef NULL
@@ -21,6 +22,8 @@ nlohmann::json* global_groups_pointer;
 HANDLE ghJob;
 HANDLE ghMutex;
 HICON gHicon;
+CRITICAL_SECTION CriticalSection;
+bool enable_critialsection;
 //WCHAR szHIcon[MAX_PATH * 2];
 //int icon_size;
 bool is_runas_admin;
@@ -34,6 +37,7 @@ bool disable_cache_enabled;
 bool disable_cache_show;
 bool disable_cache_alpha;
 bool start_show_silent;
+bool auto_hot_reloading_config;
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
 // after that, its false means need to flush cache out to disk
@@ -48,6 +52,7 @@ int global_hotkey_alpha_step;
 
 TCHAR szPathToExe[MAX_PATH * 10];
 TCHAR szPathToExeToken[MAX_PATH * 10];
+TCHAR szPathToExeDir[MAX_PATH * 10];
 
 CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 BOOL isZHCN, isENUS;
@@ -493,17 +498,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 BOOL CDCurrentDirectory()
 {
 
-	WCHAR* szPath = _wcsdup(szPathToExe);
+	//WCHAR* szPath = _wcsdup(szPathToExe);
 
 	/*WCHAR szPath[4096] = L"";
 	//GetModuleFileName(NULL, szPath, sizeof(szPath) / sizeof(szPath[0]) - 1);
 	GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath));*/
 
-	*wcsrchr(szPath, L'\\') = 0;
-	SetCurrentDirectory(szPath);
-	SetEnvironmentVariableW(L"CWD", szPath);
-	LOGMESSAGE(L"CWD: %s\n", szPath);
-	free(szPath);
+	//*wcsrchr(szPath, L'\\') = 0;
+	SetCurrentDirectory(szPathToExeDir);
+	SetEnvironmentVariableW(L"CWD", szPathToExeDir);
+	LOGMESSAGE(L"CWD: %s\n", szPathToExeDir);
+	//free(szPath);
 	return TRUE;
 }
 
@@ -1110,6 +1115,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return FALSE;
 	}
 
+	if (!InitializeCriticalSectionAndSpinCount(&CriticalSection,
+		0x00000400))
+	{
+		msg_prompt(L"InitializeCriticalSectionAndSpinCount failed!", L"Error");
+		enable_critialsection = false;
+	}
+	else
+	{
+		enable_critialsection = true;
+	}
+
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
 	if (NULL == init_global(ghJob, gHicon))
 	{
@@ -1125,6 +1141,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//ShowTrayIcon(GetWindowsProxy(), NIM_ADD);
 	ShowTrayIcon(L"", NIM_ADD);
 	//TryDeleteUpdateFiles();
+	
 #ifdef _DEBUG
 	{
 		cron_expr expr;
@@ -1151,6 +1168,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		LOGMESSAGE(L"ARRAYSIZE %d\n", ARRAYSIZE("start") - 1);
 	}
 #endif
+	HANDLE filewatch_thread;
+	if (!CreateFileWatch(szPathToExeDir, filewatch_thread))
+	{
+		msg_prompt(L"filewatch failed!", L"create thread failed");
+	}
+	else
+	{
+		CloseHandle(filewatch_thread);
+	}
 	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{
 		TranslateMessage(&msg);

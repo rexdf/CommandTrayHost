@@ -229,6 +229,7 @@
     <ClInclude Include="cache.h" />
     <ClInclude Include="CommandTrayHost.h" />
     <ClInclude Include="configure.h" />
+    <ClInclude Include="filewatcher.h" />
     <ClInclude Include="language.h" />
     <ClInclude Include="language_data.h" />
     <ClInclude Include="resource.h" />
@@ -242,6 +243,7 @@
     <ClCompile Include="cache.cpp" />
     <ClCompile Include="CommandTrayHost.cpp" />
     <ClCompile Include="configure.cpp" />
+    <ClCompile Include="filewatcher.cpp" />
     <ClCompile Include="language.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
