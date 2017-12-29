@@ -37,6 +37,8 @@ extern bool reload_config_with_cache;
 extern bool repeat_mod_hotkey;
 extern int global_hotkey_alpha_step;
 
+extern bool cachefile_invalid;
+
 extern TCHAR szPathToExe[MAX_PATH * 10];
 extern TCHAR szPathToExeToken[MAX_PATH * 10];
 extern TCHAR szPathToExeDir[MAX_PATH * 10];
@@ -979,6 +981,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 		return true;
 	};
 
+
 	// type check for global optional items
 	const RapidJsonObjectChecker global_optional_items[] = {
 		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
@@ -1000,7 +1003,6 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ "lang", iStringType, true, lambda_remove_empty_string, [](Value& val, PCSTR name)->bool { // place hold for execute some code
 			bool has_lang = val.HasMember("lang");
 			initialize_local(has_lang, has_lang ? val["lang"].GetString() : NULL);
-			if (global_stat == nullptr)is_cache_not_expired2();
 			return true;
 		}},
 
@@ -1247,6 +1249,12 @@ rapidjson::SizeType configure_reader(std::string& out)
 			);
 			d.RemoveMember("cache");
 		}
+
+		if (global_stat == nullptr) 
+		{
+			is_cache_not_expired2();  // why here? enable_cache & is_ZHCN
+		}
+
 		is_cache_valid = reload_config_with_cache;
 		Document d_cache(&allocator);
 		//if (TRUE == PathFileExists(CACHE_FILENAME))
@@ -1714,7 +1722,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 	if (enable_cache)
 	{
 		global_cache_configs_pointer = &(global_stat["cache"]["configs"]);
-		if (TRUE != PathFileExists(CACHE_FILENAMEW) || is_cache_valid == false)
+		if (TRUE != PathFileExists(CACHE_FILENAMEW) || is_cache_valid == false || cachefile_invalid)
 		{
 			is_cache_valid = false;
 			flush_cache();

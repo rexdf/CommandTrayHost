@@ -21,6 +21,7 @@ extern bool is_cache_valid;
 extern bool auto_hot_reloading_config;
 
 extern bool reload_config_with_cache;
+extern bool cachefile_invalid;
 
 extern BOOL isZHCN, isENUS;
 //extern CRITICAL_SECTION CriticalSection;
@@ -76,6 +77,7 @@ int is_cache_not_expired2()
 
 	if (CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0)
 	{
+		cachefile_invalid = true;
 		LOGMESSAGE(L"json_write_timestamp is later than cache_write_timestamp\n");
 		if (global_stat == nullptr)
 		{
@@ -104,6 +106,10 @@ int is_cache_not_expired2()
 				return 4;
 			}
 		}
+	}
+	else
+	{
+		cachefile_invalid = false;
 	}
 	reload_config_with_cache = true;
 	return 0;

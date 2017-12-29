@@ -42,6 +42,7 @@ bool auto_hot_reloading_config;
 bool reload_config_with_cache;
 
 int volatile atom_variable_for_config;
+bool cachefile_invalid;
 
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
@@ -904,7 +905,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			//unregisterhotkey_killtimer_all();
 			//is_cache_not_expired(true);
-			if(is_config_changed())
+			if (is_config_changed())
 			{
 				reload_config();
 			}
@@ -1149,6 +1150,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		msg_prompt(/*NULL, */L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;
 	}
+	cachefile_invalid = true; // after first load, every time config is reload, cache must need to be write
 	check_admin(is_runas_admin);
 	//initialize_local();
 	//

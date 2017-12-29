@@ -33,7 +33,7 @@ void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 	//static auto& base_main_ref = global_stat["configs"];
 	extern int cache_config_cursor;
 	extern nlohmann::json* global_cache_configs_pointer;
-	extern nlohmann::json* global_configs_pointer;
+	//extern nlohmann::json* global_configs_pointer;
 	auto& cache_ref = (*global_cache_configs_pointer)[cache_config_cursor][name];
 	//auto& main_ref= base_main_ref[cache_config_cursor][name];
 	if (cache_ref != value)
