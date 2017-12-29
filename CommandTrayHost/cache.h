@@ -1,6 +1,11 @@
 ﻿#pragma once
 
-bool is_cache_not_expired(bool is_from_flush = false/*, bool is_from_other_thread = false*/);
+//bool is_cache_not_expired(bool is_from_flush = false/*, bool is_from_other_thread = false*/);
+int is_cache_not_expired2();
+
+bool is_config_changed();
+bool reload_config();
+bool get_filetime(PCWSTR const filename, FILETIME& file_write_timestamp);
 
 bool flush_cache(/*bool is_exist = false*/);
 
@@ -77,3 +82,61 @@ T get_cache(PCSTR name)
 	extern nlohmann::json* global_cache_configs_pointer;
 	return (*global_cache_configs_pointer)[cache_config_cursor][name];
 }
+
+/*
+* type:	-1 means cache_name invalid, return idx
+*			0 fatal error
+*			1 return from cache memory
+*			2 return from cache file
+*			3 return from config.json
+*			4 not found from above all, return idx
+*/
+rapidjson::SizeType get_cache_index(
+	const rapidjson::Value& d_configs, // d["configs"]
+	const rapidjson::Value* d_cache_configs, // &(d_cache["configs"])
+	const PCSTR cache_name,
+	//PCSTR cache_item_name,
+	const rapidjson::SizeType cache_size, // d_cache["configs"].Size()
+	const rapidjson::SizeType global_cache_size, // global_stat["cache"]["configs"].size()
+	const rapidjson::SizeType idx,
+	int& type
+);
+
+template<typename Type>
+Type get_cache_value(
+	const rapidjson::Value* d_cache_configs,
+	rapidjson::SizeType cache_size,
+	rapidjson::SizeType idx,
+	size_t global_cache_size,
+	PCSTR name,
+	int find_type,
+	Type default_val
+)
+{
+	//if (global_stat != nullptr && global_cache_configs_pointer != nullptr)
+	{
+		if (find_type == 1 && idx < global_cache_size)
+		{
+			assert(global_stat != nullptr && global_cache_configs_pointer != nullptr);
+			auto& global_cache_config_i_ref = (*global_cache_configs_pointer)[idx];
+#ifdef _DEBUG
+			try_read_optional_json(global_cache_config_i_ref, default_val, name, __FUNCTION__);
+#else
+			try_read_optional_json(global_cache_config_i_ref, default_val, name);
+#endif
+			return default_val;
+		}
+	}
+	
+	if (find_type == 2 && idx < cache_size)
+	{
+		auto& d_cache_config_i_ref = (*d_cache_configs)[idx];
+		if (d_cache_config_i_ref.HasMember(name))
+		{
+			return d_cache_config_i_ref[name].Get<Type>();
+		}
+	}
+
+	return default_val;
+}
+

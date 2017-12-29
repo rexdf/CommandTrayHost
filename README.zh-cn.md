@@ -205,7 +205,7 @@ Windows命令行程序系统托盘管理工具
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
-    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击清空缓存弹窗的取消或者否
+    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击加载配置弹窗的否
 }
 ```
 

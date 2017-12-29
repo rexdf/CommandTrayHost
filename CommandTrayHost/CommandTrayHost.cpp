@@ -22,6 +22,7 @@ nlohmann::json* global_groups_pointer;
 HANDLE ghJob;
 HANDLE ghMutex;
 HICON gHicon;
+FILETIME config_last_timestamp;
 //CRITICAL_SECTION CriticalSection;
 //bool enable_critialsection;
 //WCHAR szHIcon[MAX_PATH * 2];
@@ -38,12 +39,14 @@ bool disable_cache_show;
 bool disable_cache_alpha;
 bool start_show_silent;
 bool auto_hot_reloading_config;
+bool reload_config_with_cache;
+
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
 // after that, its false means need to flush cache out to disk
 bool is_cache_valid;
 int cache_config_cursor;
-int number_of_configs;
+size_t number_of_configs;
 
 int start_show_timer_tick_cnt;
 
@@ -898,7 +901,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID)
 		{
 			//unregisterhotkey_killtimer_all();
-			is_cache_not_expired(true);
+			//is_cache_not_expired(true);
+			if(is_config_changed())
+			{
+				reload_config();
+			}
 		}
 		else
 		{
@@ -1131,8 +1138,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		enable_critialsection = true;
 	}*/
 
+	reload_config_with_cache = false;
+	//is_cache_not_expired2();
+
 	//if (NULL == init_global(ghJob, szHIcon, icon_size))
-	if (NULL == init_global(ghJob, gHicon))
+	if (NULL == init_global(ghJob, gHicon) || !get_filetime(CONFIG_FILENAMEW, config_last_timestamp))
 	{
 		msg_prompt(/*NULL, */L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
 		return -1;

@@ -16,7 +16,7 @@ extern nlohmann::json* global_groups_pointer;
 extern BOOL isZHCN;
 extern bool enable_groups_menu;
 extern bool enable_left_click;
-extern int number_of_configs;
+extern size_t number_of_configs;
 extern int start_show_timer_tick_cnt;
 extern HANDLE ghMutex;
 
@@ -32,6 +32,7 @@ extern bool is_cache_valid;
 extern int cache_config_cursor;
 
 extern bool auto_hot_reloading_config;
+extern bool reload_config_with_cache;
 
 extern bool repeat_mod_hotkey;
 extern int global_hotkey_alpha_step;
@@ -209,7 +210,7 @@ bool initial_configure()
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
-    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击清空缓存弹窗的取消或者否
+    "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击加载配置弹窗的否
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -348,7 +349,7 @@ bool initial_configure()
     "show_hotkey_in_menu": true,
     "enable_hotkey": true,
     "start_show_silent": true,
-    "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No or Cancel
+    "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -405,7 +406,7 @@ bool check_rapidjson_object(
  * return NULL: failed
  * return others: numbers of configs
  */
-int configure_reader(std::string& out)
+rapidjson::SizeType configure_reader(std::string& out)
 {
 	PCWSTR json_filename = CONFIG_FILENAMEW;
 	if (TRUE != PathFileExists(json_filename))
@@ -559,7 +560,7 @@ int configure_reader(std::string& out)
 		return v >= 0 && v < 256;
 	};
 
-	int cnt = 0;
+	SizeType cnt = 0;
 
 	int config_hotkey_items_idx;
 	bool enable_hotkey = true;
@@ -999,6 +1000,7 @@ int configure_reader(std::string& out)
 		{ "lang", iStringType, true, lambda_remove_empty_string, [](Value& val, PCSTR name)->bool { // place hold for execute some code
 			bool has_lang = val.HasMember("lang");
 			initialize_local(has_lang, has_lang ? val["lang"].GetString() : NULL);
+			if (global_stat == nullptr)is_cache_not_expired2();
 			return true;
 		}},
 
@@ -1061,7 +1063,7 @@ int configure_reader(std::string& out)
 				if (enable_hot_reload)
 				{
 					config_i_unchanged = true;
-					if (cnt > (int)(*global_configs_pointer).size())
+					if (cnt >= (*global_configs_pointer).size())
 					{
 						config_i_unchanged = false;
 					}
@@ -1130,7 +1132,7 @@ int configure_reader(std::string& out)
 				if (m.IsInt())
 				{
 					int ans = m.GetInt();
-					if (ans < 0 || ans >= cnt)
+					if (ans < 0 || static_cast<SizeType>(ans) >= cnt)
 					{
 						return false;
 					}
@@ -1245,22 +1247,24 @@ int configure_reader(std::string& out)
 			);
 			d.RemoveMember("cache");
 		}
-		is_cache_valid = false;
+		is_cache_valid = reload_config_with_cache;
+		Document d_cache(&allocator);
 		//if (TRUE == PathFileExists(CACHE_FILENAME))
-		if (is_cache_not_expired())
+		//if (is_cache_not_expired2() == 0)
+		if (is_cache_valid)
 		{
 			FILE* fp_cache;
 			errno_t err = _wfopen_s(&fp_cache, CACHE_FILENAMEW, L"rb"); // 非 Windows 平台使用 "r"
 			if (0 != err)
 			{
 				msg_prompt(/*NULL,*/ L"Open cache failed!", L"Error", MB_OK | MB_ICONERROR);
-				enable_cache = false;
+				is_cache_valid = false;
 			}
-			if (enable_cache)
+			if (is_cache_valid)
 			{
-				is_cache_valid = true;
+				//is_cache_valid = true;
 				FileReadStream bis_cache(fp_cache, readBuffer, static_cast<size_t>(json_file_size + 5));
-				Document d_cache(&allocator);
+				//Document d_cache(&allocator);
 				if (d_cache.ParseStream(bis_cache).HasParseError())
 				{
 					LOGMESSAGE(L"cache parse faild!\n");
@@ -1270,8 +1274,8 @@ int configure_reader(std::string& out)
 				{
 					if (d_cache.IsObject() &&
 						d_cache.HasMember("configs") &&
-						d_cache["configs"].IsArray() &&
-						d_cache["configs"].Size() == cnt
+						d_cache["configs"].IsArray() /*&&
+						d_cache["configs"].Size() == cnt*/
 						)
 					{
 						const RapidJsonObjectChecker cache_config_items[] = {
@@ -1293,9 +1297,9 @@ int configure_reader(std::string& out)
 								}
 								return true;
 							}},
-#ifdef _DEBUG
-							{ "name", iStringType, true, nullptr },
-#endif
+							//#ifdef _DEBUG
+														{ "name", iStringType, true, nullptr },
+								//#endif
 						};
 						for (auto& m : d_cache["configs"].GetArray())
 						{
@@ -1320,28 +1324,199 @@ int configure_reader(std::string& out)
 						is_cache_valid = false;
 					}
 					//add cache to config.json
-					if (is_cache_valid)
+					/*if (is_cache_valid)
 					{
 						//Value cache;
 						//cache.SetObject();
 						//d.AddMember("cache", cache, allocator);
 						d.AddMember("cache", d_cache, allocator);
 						//rapidjson_merge_object(d["cache"], d_cache, allocator);
-					}
+					}*/
 				}
 				fclose(fp_cache);
 			}
 
 		}
 
+		Value* d_cache_config_pointer = nullptr;
+		SizeType cache_size = 0;
+		if (is_cache_valid)
+		{
+			d_cache_config_pointer = &(d_cache["configs"]);
+			cache_size = d_cache_config_pointer->Size();
+		}
+
+		SizeType global_cache_size = 0;
+		if (global_stat != nullptr && global_cache_configs_pointer != nullptr)
+		{
+			global_cache_size = static_cast<SizeType>((*global_cache_configs_pointer).size());
+		}
+
+		//generate cache
+		//if (enable_cache && false == is_cache_valid)
+		{
+			auto& d_config_ref = d["configs"];
+
+			Value cache_object;
+			cache_object.SetObject();
+			d.AddMember("cache", cache_object, allocator);
+			Value cache_config_array;
+			cache_config_array.SetArray();
+			d["cache"].AddMember("configs", cache_config_array, allocator);
+			auto d_cache_config_ref = d["cache"]["configs"].GetArray();
+
+			/*size_t buffer_index = 0;
+			if (false == printf_to_bufferA(
+				readBuffer,
+				static_cast<size_t>(json_file_size),
+				buffer_index,
+				u8R"({"configs":[)"
+			))
+			{
+				msg_prompt(L"cache buffer error 1",
+					L"Cache error",
+					MB_OK | MB_ICONWARNING
+				);
+				assert(false);
+			}*/
+
+			for (SizeType i = 0; i < cnt; i++)
+			{
+				auto& d_config_i_ref = d_config_ref[i];
+				int cache_alpha = 255;
+				if (d_config_i_ref.HasMember("alpha"))
+				{
+					cache_alpha = d_config_i_ref["alpha"].GetInt();
+				}
+				bool cache_enabled = d_config_i_ref["enabled"].GetBool();
+				bool cache_start_show = false;
+				if (d_config_i_ref.HasMember("start_show"))
+				{
+					cache_start_show = d_config_i_ref["start_show"].GetBool();
+				}
+				//#ifdef _DEBUG
+				std::string cache_name = d_config_i_ref["name"].GetString();
+				//#endif
+				//generate cache configs items, and pushback to document d
+				{
+					int find_type;
+					SizeType idx = get_cache_index(
+						d_config_ref,
+						d_cache_config_pointer,
+						cache_name.c_str(),
+						cache_size, 
+						global_cache_size, 
+						i, 
+						find_type
+					);
+					if (is_cache_valid && find_type != 1 && find_type != 2)is_cache_valid = false;
+					Value cache_item;
+					cache_item.SetObject();
+					//#ifdef _DEBUG
+					Value cache_item_name;
+					cache_item_name.SetString(cache_name.c_str(), static_cast<SizeType>(cache_name.length()), allocator);
+					cache_item.AddMember("name", cache_item_name, allocator);
+					//#endif
+					typedef struct { const char* name; int default_val; } IntTypeCacheItems, *pIntTypeCacheItems;
+					const IntTypeCacheItems int_cache_adder[] = {
+						{ "left", 0 },
+						{ "top", 0 },
+						{ "right", 0 },
+						{ "bottom", 0 },
+						{ "alpha", cache_alpha },
+						{ "valid", 0 },
+					};
+					for (int j = 0; j < ARRAYSIZE(int_cache_adder); j++)
+					{
+						const IntTypeCacheItems* cur_int_cache_adder = &(int_cache_adder[j]);
+						cache_item.AddMember(StringRef(cur_int_cache_adder->name), get_cache_value<int>(d_cache_config_pointer,
+							cache_size, idx, global_cache_size, cur_int_cache_adder->name, find_type, cur_int_cache_adder->default_val),
+							allocator);
+					}
+					/*cache_item.AddMember("left", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "left", find_type, 0),
+						allocator);
+					cache_item.AddMember("top", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "top", find_type, 0),
+						allocator);
+					cache_item.AddMember("right", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "right", find_type, 0),
+						allocator);
+					cache_item.AddMember("bottom", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "right", find_type, 0),
+						allocator);
+					cache_item.AddMember("alpha", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "alpha", find_type, cache_alpha),
+						allocator);
+					cache_item.AddMember("valid", get_cache_value<int>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "valid", find_type, 0), 
+						allocator);*/
+					cache_item.AddMember("enabled", get_cache_value<bool>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "enabled", find_type, cache_enabled),
+						allocator);
+					cache_item.AddMember("start_show", get_cache_value<bool>(d_cache_config_pointer,
+						cache_size, idx, global_cache_size, "start_show", find_type, cache_start_show),
+						allocator);
+					
+					
+					d_cache_config_ref.PushBack(cache_item, allocator);
+				}
+				/*if (false == printf_to_bufferA(
+					readBuffer,
+					static_cast<size_t>(json_file_size),
+					buffer_index,
+//#ifdef _DEBUG
+					u8R"(%s{"alpha":%d, "left": 0, "top": 0, "right": 0, "bottom": 0, "valid":0 ,"enabled": %s, "start_show": %s, "name": "%s"})",
+//#else
+//					u8R"(%s{"alpha":%d,"left":0,"top":0,"right":0,"bottom":0,"valid":0,"enabled":%s,"start_show":%s})",
+//#endif
+					i ? "," : "",
+					cache_alpha,
+					cache_enabled ? "true" : "false",
+					cache_start_show ? "true" : "false"
+//#ifdef _DEBUG
+					, cache_name.c_str()
+//#endif
+				))
+				{
+					msg_prompt(L"cache buffer error 2",
+						L"Cache error",
+						MB_OK | MB_ICONWARNING
+					);
+					assert(false);
+				}*/
+			}
+
+			/*LOGMESSAGE(L"buffer_index: %d json_file_size: %d\n", buffer_index, json_file_size);
+			if (false == printf_to_bufferA(
+				readBuffer,
+				static_cast<size_t>(json_file_size),
+				buffer_index,
+				u8R"(]})"
+			))
+			{
+				msg_prompt(L"cache buffer error 3",
+					L"Cache error",
+					MB_OK | MB_ICONWARNING
+				);
+				assert(false);
+			}
+			std::ofstream o(CACHE_FILENAMEA);
+			if (o.good())
+			{
+				o << readBuffer;
+				//is_cache_valid = false;
+			}*/
+		}
+
 		//sync cache to configs, override setting in config.json
-		if (enable_cache && is_cache_valid)
+		//if (enable_cache && is_cache_valid)
 		{
 			if (!disable_cache_position || !disable_cache_size || !disable_cache_enabled || !disable_cache_show || !disable_cache_alpha)
 			{
 				auto& d_configs_ref = d["configs"];
 				auto& cache_configs_ref = d["cache"]["configs"];
-				for (int i = 0; i < cnt; i++)
+				for (SizeType i = 0; i < cnt; i++)
 				{
 					auto& cache_config_i_ref = cache_configs_ref[i];
 					int valid_flag = cache_config_i_ref["valid"].GetInt();
@@ -1425,114 +1600,6 @@ int configure_reader(std::string& out)
 			}
 		}
 
-		//generate cache
-		if (enable_cache && false == is_cache_valid)
-		{
-			auto& d_config_ref = d["configs"];
-
-			Value cache_object;
-			cache_object.SetObject();
-			d.AddMember("cache", cache_object, allocator);
-			Value cache_config_array;
-			cache_config_array.SetArray();
-			d["cache"].AddMember("configs", cache_config_array, allocator);
-			auto d_cache_config_ref = d["cache"]["configs"].GetArray();
-			size_t buffer_index = 0;
-			if (false == printf_to_bufferA(
-				readBuffer,
-				static_cast<size_t>(json_file_size),
-				buffer_index,
-				u8R"({"configs":[)"
-			))
-			{
-				msg_prompt(/*NULL, */L"cache buffer error 1",
-					L"Cache error",
-					MB_OK | MB_ICONWARNING
-				);
-				assert(false);
-			}
-			for (int i = 0; i < cnt; i++)
-			{
-				auto& d_config_i_ref = d_config_ref[i];
-				int cache_alpha = 255;
-				if (d_config_i_ref.HasMember("alpha"))
-				{
-					cache_alpha = d_config_i_ref["alpha"].GetInt();
-				}
-				bool cache_enabled = d_config_i_ref["enabled"].GetBool();
-				bool cache_start_show = false;
-				if (d_config_i_ref.HasMember("start_show"))
-				{
-					cache_start_show = d_config_i_ref["start_show"].GetBool();
-				}
-#ifdef _DEBUG
-				std::string cache_name = d_config_i_ref["name"].GetString();
-#endif
-				//generate cache configs items, and pushback to document d
-				{
-					Value cache_item;
-					cache_item.SetObject();
-					cache_item.AddMember("left", 0, allocator);
-					cache_item.AddMember("top", 0, allocator);
-					cache_item.AddMember("right", 0, allocator);
-					cache_item.AddMember("bottom", 0, allocator);
-					cache_item.AddMember("alpha", cache_alpha, allocator);
-					cache_item.AddMember("enabled", cache_enabled, allocator);
-					cache_item.AddMember("start_show", cache_start_show, allocator);
-					cache_item.AddMember("valid", 0, allocator);
-#ifdef _DEBUG
-					Value cache_item_name;
-					cache_item_name.SetString(cache_name.c_str(), static_cast<unsigned>(cache_name.length()), allocator);
-					cache_item.AddMember("name", cache_item_name, allocator);
-#endif
-					d_cache_config_ref.PushBack(cache_item, allocator);
-				}
-				if (false == printf_to_bufferA(
-					readBuffer,
-					static_cast<size_t>(json_file_size),
-					buffer_index,
-#ifdef _DEBUG
-					u8R"(%s{"alpha":%d, "left": 0, "top": 0, "right": 0, "bottom": 0, "valid":0 ,"enabled": %s, "start_show": %s, "name": "%s"})",
-#else
-					u8R"(%s{"alpha":%d,"left":0,"top":0,"right":0,"bottom":0,"valid":0,"enabled":%s,"start_show":%s})",
-#endif
-					i ? "," : "",
-					cache_alpha,
-					cache_enabled ? "true" : "false",
-					cache_start_show ? "true" : "false"
-#ifdef _DEBUG
-					, cache_name.c_str()
-#endif
-				))
-				{
-					msg_prompt(/*NULL, */L"cache buffer error 2",
-						L"Cache error",
-						MB_OK | MB_ICONWARNING
-					);
-					assert(false);
-				}
-			}
-			LOGMESSAGE(L"buffer_index: %d json_file_size: %d\n", buffer_index, json_file_size);
-			if (false == printf_to_bufferA(
-				readBuffer,
-				static_cast<size_t>(json_file_size),
-				buffer_index,
-				u8R"(]})"
-			))
-			{
-				msg_prompt(/*NULL, */L"cache buffer error 3",
-					L"Cache error",
-					MB_OK | MB_ICONWARNING
-				);
-				assert(false);
-			}
-			std::ofstream o(CACHE_FILENAMEA);
-			if (o.good())
-			{
-				o << readBuffer;
-				//is_cache_valid = false;
-			}
-		}
 	}
 
 	StringBuffer sb;
@@ -1610,7 +1677,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 
 /*
  * return NULL : failed
- * return 1 : sucess
+ * return 1 : success
  * enabled bool
  * running bool
  * handle int64_t
@@ -1625,7 +1692,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 //int init_global(HANDLE& ghJob, PWSTR szIcon, int& out_icon_size)
 {
 	std::string js_string;
-	int cmd_cnt = configure_reader(js_string);
+	size_t cmd_cnt = configure_reader(js_string);
 	assert(cmd_cnt > 0);
 	LOGMESSAGE(L"cmd_cnt:%d \n%s\n", cmd_cnt, utf8_to_wstring(js_string).c_str());
 	if (cmd_cnt == 0)
@@ -1643,15 +1710,37 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 
 	// I don't know where is js now? data? bss? heap? stack?
 	global_stat = nlohmann::json::parse(js_string);
-	if (enable_cache)global_cache_configs_pointer = &(global_stat["cache"]["configs"]);
+
+	if (enable_cache)
+	{
+		global_cache_configs_pointer = &(global_stat["cache"]["configs"]);
+		if (TRUE != PathFileExists(CACHE_FILENAMEW) || is_cache_valid == false)
+		{
+			is_cache_valid = false;
+			flush_cache();
+		}
+	}
+	else
+	{
+		global_cache_configs_pointer = nullptr;
+	}
+
 	global_configs_pointer = &(global_stat["configs"]);
 	if (json_object_has_member(global_stat, "left_click"))
 	{
 		global_left_click_pointer = &(global_stat["left_click"]);
 	}
+	else
+	{
+		global_left_click_pointer = nullptr;
+	}
 	if (json_object_has_member(global_stat, "groups"))
 	{
 		global_groups_pointer = &(global_stat["groups"]);
+	}
+	else
+	{
+		global_groups_pointer = nullptr;
 	}
 	for (auto& i : *global_configs_pointer)
 	{
@@ -2975,8 +3064,8 @@ void unregisterhotkey_killtimer_all()
 			{
 				extern HWND hWnd;
 				UnregisterHotKey(hWnd, hotkey_ids_global_section[i]);
-				LOGMESSAGE(L"UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x", 
-					hWnd, 
+				LOGMESSAGE(L"UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x",
+					hWnd,
 					hotkey_ids_global_section[i],
 					GetLastError()
 				);
@@ -3015,8 +3104,8 @@ void unregisterhotkey_killtimer_all()
 					extern HWND hWnd;
 					//UnregisterHotKey(hWnd, hotkey_ids_base_config_i+hotkey_ids_config_i[i]);
 					UnregisterHotKey(hWnd, hotkey_ids_base_config_i + 2 + i);
-					LOGMESSAGE(L"i UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x", 
-						hWnd, 
+					LOGMESSAGE(L"i UnregisterHotKey hWnd:0x%x id:%d GetLastError:0x%x",
+						hWnd,
 						hotkey_ids_base_config_i + 2 + i,
 						GetLastError()
 					);
@@ -3373,8 +3462,8 @@ void ElevateNow()
 				kill_all(js);
 				DeleteTrayIcon();*/
 				extern HICON gHicon;
-				extern CRITICAL_SECTION CriticalSection;
-				extern bool enable_critialsection;
+				//extern CRITICAL_SECTION CriticalSection;
+				//extern bool enable_critialsection;
 				CLEANUP_BEFORE_QUIT(1);
 				_exit(1);  // Quit itself
 			}

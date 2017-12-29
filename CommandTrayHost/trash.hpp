@@ -1303,3 +1303,199 @@ void get_command_submenu2(std::vector<HMENU>& outVcHmenu)
 	//return true;
 	//return vctHmenu;
 }
+
+
+bool is_cache_not_expired(bool is_from_flush/*,bool is_from_other_thread*/)
+{
+	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
+	/*if (enable_critialsection)
+	{
+		EnterCriticalSection(&CriticalSection);
+		if(is_from_flush)
+		{
+			LOGMESSAGE(L"EnterCriticalSection\n");
+		}
+	}*/
+	PCWSTR json_filename = CONFIG_FILENAMEW;
+	PCWSTR cache_filename = CACHE_FILENAMEW;
+
+#define RETURN_LEAVECRITIALCAL(val) { \
+	/*if(enable_critialsection)LeaveCriticalSection(&CriticalSection);*/ \
+	return val; \
+}
+
+	if (TRUE != PathFileExists(json_filename))
+	{
+		extern HANDLE ghJob;
+		extern HICON gHicon;
+		if (NULL == init_global(ghJob, gHicon))
+		{
+			//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+			//enable_cache = true;
+			//return true;
+			RETURN_LEAVECRITIALCAL(true);
+		}
+	}
+	if (enable_cache && TRUE != PathFileExists(cache_filename))
+	{
+		if (is_from_flush && global_stat != nullptr)
+		{
+			if (conform_cache_expire)
+			{
+				const int result = msg_prompt(//NULL,
+					isZHCN ? L"缓存文件被删除了，是否要写入旧缓存！\n\n选择 是 则临时禁用缓存"
+					L"\n\n选择 否 则继续缓存数据，如果改动了" CONFIG_FILENAMEW L"同时删除了缓存，选 否 使用内存的缓存"
+					:
+					translate_w2w(L"You just Delete " CONFIG_FILENAMEW L"\n\nChoose Yes to clear"
+						L" cache\n\nChoose No to keep expired cache.").c_str(),
+					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					MB_YESNO
+				);
+				if (IDNO == result)
+				{
+					return true;
+				}
+				else if (IDYES == result) // global_stat != nullptr
+				{
+					enable_cache = false;
+				}
+			}
+		}
+		LOGMESSAGE(L"PathFileExists failed\n");
+		//return false;
+		RETURN_LEAVECRITIALCAL(false);
+	}
+	HANDLE json_hFile = CreateFile(json_filename, GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE cache_hFile = nullptr;
+	if (enable_cache)
+	{
+		cache_hFile = CreateFile(cache_filename, GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
+	}
+
+#define CLOSE_CREATEFILE(fp) { \
+	if(fp)CloseHandle(fp); \
+	fp=NULL; \
+}
+
+#define RETURN_AND_CLOSE_CREATEFILE(ret) { \
+	CLOSE_CREATEFILE(json_hFile);\
+	if(enable_cache)CLOSE_CREATEFILE(cache_hFile);\
+	RETURN_LEAVECRITIALCAL(ret); \
+}
+	if (!json_hFile || (enable_cache && !cache_hFile))
+	{
+		LOGMESSAGE(L"CreateFile failed\n");
+		RETURN_AND_CLOSE_CREATEFILE(false);
+	}
+	FILETIME json_write_timestamp, cache_write_timestamp;
+	if (!GetFileTime(json_hFile, NULL, NULL, &json_write_timestamp) ||
+		(enable_cache && !GetFileTime(cache_hFile, NULL, NULL, &cache_write_timestamp)))
+	{
+		LOGMESSAGE(L"GetFileTime failed\n");
+		RETURN_AND_CLOSE_CREATEFILE(false);
+	}
+	CLOSE_CREATEFILE(json_hFile);
+	if (enable_cache)CLOSE_CREATEFILE(cache_hFile);
+	if (!enable_cache || (enable_cache && CompareFileTime(&json_write_timestamp, &cache_write_timestamp) >= 0))
+	{
+		LOGMESSAGE(L"json_write_timestamp is later than cache_write_timestamp\n");
+		bool return_val = false;
+		if (conform_cache_expire)
+		{
+			//bool isZHCN = GetSystemDefaultLCID() == 2052 || GetACP() == 936;
+			LOGMESSAGE(L"isZHCN:%d isENUS:%d\n", isZHCN, isENUS);
+			//extern HWND hWnd;
+			//SetForegroundWindow(hWnd);
+			int result;
+			bool is_reloading_config = is_from_flush && global_stat != nullptr;
+			if (!auto_hot_reloading_config)
+			{
+				result = msg_prompt(//NULL,
+					isZHCN ? (is_reloading_config ?
+						L"config.json被编辑过了,缓存可能已经失效！\n\n选择 是 则清空缓存，关闭全部在运行的程序，重新读取配置。"
+						L"\n\n选择 否 则重新加载配置,但是并不删除缓存,cmd path working_directory未修改的运行中的程序不会被关闭"
+						L"\n\n选择 取消 则保留缓存数据,下次启动CommandTrayHost才加载config.json"
+						:
+						L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
+						L"\n\n选择 否 则保留缓存数据"
+						)
+					:
+					translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
+						L" cache\n\nChoose No to keep expired cache.").c_str(),
+					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					is_reloading_config ? MB_YESNOCANCEL : MB_YESNO
+				);
+			}
+			else
+			{
+				//result = is_reloading_config ? IDCANCEL : IDNO;
+				result = IDNO;
+			}
+			if (enable_cache && (IDNO == result || IDCANCEL == result))
+			{
+				return_val = true;
+				if (global_stat == nullptr || IDCANCEL == result)
+				{
+					std::ofstream o_cache(CACHE_FILENAMEA, std::ios_base::app | std::ios_base::out);
+					o_cache << std::endl;
+				}
+			}
+			if (IDYES == result || IDCANCEL == result)
+			{
+				if (global_stat == nullptr)
+				{
+					LOGMESSAGE(L"IDYES nullptr\n");
+				}
+				else
+				{
+					LOGMESSAGE(L"IDYES\n");
+
+					enable_cache = false;
+					/*if (is_from_other_thread)
+					{
+						LOGMESSAGE(L"is_from_other_thread GetCurrentThreadId:%d\n", GetCurrentThreadId());
+						extern HWND hWnd;
+						SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_UNREGISTRYHOTKEY_CRONTAB, NULL);
+					}
+					else
+					{
+						unregisterhotkey_killtimer_all();
+					}*/
+					unregisterhotkey_killtimer_all();
+					if (IDYES == result)
+					{
+						if (NULL == DeleteFile(CACHE_FILENAMEW))
+						{
+							LOGMESSAGE(L"DeleteFile GetLastError:%d\n", GetLastError());
+							msg_prompt(/*NULL,*/ L"Delete " CACHE_FILENAMEW L" Failed!", L"Delete failed", MB_OK);
+						}
+						kill_all();
+					}
+					extern HANDLE ghJob;
+					extern HICON gHicon;
+					if (NULL == init_global(ghJob, gHicon))
+					{
+						//MessageBox(NULL, L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
+						//enable_cache = true;
+						//return true;
+						RETURN_LEAVECRITIALCAL(true);
+					}
+					start_all(ghJob);
+					DeleteTrayIcon();
+					ShowTrayIcon(CONFIG_FILENAMEW L" has been reloaded.", NIM_ADD);
+					//enable_cache = false;
+					//return false;
+					RETURN_LEAVECRITIALCAL(false);
+				}
+
+			}
+		}
+		RETURN_AND_CLOSE_CREATEFILE(return_val);
+	}
+	RETURN_AND_CLOSE_CREATEFILE(true);
+}
+
