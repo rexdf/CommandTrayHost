@@ -132,10 +132,14 @@ bool is_config_changed()
 
 bool reload_config()
 {
+	static int atom_variable = 0;
+	if (atom_variable)return false;
+	atom_variable = 1;
 	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
 	if (global_stat == nullptr)
 	{
 		LOGMESSAGE(L"global_stat is nullptr\n");
+		atom_variable = 0;
 		return false;
 	}
 	assert(conform_cache_expire);
@@ -162,9 +166,9 @@ bool reload_config()
 		}
 		if (IDCANCEL == result)
 		{
+			atom_variable = 0;
 			return true;
 		}
-
 
 		reload_config_with_cache = IDNO == result;
 
@@ -186,12 +190,14 @@ bool reload_config()
 		extern HICON gHicon;
 		if (NULL == init_global(ghJob, gHicon))
 		{
+			atom_variable = 0;
 			return false;
 		}
 		start_all(ghJob);
 		DeleteTrayIcon();
 		ShowTrayIcon(CONFIG_FILENAMEW L" has been reloaded.", NIM_ADD);
 	}
+	atom_variable = 0;
 	return true;
 }
 
@@ -410,7 +416,7 @@ bool flush_cache(/*bool is_exit*/)
 #endif
 			return true;
 		}
-	}
+}
 
 	return false;
 }
