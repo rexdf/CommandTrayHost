@@ -41,6 +41,8 @@ bool start_show_silent;
 bool auto_hot_reloading_config;
 bool reload_config_with_cache;
 
+int volatile atom_variable_for_config;
+
 // during loading configuration file in configure_reader
 // is_cache_valid true means that content in command_tray_host.cache is valid
 // after that, its false means need to flush cache out to disk

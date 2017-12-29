@@ -35,7 +35,8 @@ const nlohmann::json language_data = u8R"json({
         "Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.": "Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.",
         "CommandTrayHost Started，Click Tray icon to Hide/Show Console.": "CommandTrayHost Started，Click Tray icon to Hide/Show Console.",
         "Clear cache?": "Clear cache?",
-        "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.\n\nChoose Cancel to do nothing": "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.\n\nChoose Cancel to do nothing"
+        "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.":"You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.",
+        "\n\nChoose Cancel to do nothing": "\n\nChoose Cancel to do nothing"
     }
 })json"_json;
 

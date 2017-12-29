@@ -111,9 +111,11 @@ int is_cache_not_expired2()
 
 bool is_config_changed()
 {
-	static int atom_variable = 0;
-	if (atom_variable)return false;
-	atom_variable = 1;
+	extern int volatile atom_variable_for_config;
+	//static int atom_variable = 0;
+	if (atom_variable_for_config)return false;
+	atom_variable_for_config = 1;
+	//Sleep(200); // wait a little while for windows finish writing files to disk. Otherwise, there will be multiple timestamp
 	extern FILETIME config_last_timestamp;
 	LOGMESSAGE(L"dwLowDateTime:%d dwHighDateTime:%d\n", config_last_timestamp.dwLowDateTime, config_last_timestamp.dwHighDateTime);
 	FILETIME current_config_timestamp;
@@ -122,24 +124,25 @@ bool is_config_changed()
 		if (CompareFileTime(&current_config_timestamp, &config_last_timestamp) != 0)
 		{
 			config_last_timestamp = current_config_timestamp;
-			atom_variable = 0;
+			//atom_variable = 0;
 			return true;
 		}
 	}
-	atom_variable = 0;
+	atom_variable_for_config = 0;
 	return false;
 }
 
 bool reload_config()
 {
-	static int atom_variable = 0;
-	if (atom_variable)return false;
-	atom_variable = 1;
+	extern int volatile atom_variable_for_config;
+	//static int atom_variable = 0;
+	//if (atom_variable)return false;
+	//atom_variable = 1;
 	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
 	if (global_stat == nullptr)
 	{
 		LOGMESSAGE(L"global_stat is nullptr\n");
-		atom_variable = 0;
+		atom_variable_for_config = 0;
 		return false;
 	}
 	assert(conform_cache_expire);
@@ -154,8 +157,9 @@ bool reload_config()
 				L"\n\n选择 否 重新加载配置，尽最大努力保留缓存(如果启用缓存)，cmd path working_directory未修改的运行中的程序不会被关闭"
 				L"\n\n选择 取消 下次启动CommandTrayHost才加载配置"
 				:
-				translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
-					L" cache\n\nChoose No to keep expired cache.\n\nChoose Cancel to do nothing").c_str(),
+				(translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
+					L" cache\n\nChoose No to keep expired cache.") +
+					translate_w2w(L"\n\nChoose Cancel to do nothing")).c_str(),
 				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
 				MB_YESNOCANCEL
 			);
@@ -166,7 +170,7 @@ bool reload_config()
 		}
 		if (IDCANCEL == result)
 		{
-			atom_variable = 0;
+			atom_variable_for_config = 0;
 			return true;
 		}
 
@@ -190,14 +194,14 @@ bool reload_config()
 		extern HICON gHicon;
 		if (NULL == init_global(ghJob, gHicon))
 		{
-			atom_variable = 0;
+			atom_variable_for_config = 0;
 			return false;
 		}
 		start_all(ghJob);
 		DeleteTrayIcon();
 		ShowTrayIcon(CONFIG_FILENAMEW L" has been reloaded.", NIM_ADD);
 	}
-	atom_variable = 0;
+	atom_variable_for_config = 0;
 	return true;
 }
 
@@ -416,7 +420,7 @@ bool flush_cache(/*bool is_exit*/)
 #endif
 			return true;
 		}
-}
+	}
 
 	return false;
 }

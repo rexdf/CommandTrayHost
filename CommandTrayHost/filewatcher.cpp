@@ -52,9 +52,10 @@ DWORD WINAPI WatchDirectory(LPVOID lpParam)
 
 			LOGMESSAGE(L"%s\n", reinterpret_cast<PCWSTR>(lpParam));
 			//is_cache_not_expired(true, true);
+			Sleep(200); // wait a little while for windows finish writing files to disk. Otherwise, there will be multiple timestamp
 			extern HWND hWnd;
 			SendMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
-			Sleep(500);
+			Sleep(300);
 			//PostMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID, NULL);
 			if (FindNextChangeNotification(dwChangeHandles) == FALSE)
 			{
