@@ -2122,6 +2122,10 @@ void handle_crontab(int idx)
 				config_i_ref["start_show"] = config_i_start_show_backup;
 			}
 		}
+		else
+		{
+			log_msg = "method:renew";
+		}
 		enable_cache = enable_cache_backup;
 
 
