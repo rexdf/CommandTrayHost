@@ -66,7 +66,8 @@ bool initial_configure()
      *    其他路径则是CommandTrayHost.exe所在目录指定
      * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
      *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
-     * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响
+     * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响. 当然了默认配置是为了演示用，
+     *    启用了全部热键，第二个启动时会提示热键冲突，禁用或者修改第二个的热键即可。
      * 6. 如果改成 "enable_cache": true ，则会将用户操作缓存到command_tray_host.cache
      *    可以缓存用户的启用停用状态，窗口的位置大小，以及显示隐藏状态。作用下次启动
      *    CommandTrayHost.exe时，会忽略config.json里面的值。

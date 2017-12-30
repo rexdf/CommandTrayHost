@@ -202,7 +202,7 @@ example configure
     "show_hotkey_in_menu": true,
     "enable_hotkey": true,
     "start_show_silent": true,
-    "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No
+    "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No button
 }
 ```
 
