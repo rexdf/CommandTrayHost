@@ -6,6 +6,10 @@
 #include "utils.hpp"
 #include "filewatcher.h"
 
+#ifdef _DEBUG
+#include "test.hpp"
+#endif
+
 #ifndef __cplusplus
 #undef NULL
 #define NULL 0
@@ -1162,31 +1166,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	//TryDeleteUpdateFiles();
 
 #ifdef _DEBUG
-	{
-		cron_expr expr;
-		ZeroMemory(&expr, sizeof(expr));
-		const char* err = NULL;
-		cron_parse_expr("8 */2 15-16 29 2 *", &expr, &err);
-		if (err)LOGMESSAGE(L"cron_parse_expr err: %S\n", err);
-		else LOGMESSAGE(L"cron_parse_expr ok!\n");
-		assert(0 == err);
-		time_t cur = time(NULL);
-		time_t next = cron_next(&expr, cur);
-
-		LOGMESSAGE(L"%lld -> %lld diff:%lld", next, cur, next - cur);
-		double dif = difftime(next, cur);
-		char buffer[80];
-		tm t1, t2;
-		localtime_s(&t1, &cur);
-		localtime_s(&t2, &next);
-		strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S", &t1);
-		LOGMESSAGE(L"t1:%S %f\n", buffer, dif);
-		strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d_%H:%M:%S", &t2);
-		LOGMESSAGE(L"t2:%S %f\n", buffer, dif);
-		LOGMESSAGE(L"%lld\n", ((time_t)-1));
-		LOGMESSAGE(L"ARRAYSIZE %d\n", ARRAYSIZE("start") - 1);
-	}
+	experimental_test();
 #endif
+
 	if (conform_cache_expire)
 	{
 		HANDLE filewatch_thread;

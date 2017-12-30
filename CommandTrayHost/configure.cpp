@@ -732,6 +732,15 @@ rapidjson::SizeType configure_reader(std::string& out)
 			}
 			return true;
 		} },
+		{ "need_renew",iNullType,true,[](const Value& val, PCSTR name)->bool {
+			return false;
+		}, [&allocator](Value& val, PCSTR name)->bool {
+			if (!val.HasMember(name))
+			{
+				val.AddMember("need_renew", false, allocator);
+			}
+			return true;
+		} },
 	};
 
 	//hot reloading
@@ -1612,6 +1621,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 	}
 
 	StringBuffer sb;
+	//Writer<StringBuffer,UTF8<>, ASCII<>> writer(sb);
 	Writer<StringBuffer> writer(sb);
 	d.Accept(writer);
 	out = sb.GetString();
@@ -2030,110 +2040,123 @@ void handle_crontab(int idx)
 		PCSTR log_msg = nullptr, log_cron_msg = nullptr;
 		int log_count = 0;
 		std::string crontab_method = crontab_ref["method"];
+		bool need_renew = crontab_ref["need_renew"];
 		extern HANDLE ghJob;
 		bool enable_cache_backup = enable_cache;
 		enable_cache = false;
 
 		bool to_start;
-		if (crontab_method.compare(0, ARRAYSIZE("start") - 1, "start") == 0)
+		if (false == need_renew)
 		{
-			to_start = true;
-
-			if (config_i_ref["running"])
+			if (crontab_method.compare(0, ARRAYSIZE("start") - 1, "start") == 0)
 			{
-				int64_t handle = config_i_ref["handle"];
-				DWORD lpExitCode;
-				BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
-				if (retValue != 0 && lpExitCode == STILL_ACTIVE)
+				to_start = true;
+
+				if (config_i_ref["running"])
 				{
-					to_start = false;
-					log_msg = "method:start program is still running.";
+					int64_t handle = config_i_ref["handle"];
+					DWORD lpExitCode;
+					BOOL retValue = GetExitCodeProcess(reinterpret_cast<HANDLE>(handle), &lpExitCode);
+					if (retValue != 0 && lpExitCode == STILL_ACTIVE)
+					{
+						to_start = false;
+						log_msg = "method:start program is still running.";
+					}
+				}
+				if (to_start)
+				{
+					/*config_i_ref["enabled"] = true;
+					create_process(config_i_ref, ghJob, true);*/
+					log_msg = "method:start started.";
+					//crontab_write_log = true;
+				}
+			}
+			/*else if (crontab_method == "restart")
+			{
+
+			}
+			else if (crontab_method == "stop")*/
+			else
+			{
+				to_start = false;
+				if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
+				{
+					disable_enable_menu(config_i_ref, ghJob);
+					log_msg = "method:stop killed.";
+					//crontab_write_log = true;
+				}
+				if (crontab_method.compare(0, ARRAYSIZE("restart") - 1, "restart") == 0) // should I minus 1
+				{
+					to_start = true;
+					/*config_i_ref["enabled"] = true;
+					create_process(config_i_ref, ghJob, false, true);*/
+					log_msg = "method:restart done.";
+					//crontab_write_log = true;
 				}
 			}
 			if (to_start)
 			{
-				/*config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob, true);*/
-				log_msg = "method:start started.";
-				//crontab_write_log = true;
-			}
-		}
-		/*else if (crontab_method == "restart")
-		{
-
-		}
-		else if (crontab_method == "stop")*/
-		else
-		{
-			to_start = false;
-			if (config_i_ref["enabled"] && config_i_ref["running"] && config_i_ref["en_job"])
-			{
-				disable_enable_menu(config_i_ref, ghJob);
-				log_msg = "method:stop killed.";
-				//crontab_write_log = true;
-			}
-			if (crontab_method.compare(0, ARRAYSIZE("restart") - 1, "restart") == 0) // should I minus 1
-			{
-				to_start = true;
-				/*config_i_ref["enabled"] = true;
-				create_process(config_i_ref, ghJob, false, true);*/
-				log_msg = "method:restart done.";
-				//crontab_write_log = true;
-			}
-		}
-		if (to_start)
-		{
-			config_i_ref["enabled"] = true;
-			bool start_show = false, config_i_start_show_backup = false;
-			if (json_object_has_member(crontab_ref, "start_show"))
-			{
-				start_show = crontab_ref["start_show"];
-			}
-			else
-			{
-				if (enable_cache_backup && !disable_cache_show)
+				config_i_ref["enabled"] = true;
+				bool start_show = false, config_i_start_show_backup = false;
+				if (json_object_has_member(crontab_ref, "start_show"))
 				{
-					auto& ref = (*global_cache_configs_pointer)[idx];
-					if (check_cache_valid(ref["valid"].get<int>(), cShow))
+					start_show = crontab_ref["start_show"];
+				}
+				else
+				{
+					if (enable_cache_backup && !disable_cache_show)
 					{
-						start_show = ref["start_show"];
-						LOGMESSAGE(L"start_show cache hit!");
+						auto& ref = (*global_cache_configs_pointer)[idx];
+						if (check_cache_valid(ref["valid"].get<int>(), cShow))
+						{
+							start_show = ref["start_show"];
+							LOGMESSAGE(L"start_show cache hit!");
+						}
 					}
 				}
+				if (json_object_has_member(config_i_ref, "start_show"))
+				{
+					config_i_start_show_backup = config_i_ref["start_show"];
+				}
+				config_i_ref["start_show"] = start_show;
+				create_process(config_i_ref, ghJob, false, true);
+				config_i_ref["start_show"] = config_i_start_show_backup;
 			}
-			if (json_object_has_member(config_i_ref, "start_show"))
-			{
-				config_i_start_show_backup = config_i_ref["start_show"];
-			}
-			config_i_ref["start_show"] = start_show;
-			create_process(config_i_ref, ghJob, false, true);
-			config_i_ref["start_show"] = config_i_start_show_backup;
 		}
 		enable_cache = enable_cache_backup;
 
 
 		int crontab_count = crontab_ref["count"];
 
-		if (crontab_count != 1)
+		if (need_renew || crontab_count != 1)
 		{
 			cron_expr c;
 			if (nullptr != get_cron_expr(config_i_ref, c))
 			{
 				time_t next_t = 0, now_t = time(NULL);
 				next_t = cron_next(&c, now_t); // return -1 when failed
-				LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
-				if (next_t > now_t)
+				LOGMESSAGE(L"next_t %llu now_t %llu\n", next_t, now_t);
+				if (next_t != static_cast<time_t>(-1) && next_t > now_t)
 				{
 					log_time_next = next_t; // logging
 
 					next_t -= now_t;
+					if (next_t > CRONTAB_MAXIUM_SECONDS)
+					{
+						next_t = CRONTAB_RENEW_MARKER;
+						if (!need_renew)crontab_ref["need_renew"] = true;
+					}
+					else if(need_renew)
+					{
+						crontab_ref["need_renew"] = false;
+					}
 					next_t *= 1000;
-					if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
+					//if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
 					SetTimer(hWnd, VM_TIMER_BASE + idx, static_cast<UINT>(next_t), NULL);
 
 					log_cron_msg = "schedule next"; // logging
 
-					if (crontab_count > 1)
+					if (false == need_renew && crontab_count > 1)
 					{
 						crontab_ref["count"] = crontab_count - 1;
 						log_count = crontab_count - 1;
@@ -2207,12 +2230,17 @@ void start_all(HANDLE ghJob, bool force)
 					extern HWND hWnd;
 					time_t next_t = 0, now_t = time(NULL);
 					next_t = cron_next(&c, now_t); // return -1 when failed
-					LOGMESSAGE(L"next_t %lld now_t %lld\n", next_t, now_t);
-					if (next_t > now_t)
+					LOGMESSAGE(L"next_t %llu now_t %llu\n", next_t, now_t);
+					if (next_t != static_cast<time_t>(-1) && next_t > now_t)
 					{
 						next_t -= now_t;
+						if (next_t > CRONTAB_MAXIUM_SECONDS)
+						{
+							next_t = CRONTAB_RENEW_MARKER;
+							i["crontab_config"]["need_renew"] = true;
+						}
 						next_t *= 1000;
-						if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
+						//if (next_t > USER_TIMER_MAXIMUM)next_t = USER_TIMER_MAXIMUM;
 						SetTimer(hWnd, VM_TIMER_BASE + cache_config_cursor, static_cast<UINT>(next_t), NULL);
 					}
 				}

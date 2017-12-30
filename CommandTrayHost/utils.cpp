@@ -150,10 +150,12 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 			if ('a' <= c1 && c1 <= 'f')c1 -= 'a' - 10;
 			else if ('A' <= c1 && c1 <= 'F')c1 -= 'A' - 10;
 			else if ('0' <= c1 && c1 <= '9')c1 -= '0';
+			else return false;
 
 			if ('a' <= c2 && c2 <= 'f')c2 -= 'a' - 10;
 			else if ('A' <= c2 && c2 <= 'F')c2 -= 'A' - 10;
 			else if ('0' <= c2 && c2 <= '9')c2 -= '0';
+			else return false;
 
 			if (0 <= c1 && c1 <= 15 && 0 <= c2 && c2 <= 15)
 			{
@@ -723,7 +725,6 @@ void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache)
 				name, pid,
 				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
 			TerminateProcess(hProcess, 0);
-			CloseHandle(hProcess);
 		}
 		else
 		{
@@ -731,8 +732,14 @@ void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache)
 				name, pid,
 				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
 		}
+		CloseHandle(hProcess);
 	}
-
+#ifdef _DEBUG
+	else
+	{
+		msg_prompt(L"It should never here. GetProcessId(hProcess) != pid", L"Why this happened?");
+	}
+#endif
 	if (is_update_cache && enable_cache && !disable_cache_enabled)
 	{
 		update_cache("enabled", false, cEnabled);
