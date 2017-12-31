@@ -37,7 +37,8 @@ const nlohmann::json language_data = u8R"json({
         "Clear cache?": "Clear cache?",
         "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.":"You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.",
         "\n\nChoose Cancel to do nothing": "\n\nChoose Cancel to do nothing",
-        "Check for Updates...": "Check for Updates..."
+        "Check for Updates...": "Check for Updates...",
+        "New version found! Download?\n\n": "New version found! Download?\n\n"
     }
 })json"_json;
 

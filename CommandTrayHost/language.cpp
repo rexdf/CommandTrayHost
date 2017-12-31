@@ -9,7 +9,7 @@
 extern CHAR locale_name[LOCALE_NAME_MAX_LENGTH];
 extern BOOL isZHCN, isENUS;
 
-std::string translate(std::string en)
+std::string translate(const std::string& en)
 {
 	if (language_data == nullptr)return en;
 	/*char lang[10];
@@ -29,7 +29,7 @@ std::string translate(std::string en)
 	return language_data[locale_name][en.c_str()];
 }
 
-std::wstring translate_w2w(std::wstring en)
+std::wstring translate_w2w(const std::wstring& en)
 {
 	if (isENUS)return en;
 	return  utf8_to_wstring(translate(wstring_to_utf8(en)));

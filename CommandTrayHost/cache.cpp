@@ -90,9 +90,9 @@ int is_cache_not_expired2()
 					L"config.json被编辑过了，缓存可能已经失效！\n\n选择 是 则清空缓存"
 					L"\n\n选择 否 则保留缓存数据"
 					:
-					translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
-						L" cache\n\nChoose No to keep expired cache.").c_str(),
-					isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+					utf8_to_wstring(translate("You just edit config.json!\n\nChoose Yes to clear"
+						" cache\n\nChoose No to keep expired cache.")).c_str(),
+					isZHCN ? L"是否要清空缓存？" : utf8_to_wstring(translate("Clear cache?")).c_str(),
 					MB_YESNO
 				);
 			}
@@ -163,10 +163,10 @@ bool reload_config()
 				L"\n\n选择 否 重新加载配置，尽最大努力保留缓存(如果启用缓存)，cmd path working_directory未修改的运行中的程序不会被关闭"
 				L"\n\n选择 取消 下次启动CommandTrayHost才加载配置"
 				:
-				(translate_w2w(L"You just edit config.json!\n\nChoose Yes to clear"
-					L" cache\n\nChoose No to keep expired cache.") +
-					translate_w2w(L"\n\nChoose Cancel to do nothing")).c_str(),
-				isZHCN ? L"是否要清空缓存？" : translate_w2w(L"Clear cache?").c_str(),
+				utf8_to_wstring(translate("You just edit config.json!\n\nChoose Yes to clear"
+					" cache\n\nChoose No to keep expired cache.") +
+					translate("\n\nChoose Cancel to do nothing")).c_str(),
+				isZHCN ? L"是否要清空缓存？" : utf8_to_wstring(translate("Clear cache?")).c_str(),
 				MB_YESNOCANCEL
 			);
 		}

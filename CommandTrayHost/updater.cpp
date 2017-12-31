@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "updater.h"
 #include "utils.hpp"
+#include "language.h"
+#include "CommandTrayHost.h"
 
 
 #ifdef _WIN64
@@ -19,9 +21,11 @@ extern int volatile atom_variable_for_updater;
 //extern bool auto_update;
 extern bool skip_prelease;
 extern bool keep_update_history;
+extern BOOL isZHCN;
 
 bool unzip(BSTR source, BSTR dest)
 {
+	//https://www.codeproject.com/Articles/280650/Zip-Unzip-using-Windows-Shell
 	//BSTR source = L"C:\\test.zip\\\0\0";
 	//BSTR dest = L"C:\\test\\\0\0"; // Currently it is assumed that the there exist Folder "Test" in C:
 
@@ -100,14 +104,28 @@ struct ComInit
 		if (SUCCEEDED(hr)) ::CoUninitialize();
 		if (0 == ret)
 		{
-			if (last_atom_updater)
+			/*if (last_atom_updater)
 			{
 				msg_prompt(L"Updated!", L"Updater");
+			}*/
+			int result = msg_prompt(
+				isZHCN ? L"已经更新完成，是否现在就启动新版本？也可以之后手动重启\n\n" :
+				utf8_to_wstring(translate("Update done! Restart CommandTrayHost Now?\n\n")).c_str(),
+				isZHCN ? L"更新完成" : L"Update finished",
+				MB_YESNO);
+			if (result == IDYES)
+			{
+				extern HWND hWnd;
+				PostMessage(hWnd, WM_COMMAND, WM_TASKBARNOTIFY_MENUITEM_FORCE_RESTART, NULL);
 			}
 		}
 		else if (-3 == ret)
 		{
 			// user click No button, do nothing and quit
+		}
+		else if (10 == ret)
+		{
+			// filename is not CommandTrayHost.exe
 		}
 		else if (ret < 0)
 		{
@@ -264,7 +282,11 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 					init.SetRet(-2);
 					continue;
 				}
-				int result = msg_prompt((L"New version found! Download?\n\n" + body).c_str(), tag_name.c_str(), MB_YESNO);
+				int result = msg_prompt(
+					isZHCN ? (L"发现新版本! 是否要下载？\n\n" + body).c_str() :
+					(utf8_to_wstring(translate("New version found! Download?\n\n")) + body).c_str(),
+					tag_name.c_str(),
+					MB_YESNO);
 				if (result == IDNO) {
 					init.SetRet(-3);
 					return -3;
@@ -343,12 +365,28 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 					SysFreeString(dst_dir);
 					if (ret == 0)
 					{
-						if (TRUE == PathFileExists(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe"))
+						extern TCHAR szPathToExe[MAX_PATH * 10];
+						PCWSTR exe_name_pointer = wcsrchr(szPathToExe, L'\\');
+						LOGMESSAGE(L"exe_name_pointer: %s\n", exe_name_pointer);
+						if (StrCmp(exe_name_pointer + 1, L"CommandTrayHost.exe") == 0)
 						{
-							DeleteFile(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
+							if (TRUE == PathFileExists(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe"))
+							{
+								DeleteFile(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
+							}
+							MoveFile(L"CommandTrayHost.exe", UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
+							MoveFile(UPDATE_TEMP_DIR L"\\" FOLDER_NAME L"\\CommandTrayHost.exe", L"CommandTrayHost.exe");
 						}
-						MoveFile(L"CommandTrayHost.exe", UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
-						MoveFile(UPDATE_TEMP_DIR L"\\" FOLDER_NAME L"\\CommandTrayHost.exe", L"CommandTrayHost.exe");
+						else
+						{
+							msg_prompt("Update download and unzip done.\n\n"
+								L"Filename is not CommandTrayHost.exe,"
+								L" you need to copy and rename by hand",
+								L"update error",
+								MB_ICONERROR);
+							ret = 10;
+							init.SetRet(10);
+						}
 						if (ret == 0)break;
 					}
 				}

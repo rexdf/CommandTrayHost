@@ -109,4 +109,5 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 #define BUILD_TIME_EN __TIMESTAMP__
 
 #define UPDATE_TEMP_DIR L"temp"
+#define UPDATE_URL L"https://api.github.com/repos/rexdf/CommandTrayHost/releases"
 

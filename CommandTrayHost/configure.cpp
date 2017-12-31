@@ -7,6 +7,7 @@
 
 
 extern bool is_runas_admin;
+extern bool is_from_self_restart;
 extern nlohmann::json global_stat;
 extern nlohmann::json* global_cache_configs_pointer;
 extern nlohmann::json* global_configs_pointer;
@@ -2873,7 +2874,7 @@ void create_process(
 						);*/
 						ShowTrayIcon(
 							isZHCN ? (name + L"\n因UIDP限制，AssignProcessToObject失败，程序现在不受CommandTrayHost控制，你需要手动关掉它。").c_str()
-							: (name + L"\n" + translate_w2w(L"Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager.")).c_str()
+							: (name + L"\n" + utf8_to_wstring(translate("Could not AssignProcessToObject. If not show up, you maybe need to kill the process by TaskManager."))).c_str()
 							, NIM_MODIFY
 						);
 					}
@@ -3476,6 +3477,34 @@ void delete_lockfile()
 }
 */
 
+void RestartNow()
+{
+	if (szPathToExe[0])
+	{
+		SHELLEXECUTEINFO sei = { sizeof(sei) };
+		//sei.lpVerb = is_runas_admin ? L"runas" : L"open";
+		sei.lpVerb = L"open";
+		//sei.lpFile = szPath;
+		sei.lpFile = szPathToExe;
+		sei.lpParameters = L" force-restart";
+		sei.hwnd = NULL;
+		sei.nShow = SW_NORMAL;
+		if (!ShellExecuteEx(&sei))
+		{
+			DWORD dwError = GetLastError();
+			if (dwError == ERROR_CANCELLED)
+			{
+				msg_prompt(L"Restart Failed!", L"Error", MB_OK | MB_ICONERROR);
+			}
+		}
+		else
+		{
+			extern HICON gHicon;
+			CLEANUP_BEFORE_QUIT(-1);
+			_exit(2);
+		}
+	}
+}
 
 void ElevateNow()
 {
@@ -3626,7 +3655,7 @@ bool is_another_instance_running()
 			ret = ERROR_ALREADY_EXISTS == GetLastError();
 			if (ret == true)
 			{
-				CloseHandle(ghMutex);
+				if (ghMutex)CloseHandle(ghMutex);
 				ghMutex = NULL;
 			}
 		}
@@ -3634,7 +3663,7 @@ bool is_another_instance_running()
 		{
 			ret = true;
 		}
-
+		if (ghMutex)CloseHandle(ghMutex);
 		ghMutex = m_hMutex;
 		LOGMESSAGE(L"%d ghMutex: 0x%x\n", ret, ghMutex);
 	}
@@ -3695,6 +3724,9 @@ DWORD GetNamedProcessID(LPCTSTR process_name)
 	return 0;
 }
 
+/*
+ * only can be called once
+ */
 void makeSingleInstance3()
 {
 	if (is_another_instance_running())
@@ -3702,7 +3734,7 @@ void makeSingleInstance3()
 		LOGMESSAGE(L"is_another_instance_running!\n");
 		bool to_exit_now = false;
 		// check by filepath
-		if (false == is_runas_admin)
+		if (is_from_self_restart == false && false == is_runas_admin)
 		{
 			//TCHAR szPathToExe[MAX_PATH * 2];
 			//if (GetModuleFileName(NULL, szPathToExe, ARRAYSIZE(szPathToExe)))
@@ -3735,6 +3767,7 @@ void makeSingleInstance3()
 				L"or rename CommandTrayHost.exe",
 				L"Error",
 				MB_OK | MB_ICONERROR);
+			if (ghMutex)CloseHandle(ghMutex);
 			exit(-1);
 		}
 	}

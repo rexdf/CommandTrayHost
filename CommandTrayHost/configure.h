@@ -68,6 +68,7 @@ BOOL IsMyProgramRegisteredForStartup(PCWSTR);
 BOOL DisableStartUp();
 BOOL EnableStartup();
 void ElevateNow();
+void RestartNow();
 //void makeSingleInstance();
 //void delete_lockfile();
 void makeSingleInstance3();

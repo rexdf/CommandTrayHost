@@ -33,6 +33,7 @@ FILETIME config_last_timestamp;
 //WCHAR szHIcon[MAX_PATH * 2];
 //int icon_size;
 bool is_runas_admin;
+bool is_from_self_restart;
 bool enable_groups_menu;
 bool enable_left_click;
 bool enable_cache;
@@ -833,7 +834,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n\n作者: rexdf" L"\n\n编译时间: " BUILD_TIME_CN) :
 				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\n\nAuthor: rexdf" L"\n\nBuild Timestamp: " BUILD_TIME_EN);
 
-			MessageBox(hWnd, msg, isZHCN ? L"关于" : translate_w2w(L"About").c_str(), 0);
+			MessageBox(hWnd, msg, isZHCN ? L"关于" : utf8_to_wstring(translate("About")).c_str(), 0);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{
@@ -915,8 +916,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_UPDATE)
 		{
 			HANDLE updater_thread = NULL;
-			UpdaterChecker(L"https://api.github.com/repos/rexdf/CommandTrayHost/releases", updater_thread);
+			UpdaterChecker(UPDATE_URL, updater_thread);
 			if (updater_thread)CloseHandle(updater_thread);
+		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_FORCE_RESTART)
+		{
+			RestartNow();
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID)
 		{
@@ -1121,10 +1126,37 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	return ret;
 }
 
+BOOL CheckArgument()
+{
+	LPWSTR *szArglist;
+	int nArgs;
+	szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	if (szArglist)
+	{
+#ifdef _DEBUG
+		for (int i = 0; i < nArgs; i++)
+		{
+			LOGMESSAGE(L"arguments %d :%s\n", i, szArglist[i]);
+		}
+#endif
+		if (nArgs > 1)
+		{
+			if (0 == StrCmp(szArglist[1], L"force-restart"))
+			{
+				LOGMESSAGE(L"is_from_self_restart = true;\n");
+				is_from_self_restart = true;
+			}
+		}
+		LocalFree(szArglist);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
+	CheckArgument();
 	hInst = hInstance;
 	is_runas_admin = check_runas_admin();
 	if (is_runas_admin)
@@ -1186,7 +1218,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	{
 		assert(atom_variable_for_updater == 0);
 		HANDLE updater_thread = NULL;
-		UpdaterChecker(L"https://api.github.com/repos/rexdf/CommandTrayHost/releases", updater_thread);
+		UpdaterChecker(UPDATE_URL, updater_thread);
 		if (updater_thread)CloseHandle(updater_thread);
 	}
 	else

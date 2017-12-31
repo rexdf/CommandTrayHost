@@ -8,5 +8,5 @@ void initialize_local(bool has_lang, PCSTR lang_str);
 
 // std::string translate(std::string);
 
-std::wstring translate_w2w(std::wstring);
-std::string translate(std::string);
+//std::wstring translate_w2w(const std::wstring&);
+std::string translate(const std::string&);
