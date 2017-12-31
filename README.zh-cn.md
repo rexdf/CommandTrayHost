@@ -25,7 +25,9 @@ Windows命令行程序系统托盘管理工具
 
 [下载](https://github.com/rexdf/CommandTrayHost/releases)
 
-配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。支持的编码为UTF8 UTF-16LE UTF-16BE UTF-32等，支持BOM识别。也就是支持记事本保存的Unicode和UTF-8格式。 (请使用1.1-b122之后的版本，有一个重大bug修复。[#4][i4])
+使用前可以先看一眼[wiki](https://github.com/rexdf/CommandTrayHost/wiki)
+
+配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。支持的编码为UTF8 UTF-16LE UTF-16BE UTF-32等，支持BOM识别。也就是支持记事本保存的Unicode和UTF-8格式。
 
 配置样例
 
@@ -265,4 +267,3 @@ Windows命令行程序系统托盘管理工具
 
 
 [i1]: https://github.com/rexdf/CommandTrayHost/issues/1
-[i4]: https://github.com/rexdf/CommandTrayHost/issues/4

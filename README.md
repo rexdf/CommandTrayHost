@@ -24,7 +24,7 @@ A Command Line program systray for Windows
 
 [Download](https://github.com/rexdf/CommandTrayHost/releases)
 
-configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Supported encodings: `UTF-8 UTF-8BOM UTF-16LE UTF-16BE UTF-32LE UTF32-BE`. (A fatal bug is fixed in 1.1-b112 [#4][i4])
+configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Supported encodings: `UTF-8 UTF-8BOM UTF-16LE UTF-16BE UTF-32LE UTF32-BE`.
 
 example configure
 
@@ -260,4 +260,4 @@ See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github
 
 
 [i1]: https://github.com/rexdf/CommandTrayHost/issues/1
-[i4]: https://github.com/rexdf/CommandTrayHost/issues/4
+
