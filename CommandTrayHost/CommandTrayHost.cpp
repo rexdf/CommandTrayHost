@@ -1201,6 +1201,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	}
 	cachefile_invalid = true; // after first load, every time config is reload, cache must need to be write
 	check_admin(is_runas_admin);
+	if (is_from_self_restart && !keep_update_history)
+	{
+		_wsystem(L"rd /s /q " UPDATE_TEMP_DIR);
+	}
 	//initialize_local();
 	//
 	start_all(ghJob);
