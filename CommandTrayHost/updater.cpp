@@ -19,7 +19,7 @@
 
 extern int volatile atom_variable_for_updater;
 //extern bool auto_update;
-extern bool skip_prelease;
+extern bool skip_prerelease;
 extern bool keep_update_history;
 extern BOOL isZHCN;
 
@@ -276,7 +276,7 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 					break;
 				}
 
-				if (prerelease && skip_prelease)
+				if (prerelease && skip_prerelease)
 				{
 					ret = -2;
 					init.SetRet(-2);

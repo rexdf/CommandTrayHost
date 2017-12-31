@@ -207,7 +207,7 @@ Windows命令行程序系统托盘管理工具
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
     "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击加载配置弹窗的否
     "auto_update": true,
-    "skip_prelease": true,
+    "skip_prerelease": true,
     "keep_update_history": false, // 是否保留自动更新时的临时文件
 }
 ```

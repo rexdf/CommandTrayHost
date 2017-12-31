@@ -36,7 +36,7 @@ extern bool auto_hot_reloading_config;
 extern bool reload_config_with_cache;
 
 extern bool auto_update;
-extern bool skip_prelease;
+extern bool skip_prerelease;
 extern bool keep_update_history;
 
 extern bool repeat_mod_hotkey;
@@ -219,7 +219,7 @@ bool initial_configure()
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
     "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击加载配置弹窗的否
     "auto_update": true,
-    "skip_prelease": true,
+    "skip_prerelease": true,
     "keep_update_history": false, // 是否保留自动更新时的临时文件
 })json" : u8R"json({
     /**
@@ -361,7 +361,7 @@ bool initial_configure()
     "start_show_silent": true,
     "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No
     "auto_update": true,
-    "skip_prelease": true,
+    "skip_prerelease": true,
     "keep_update_history": false,
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
@@ -974,7 +974,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 	repeat_mod_hotkey = false;
 	start_show_silent = true;
 	auto_update = true;
-	skip_prelease = true;
+	skip_prerelease = true;
 	keep_update_history = false;
 	global_hotkey_alpha_step = 5;
 	auto_hot_reloading_config = false;
@@ -993,7 +993,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 		&repeat_mod_hotkey,  // index 8
 
 		&auto_update,
-		&skip_prelease,
+		&skip_prerelease,
 		&keep_update_history,
 	};
 	const int cache_options_numbers = 7;
@@ -1204,7 +1204,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ "repeat_mod_hotkey", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
 		{ "auto_update", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
-		{ "skip_prelease", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "skip_prerelease", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "keep_update_history", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
 		{ "global_hotkey_alpha_step", iIntType, true, [](const Value& val,PCSTR name)->bool {

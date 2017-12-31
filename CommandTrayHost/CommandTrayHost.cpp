@@ -48,7 +48,7 @@ bool auto_hot_reloading_config;
 bool reload_config_with_cache;
 
 bool auto_update;
-bool skip_prelease;
+bool skip_prerelease;
 bool keep_update_history;
 
 int volatile atom_variable_for_config;
