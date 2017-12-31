@@ -240,11 +240,6 @@ In order to make sure `resource.h` and `CommandTrayHost.rc` is checkouted in enc
 
 See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github.com/rexdf/CommandTrayHost/blob/master/CommandTrayHost/language_data.h)
 
-# Road map
-
-- [x] Timer, task schedule, crontab, monitor
-- [x] Hot reloading config.json
-
 # Help wanted
 
 - [ ] When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)

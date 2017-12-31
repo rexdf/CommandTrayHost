@@ -246,11 +246,6 @@ Windows命令行程序系统托盘管理工具
 
 看这个文件 [CommandTrayHost/CommandTrayHost/language_data.h](https://github.com/rexdf/CommandTrayHost/blob/master/CommandTrayHost/language_data.h)
 
-# Road map
-
-- [x] 计划任务，定时任务
-- [x] 热加载config.json
-
 # TODO
 
 - [ ] 现在一旦重启某个应用，那么之前的窗口就会被关掉，然后重新开启一个。这样之前的日志就丢失了。希望对每个应用，启动一个独立辅助Console，即使重新启动应用，历史日志(标准IO输出)依然可以保留。 `use_builtin_console`就是用来做这个用途的。可以参考的有 [ConEmu](https://github.com/Maximus5/ConEmu)，看上去必须要注入子进程，将其标准IO导入到ConsoleHelper才行。
