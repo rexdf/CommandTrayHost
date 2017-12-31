@@ -34,6 +34,10 @@ extern int cache_config_cursor;
 extern bool auto_hot_reloading_config;
 extern bool reload_config_with_cache;
 
+extern bool auto_update;
+extern bool skip_prelease;
+extern bool keep_update_history;
+
 extern bool repeat_mod_hotkey;
 extern int global_hotkey_alpha_step;
 
@@ -213,6 +217,9 @@ bool initial_configure()
     "enable_hotkey": true,
     "start_show_silent": true, // 启动的时候屏幕不会闪(也就是等到获取到窗口才显示)
     "auto_hot_reloading_config": false, // 这个为true时，相当于自动点击加载配置弹窗的否
+    "auto_update": true,
+    "skip_prelease": true,
+    "keep_update_history": false, // 是否保留自动更新时的临时文件
 })json" : u8R"json({
     /**
      * 1. "cmd" must contain .exe. If you want to run a bat, you can use cmd.exe /c.
@@ -352,6 +359,9 @@ bool initial_configure()
     "enable_hotkey": true,
     "start_show_silent": true,
     "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No
+    "auto_update": true,
+    "skip_prelease": true,
+    "keep_update_history": false,
 })json";
 	std::ofstream o(CONFIG_FILENAMEA);
 	if (o.good()) { o << config << std::endl; return true; }
@@ -855,6 +865,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ u8"主页", u8"Home" },
 		{ u8"关于", u8"About" },
 		{ u8"帮助", u8"Help" },
+		{ u8"检查更新...", u8"Check for Updates..." },
 	};
 	auto lambda_menu_check = [&global_menu, &configs_menu, &d, &allocator](Value& val, PCSTR name)->bool {
 		auto& menu_ref = d["menu"];
@@ -878,7 +889,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 	int global_hotkey_idx = 0;
 	auto lambda_global_hotkey_idx = [&global_menu, &configs_menu, &global_hotkey_idx, &current_hotkey_success, &allocator, &d](Value& val, PCSTR name)->bool {
 		const int index_of_left_click = 7;
-		const int others_menu_translation = 5;
+		const int others_menu_translation = ARRAYSIZE(global_menu) - index_of_left_click;
 		if (global_hotkey_idx < index_of_left_click)
 		{
 			auto& menu_ref = d["menu"];
@@ -961,6 +972,9 @@ rapidjson::SizeType configure_reader(std::string& out)
 	disable_cache_alpha = false;
 	repeat_mod_hotkey = false;
 	start_show_silent = true;
+	auto_update = true;
+	skip_prelease = true;
+	keep_update_history = false;
 	global_hotkey_alpha_step = 5;
 	auto_hot_reloading_config = false;
 
@@ -976,6 +990,10 @@ rapidjson::SizeType configure_reader(std::string& out)
 		// others cache_options_numbers = 7;
 		&start_show_silent,  // index 7
 		&repeat_mod_hotkey,  // index 8
+
+		&auto_update,
+		&skip_prelease,
+		&keep_update_history,
 	};
 	const int cache_options_numbers = 7;
 
@@ -1184,6 +1202,10 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ "start_show_silent", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "repeat_mod_hotkey", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 
+		{ "auto_update", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "skip_prelease", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+		{ "keep_update_history", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
+
 		{ "global_hotkey_alpha_step", iIntType, true, [](const Value& val,PCSTR name)->bool {
 			global_hotkey_alpha_step = val[name].GetInt();
 			if (global_hotkey_alpha_step < 1 || global_hotkey_alpha_step>255)return false;
@@ -1259,7 +1281,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 			d.RemoveMember("cache");
 		}
 
-		if (global_stat == nullptr) 
+		if (global_stat == nullptr)
 		{
 			is_cache_not_expired2();  // why here? enable_cache & is_ZHCN
 		}
@@ -1421,9 +1443,9 @@ rapidjson::SizeType configure_reader(std::string& out)
 						d_config_ref,
 						d_cache_config_pointer,
 						cache_name.c_str(),
-						cache_size, 
-						global_cache_size, 
-						i, 
+						cache_size,
+						global_cache_size,
+						i,
 						find_type
 					);
 					if (is_cache_valid && find_type != 1 && find_type != 2)is_cache_valid = false;
@@ -1466,7 +1488,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 						cache_size, idx, global_cache_size, "alpha", find_type, cache_alpha),
 						allocator);
 					cache_item.AddMember("valid", get_cache_value<int>(d_cache_config_pointer,
-						cache_size, idx, global_cache_size, "valid", find_type, 0), 
+						cache_size, idx, global_cache_size, "valid", find_type, 0),
 						allocator);*/
 					cache_item.AddMember("enabled", get_cache_value<bool>(d_cache_config_pointer,
 						cache_size, idx, global_cache_size, "enabled", find_type, cache_enabled),
@@ -1474,8 +1496,8 @@ rapidjson::SizeType configure_reader(std::string& out)
 					cache_item.AddMember("start_show", get_cache_value<bool>(d_cache_config_pointer,
 						cache_size, idx, global_cache_size, "start_show", find_type, cache_start_show),
 						allocator);
-					
-					
+
+
 					d_cache_config_ref.PushBack(cache_item, allocator);
 				}
 				/*if (false == printf_to_bufferA(
@@ -1652,7 +1674,7 @@ bool type_check_groups(const nlohmann::json& root, int deep)
 	{
 		if (m.is_number_unsigned())
 		{
-			int val = m;
+			size_t val = m;
 			if (val >= number_of_configs)
 			{
 				msg_prompt(//NULL,
@@ -2025,7 +2047,7 @@ void update_hwnd_all()
 	}
 }
 
-void handle_crontab(int idx)
+void handle_crontab(size_t idx)
 {
 	auto& config_i_ref = (*global_configs_pointer)[idx]; // ["crontab_config"]
 	if (json_object_has_member(config_i_ref, "crontab_config"))
@@ -2149,7 +2171,7 @@ void handle_crontab(int idx)
 						next_t = CRONTAB_RENEW_MARKER;
 						if (!need_renew)crontab_ref["need_renew"] = true;
 					}
-					else if(need_renew)
+					else if (need_renew)
 					{
 						crontab_ref["need_renew"] = false;
 					}

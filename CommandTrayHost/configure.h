@@ -24,6 +24,7 @@ enum GloabalMenuNameIndx
 	mHome,
 	mAbout,
 	mHelp,
+	mUpdate,
 };
 
 const int hotkey_ids_global_section[] = {
@@ -50,7 +51,7 @@ void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false
 void show_hide_toggle(nlohmann::json& jsp);
 void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 
-void handle_crontab(int idx);
+void handle_crontab(size_t idx);
 
 void hideshow_all(bool is_hideall = true);
 void start_all(HANDLE, bool force = false);

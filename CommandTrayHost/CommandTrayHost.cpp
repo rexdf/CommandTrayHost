@@ -5,6 +5,7 @@
 #include "cache.h"
 #include "utils.hpp"
 #include "filewatcher.h"
+#include "updater.h"
 
 #ifdef _DEBUG
 #include "test.hpp"
@@ -45,7 +46,12 @@ bool start_show_silent;
 bool auto_hot_reloading_config;
 bool reload_config_with_cache;
 
+bool auto_update;
+bool skip_prelease;
+bool keep_update_history;
+
 int volatile atom_variable_for_config;
+int volatile atom_variable_for_updater;
 bool cachefile_invalid;
 
 // during loading configuration file in configure_reader
@@ -427,6 +433,7 @@ BOOL ShowPopupMenuJson4()
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), (isZHCN ? L"帮助" : translate_w2w(L"Help").c_str()));
 	*/
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_OPENURL, utf8_to_wstring(menu_ref[mHome]).c_str());
+	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_UPDATE, utf8_to_wstring(menu_ref[mUpdate]).c_str());
 	AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_ABOUT, utf8_to_wstring(menu_ref[mAbout]).c_str());
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(menu_ref[mHelp]).c_str());
 	vctHmenu.push_back(hSubMenu);
@@ -905,6 +912,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 			}
 		}
+		else if (nID == WM_TASKBARNOTIFY_MENUITEM_UPDATE)
+		{
+			HANDLE updater_thread = NULL;
+			UpdaterChecker(L"https://api.github.com/repos/rexdf/CommandTrayHost/releases", updater_thread);
+			if (updater_thread)CloseHandle(updater_thread);
+		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_CHECK_CACHEVALID)
 		{
 			//unregisterhotkey_killtimer_all();
@@ -1012,7 +1025,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		if (VM_TIMER_BASE <= wParam && wParam <= 0xBF00)
 		{
-			int idx = static_cast<int>(wParam - VM_TIMER_BASE);
+			size_t idx = static_cast<size_t>(wParam - VM_TIMER_BASE);
 			if (idx >= number_of_configs || idx < 0)
 			{
 				msg_prompt(L"Crontab has some fatal error unknown idx! Please report this windows screenshot to author!",
@@ -1168,6 +1181,18 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #ifdef _DEBUG
 	experimental_test();
 #endif
+
+	if (auto_update)
+	{
+		assert(atom_variable_for_updater == 0);
+		HANDLE updater_thread = NULL;
+		UpdaterChecker(L"https://api.github.com/repos/rexdf/CommandTrayHost/releases", updater_thread);
+		if (updater_thread)CloseHandle(updater_thread);
+	}
+	else
+	{
+		atom_variable_for_updater = -1;
+	}
 
 	if (conform_cache_expire)
 	{

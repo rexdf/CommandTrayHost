@@ -36,7 +36,8 @@ const nlohmann::json language_data = u8R"json({
         "CommandTrayHost Started，Click Tray icon to Hide/Show Console.": "CommandTrayHost Started，Click Tray icon to Hide/Show Console.",
         "Clear cache?": "Clear cache?",
         "You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.":"You just edit config.json!\n\nChoose Yes to clear cache\n\nChoose No to keep expired cache.",
-        "\n\nChoose Cancel to do nothing": "\n\nChoose Cancel to do nothing"
+        "\n\nChoose Cancel to do nothing": "\n\nChoose Cancel to do nothing",
+        "Check for Updates...": "Check for Updates..."
     }
 })json"_json;
 

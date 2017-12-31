@@ -30,6 +30,8 @@
 // TODO: reference additional headers your program requires here
 #include <Shlwapi.h>
 //#include <Shlobj.h>
+#include <atlbase.h>  // CComPtr
+#include <ShlDisp.h>
 
 
 #include <fstream>
@@ -65,6 +67,8 @@
 //#pragma warning(disable : 4995)
 //#endif
 #include <strsafe.h>
+
+
 
 #define CRON_USE_LOCAL_TIME
 #define CRON_COMPILE_AS_CXX
@@ -103,4 +107,6 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 
 #define BUILD_TIME_CN __TIMESTAMP__
 #define BUILD_TIME_EN __TIMESTAMP__
+
+#define UPDATE_TEMP_DIR L"temp"
 

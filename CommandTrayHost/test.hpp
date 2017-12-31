@@ -5,7 +5,7 @@ void experimental_test()
 	cron_expr expr;
 	ZeroMemory(&expr, sizeof(expr));
 	const char* err = NULL;
-	const int test_times = 50000;
+	const int test_times = 1;// 50000;
 	{
 		auto begin = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < test_times; i++) {
@@ -51,13 +51,34 @@ void experimental_test()
 		);
 		{
 			auto begin = std::chrono::high_resolution_clock::now();
-			for (int i = 0; i<test_times; i++)
+			for (int i = 0; i < test_times; i++)
 			{
 				std::vector<uint8_t> a = j.get<std::vector<uint8_t>>();
 				a.data();
 			}
 			auto end = std::chrono::high_resolution_clock::now();
 			LOGMESSAGE(L"j.get<std::vector<uint8_t>>().data() %d times, cost %lld miliseconds\n", test_times, std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+		}
+	}
+	if (0) {
+		HRESULT hr;
+		//LPCTSTR Url = _T("https://api.github.com/repos/rexdf/CommandTrayHost/releases/latest"), File = _T("latest_commandtrayhost.json");
+		LPCTSTR Url = L"http://127.0.0.1:5000", File = L"test.txt";
+		hr = URLDownloadToFile(0, Url, File, 0, 0);
+		switch (hr)
+		{
+		case S_OK:
+			LOGMESSAGE(L"Successful download\n");
+			break;
+		case E_OUTOFMEMORY:
+			LOGMESSAGE(L"Out of memory error\n");
+			break;
+		case INET_E_DOWNLOAD_FAILURE:
+			LOGMESSAGE(L"Cannot access server data\n");
+			break;
+		default:
+			LOGMESSAGE(L"Unknown error\n");
+			break;
 		}
 	}
 }

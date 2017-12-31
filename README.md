@@ -203,6 +203,9 @@ example configure
     "enable_hotkey": true,
     "start_show_silent": true,
     "auto_hot_reloading_config": false, // if true, it's same as automatically clicking clear cache prompt No button
+    "auto_update": true,
+    "skip_prelease": true,
+    "keep_update_history": false,
 }
 ```
 

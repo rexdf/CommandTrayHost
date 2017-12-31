@@ -237,6 +237,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="test.hpp" />
     <ClInclude Include="trash.hpp" />
+    <ClInclude Include="updater.h" />
     <ClInclude Include="utils.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -254,6 +255,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='XP-Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="updater.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
