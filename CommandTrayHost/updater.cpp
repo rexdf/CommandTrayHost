@@ -109,7 +109,7 @@ struct ComInit
 				msg_prompt(L"Updated!", L"Updater");
 			}*/
 			int result = msg_prompt(
-				isZHCN ? L"已经更新完成，是否现在就启动新版本？也可以之后手动重启\n\n" :
+				isZHCN ? L"更新已经完成，是否现在就启动新版本？也可以之后手动重启\n\n" :
 				utf8_to_wstring(translate("Update done! Restart CommandTrayHost Now?\n\n")).c_str(),
 				isZHCN ? L"更新完成" : L"Update finished",
 				MB_YESNO);
