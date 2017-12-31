@@ -219,7 +219,7 @@ Windows命令行程序系统托盘管理工具
 - 如果CommandTrayHost是以管理员运行的，那么启动的要求特权的子进程没啥问题，但是CommandTrayHost开机启动会比较麻烦，不能用菜单的那个。
 - 如果CommandTrayHost是以普通用户运行的，而且没有要求提权，但是 尝试启动了一个要求提权的程序 或者 对程序加上了`"require_admin":true,`， 那么运行时会弹出UAC，授权后是可以正常运行以及重启应用，但是启动后，非特权的CommandTrayHost是没法唤出显示的。
 
-**提示3**: icon制作可以参考 [这里](http://www.imagemagick.org/Usage/thumbnails/#favicon)
+**提示3**: icon制作可以参考 [这里](http://www.imagemagick.org/Usage/thumbnails/#favicon) ，或者从[iconarchive](http://www.iconarchive.com)下载。
 
 **注意**： 所有的路径，必须是`\\`分割的，这是因为json规定字符串，会自动转义`\`之后的字符。
 

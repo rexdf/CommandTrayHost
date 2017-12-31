@@ -215,7 +215,7 @@ example configure
 - CommandTrayHost run as an unprivileged user: you can run a privileged child process and restart it, but you cannot hide/show it. Because of User Interface Privilege Isolation.
 - CommandTrayHost run as Administrator, everthing should work as you want. But you cannot use the builtin startup management.
 
-**Tips3**: How to create ico format [Here](http://www.imagemagick.org/Usage/thumbnails/#favicon)
+**Tips3**: How to create ico format [Here](http://www.imagemagick.org/Usage/thumbnails/#favicon) Or download from [iconarchive](http://www.iconarchive.com).
 
 **Note**: All paths must be `"C:\\Windows"` but not `"C:\Windows"`. Json string will escape `\<c>`.
 
