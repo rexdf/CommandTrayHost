@@ -971,7 +971,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				DWORD dwExStyle = GetWindowLong(cur_hwnd, GWL_EXSTYLE);
 				LOGMESSAGE(L"dwExStyle:0x%x\n", dwExStyle);
 				if (nID == WM_HOTKEY_ADD_ALPHA || nID == WM_HOTKEY_MINUS_ALPHA) {
-					BYTE alpha;
+					BYTE alpha = 255;
 					if (0 == (dwExStyle | WS_EX_LAYERED))
 					{
 						SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
@@ -992,6 +992,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						LOGMESSAGE(L"alpha:%d\n", alpha);
 						//SetLayeredWindowAttributes(hWnd, 0, alpha, LWA_ALPHA);
 						set_wnd_alpha(cur_hwnd, alpha);
+					}
+					else
+					{
+						set_wnd_alpha(cur_hwnd, alpha);
+						LOGMESSAGE(L"error code:0x%x", GetLastError());
 					}
 				}
 				else if (nID == WM_HOTKEY_TOPMOST)
