@@ -386,9 +386,9 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 						{
 							if (TRUE == PathFileExists(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe"))
 							{
-								DeleteFile(UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
+								DeleteFile(UPDATE_TEMP_DIR L"\\CommandTrayHost-" VERSION_NUMS L".exe");
 							}
-							MoveFile(L"CommandTrayHost.exe", UPDATE_TEMP_DIR L"\\CommandTrayHost.exe");
+							MoveFile(L"CommandTrayHost.exe", UPDATE_TEMP_DIR L"\\CommandTrayHost-" VERSION_NUMS L".exe");
 							MoveFile(UPDATE_TEMP_DIR L"\\" FOLDER_NAME L"\\CommandTrayHost.exe", L"CommandTrayHost.exe");
 						}
 						else
