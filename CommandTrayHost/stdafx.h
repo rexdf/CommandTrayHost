@@ -109,5 +109,9 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 #define BUILD_TIME_EN __TIMESTAMP__
 
 #define UPDATE_TEMP_DIR L"temp"
+#if VER_PRODUCTBUILD == 7600
+#define UPDATE_URL L"http://api.rexdf.org/github/repos/rexdf/CommandTrayHost/releases"
+#else
 #define UPDATE_URL L"https://api.github.com/repos/rexdf/CommandTrayHost/releases"
+#endif
 

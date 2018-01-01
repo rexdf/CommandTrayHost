@@ -127,6 +127,12 @@ struct ComInit
 		{
 			// filename is not CommandTrayHost.exe
 		}
+#if VER_PRODUCTBUILD == 7600
+		else if (99 == ret)
+		{
+			// Windows XP
+		}
+#endif
 		else if (ret < 0)
 		{
 			if (last_atom_updater)
@@ -282,6 +288,14 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 					init.SetRet(-2);
 					continue;
 				}
+#if VER_PRODUCTBUILD == 7600
+				init.SetRet(99);
+				msg_prompt(
+					(L"Windows XP cannot atomically download https from github, you need to do it by yourself.\n\n" + body).c_str(),
+					tag_name.c_str(),
+					MB_ICONINFORMATION);
+				return 99;
+#endif
 				int result = msg_prompt(
 					isZHCN ? (L"发现新版本! 是否要下载？\n\n" + body).c_str() :
 					(utf8_to_wstring(translate("New version found! Download?\n\n")) + body).c_str(),
@@ -386,6 +400,7 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 								MB_ICONERROR);
 							ret = 10;
 							init.SetRet(10);
+							break;
 						}
 						if (ret == 0)break;
 					}
