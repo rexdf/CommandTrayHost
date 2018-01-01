@@ -23,7 +23,7 @@ Windows命令行程序系统托盘管理工具
 
 # 使用
 
-[下载](https://github.com/rexdf/CommandTrayHost/releases)
+[下载](https://github.com/rexdf/CommandTrayHost/releases) or [镜像](https://api.rexdf.org/download/rexdf/CommandTrayHost/releases/download/)
 
 使用前可以先看一眼[wiki](https://github.com/rexdf/CommandTrayHost/wiki)
 
