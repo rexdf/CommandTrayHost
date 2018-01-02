@@ -260,143 +260,6 @@ int64_t FileSize(PCWSTR name)
 	return size.QuadPart;
 }
 
-/*void to_json(nlohmann::json& j, const cron_expr& p) {
-	j = nlohmann::json{ std::string(reinterpret_cast<const char*>(&p), sizeof(cron_expr)) };
-}
-
-void from_json(const nlohmann::json& j, cron_expr& p) {
-	memcpy(reinterpret_cast<char*>(&p), j.get<std::string>().data(), sizeof(cron_expr));
-}
-
-cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
-{
-	if (json_object_has_member(jsp, "crontab_config") && json_object_has_member(jsp["crontab_config"], "cron_expr"))
-	{
-		result = jsp["crontab_config"]["cron_expr"];
-		return &result;
-	}
-	return nullptr;
-}*/
-
-void rotate_file(PCWSTR filename)
-{
-	TCHAR buffer[MAX_PATH * 10];
-	for (int i = 1; i < 500; i++)
-	{
-		StringCchPrintf(buffer, ARRAYSIZE(buffer), L"%s.%d", filename, i);
-		if (TRUE != PathFileExists(buffer))
-		{
-			if (MoveFile(filename, buffer))
-			{
-
-			}
-			else
-			{
-				msg_prompt(
-					L"cannot rename filename!",
-					L"Logrotate failed!",
-					MB_OK
-				);
-			}
-			return;
-		}
-	}
-	msg_prompt(L"There are too many log files, Please delete or move them elsewhere.", L"Logrotate error", MB_OK);
-}
-
-/*
- * Make sure jsp has "crontab_config", before call crontab_log
- * @param time_cur,current time.
- * @param time_next,next schedule time. If both are 0, just output log_msg & cron_msg
- */
-void crontab_log(const nlohmann::json& jsp_crontab_config,
-	time_t time_cur,
-	time_t time_next,
-	PCSTR name,
-	PCSTR log_msg,
-	PCSTR cron_msg,
-	int log_count,
-	int log_level_limit
-)
-{
-	//if (json_object_has_member(jsp, "crontab_config"))
-	{
-		//auto& crontab_config_ref = jsp["crontab_config"];
-		int log_level = jsp_crontab_config["log_level"];
-		if (log_level < log_level_limit) { return; }
-		const size_t buffer_len = 256;
-		char buffer[buffer_len];
-		size_t idx = 0, len;
-		tm t1;
-		bool is_crontab_trigger_msg = true;
-		if (time_cur == 0)
-		{
-			time_cur = time(NULL);
-			if (0 == time_next)is_crontab_trigger_msg = false;
-		}
-		localtime_s(&t1, &time_cur);
-		idx = strftime(buffer, ARRAYSIZE(buffer), "%Y-%m-%d %H:%M:%S ", &t1);
-		if (is_crontab_trigger_msg)
-		{
-			printf_to_bufferA(buffer, buffer_len - idx, idx,
-				"[%s] [%s] [left count: %d] [%s]",
-				name,
-				log_msg,
-				log_count,
-				//log_count == 0 ? " infinite" : "",
-				cron_msg
-			);
-			if (time_next)
-			{
-				localtime_s(&t1, &time_next);
-				len = strftime(buffer + idx, ARRAYSIZE(buffer), " %Y-%m-%d %H:%M:%S ", &t1);
-				idx += len;
-			}
-		}
-		else
-		{
-			printf_to_bufferA(buffer, buffer_len - idx, idx,
-				"[%s] [%s] [%s]",
-				name,
-				log_msg,
-				cron_msg
-			);
-		}
-
-		std::string crontab_log_filename = jsp_crontab_config["log"];
-		std::wstring crontab_log_filename_w = utf8_to_wstring(crontab_log_filename);
-		if (TRUE == PathFileExists(crontab_log_filename_w.c_str()) && FileSize(crontab_log_filename_w.c_str()) > 1024 * 1024 * 10)
-		{
-			rotate_file(crontab_log_filename_w.c_str());
-		}
-		std::ofstream o_log(crontab_log_filename.c_str(), std::ios_base::app | std::ios_base::out);
-		o_log << buffer << std::endl;
-	}
-}
-
-cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result)
-{
-	if (json_object_has_member(jsp, "crontab_config"))
-	{
-		auto& crontab_config_ref = jsp["crontab_config"];
-		if (crontab_config_ref["enabled"])
-		{
-			//cron_expr expr;
-			ZeroMemory(&result, sizeof(cron_expr)); // if not do this, always get incorrect result
-			const char* err = NULL;
-			cron_parse_expr(crontab_config_ref["crontab"].get<std::string>().c_str(), &result, &err);
-			if (err)
-			{
-				LOGMESSAGE(L"cron_parse_expr failed! %S\n", err);
-			}
-			else
-			{
-				return &result;
-			}
-		}
-	}
-	return nullptr;
-}
 
 bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 {
@@ -424,6 +287,8 @@ bool json_object_has_member(const nlohmann::json& root, PCSTR query_string)
 	}
 	return true;
 }
+
+#if _DEBUG2
 
 //https://stackoverflow.com/questions/40013355/how-to-merge-two-json-file-using-rapidjson
 void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator)
@@ -457,55 +322,7 @@ void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcOb
 	}
 }
 
-/*
-* when not_exist_return is true
-* return false only when exist and type not correct
-*/
-bool rapidjson_check_exist_type(
-	rapidjson::Value& val,
-	PCSTR name,
-	RapidJsonType type,
-	bool not_exist_return,
-	std::function<bool(rapidjson::Value&, PCSTR)> success_func,
-	std::function<bool(rapidjson::Value&, PCSTR)> post_func
-)
-{
-	bool ret;
-	if (val.HasMember(name))
-	{
-		rapidjson::Value& ref = val[name];
-		//bool ret;
-		if (type == iBoolType)
-		{
-			int val_type = ref.GetType();
-			ret = val_type == iTrueType || val_type == iFalseType;
-		}
-		else if (type == iIntType)
-		{
-			ret = ref.IsInt();
-		}
-		else
-		{
-			ret = ref.GetType() == type;
-		}
-		if (ret && success_func != nullptr)
-		{
-			ret = success_func(val, name);
-		}
-		LOGMESSAGE(L"%S ret:%d type:%d GetType:%d\n", name, ret, type, ref.GetType());
-		//return ret;
-	}
-	else
-	{
-		ret = not_exist_return;
-		LOGMESSAGE(L"%S not exist: ret:%d \n", name, not_exist_return);
-	}
-	if (post_func != nullptr)
-	{
-		post_func(val, name);
-	}
-	return ret;
-}
+#endif
 
 //HWND WINAPI GetForegroundWindow(void);
 

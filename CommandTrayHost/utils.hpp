@@ -45,15 +45,8 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	return true;
 }
 
-//void to_json(nlohmann::json& j, const cron_expr& p);
 
-//void from_json(const nlohmann::json& j, cron_expr& p);
-
-void crontab_log(const nlohmann::json& jsp_crontab_config, time_t, time_t, PCSTR, PCSTR, PCSTR, int, int);
-
-cron_expr* get_cron_expr(const nlohmann::json& jsp, cron_expr& result);
-
-void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator);
+//void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator);
 
 //! Type of JSON value
 enum RapidJsonType {
@@ -67,15 +60,6 @@ enum RapidJsonType {
 	iBoolType = 7,		//!< boolean
 	iIntType = 8		//!< integer
 };
-
-bool rapidjson_check_exist_type(
-	rapidjson::Value&,
-	PCSTR,
-	RapidJsonType,
-	bool not_exist_return = true,
-	std::function<bool(rapidjson::Value&, PCSTR)> success_func = nullptr,
-	std::function<bool(rapidjson::Value&, PCSTR)> post_func = nullptr
-);
 
 //bool operator != (const RECT&, const RECT&);
 

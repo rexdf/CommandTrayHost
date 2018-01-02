@@ -226,9 +226,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\third_party\ccronexpr\ccronexpr.h" />
+    <ClInclude Include="admin_singleton.h" />
     <ClInclude Include="cache.h" />
     <ClInclude Include="CommandTrayHost.h" />
     <ClInclude Include="configure.h" />
+    <ClInclude Include="cron.h" />
     <ClInclude Include="filewatcher.h" />
     <ClInclude Include="language.h" />
     <ClInclude Include="language_data.h" />
@@ -242,9 +244,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\ccronexpr\ccronexpr.cpp" />
+    <ClCompile Include="admin_singleton.cpp" />
     <ClCompile Include="cache.cpp" />
     <ClCompile Include="CommandTrayHost.cpp" />
     <ClCompile Include="configure.cpp" />
+    <ClCompile Include="cron.cpp" />
     <ClCompile Include="filewatcher.cpp" />
     <ClCompile Include="language.cpp" />
     <ClCompile Include="stdafx.cpp">

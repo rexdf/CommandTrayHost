@@ -6,6 +6,8 @@
 #include "utils.hpp"
 #include "filewatcher.h"
 #include "updater.h"
+#include "admin_singleton.h"
+#include "cron.h"
 
 #ifdef _DEBUG
 #include "test.hpp"

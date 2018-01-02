@@ -57,6 +57,12 @@
     <ClInclude Include="updater.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="admin_singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cron.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -84,6 +90,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="admin_singleton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cron.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
