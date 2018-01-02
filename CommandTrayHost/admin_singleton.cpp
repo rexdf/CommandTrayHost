@@ -345,16 +345,24 @@ bool check_runas_admin()
 	return bAlreadyRunningAsAdministrator;
 }
 
-void check_admin(bool is_admin)
+/*void check_admin(bool is_admin)
 {
 	bool require_admin = false;
-#ifdef _DEBUG
-	try_read_optional_json(global_stat, require_admin, "require_admin", __FUNCTION__);
-#else
+	//#ifdef _DEBUG
+	//	try_read_optional_json(global_stat, require_admin, "require_admin", __FUNCTION__);
+	//#else
 	try_read_optional_json(global_stat, require_admin, "require_admin");
-#endif
+	//#endif
 
 	if (require_admin)
+	{
+		ElevateNow();
+	}
+}*/
+
+void check_admin()
+{
+	if (global_stat.value("require_admin", false))
 	{
 		ElevateNow();
 	}

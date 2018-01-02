@@ -3,12 +3,12 @@
 void experimental_test()
 {
 	cron_expr expr;
-	ZeroMemory(&expr, sizeof(expr));
 	const char* err = NULL;
-	const int test_times = 1;// 50000;
+	const int test_times = 1; // 50000;
 	{
 		auto begin = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < test_times; i++) {
+			ZeroMemory(&expr, sizeof(expr));
 			cron_parse_expr("8 */2 15-16 29 2 *", &expr, &err);
 		}
 		auto end = std::chrono::high_resolution_clock::now();

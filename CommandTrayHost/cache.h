@@ -22,9 +22,10 @@ enum CacheType
  * before call update_cache()
  * we need to check enable_cache and
  * disable_cache_position etc
+ * make sure cache_config_cursor correct
  */
 template<typename T>
-void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
+void update_cache(/*int index, */PCSTR name, T value, const CacheType cnt)
 {
 	assert(enable_cache);
 	//static auto& base_cache_ref = (*global_cache_configs_pointer);
@@ -54,7 +55,7 @@ void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 		//LOGMESSAGE(L"base_ref[cache_config_cursor]["valid"]: 0x%x\n", base_ref[cache_config_cursor]["valid"].get<int>());
 
 		auto& valid_ref = (*global_cache_configs_pointer)[cache_config_cursor]["valid"];
-		int valid_value = valid_ref, valid_mask = 1 << cnt;
+		const int valid_value = valid_ref, valid_mask = 1 << cnt;
 		if ((valid_value & valid_mask) == 0)
 		{
 			valid_ref = valid_value | valid_mask;
@@ -67,7 +68,7 @@ void update_cache(/*int index, */PCSTR name, T value, CacheType cnt)
 void update_cache_enabled_start_show(bool enabled, bool start_show);
 void update_cache_position_size(HWND hWnd);
 
-inline bool check_cache_valid(int valid, CacheType cnt)
+inline bool check_cache_valid(const int valid, CacheType cnt)
 {
 	assert(cnt >= 0 && cnt < 5);
 	return valid & (1 << cnt);
@@ -105,11 +106,11 @@ rapidjson::SizeType get_cache_index(
 template<typename Type>
 Type get_cache_value(
 	const rapidjson::Value* d_cache_configs,
-	rapidjson::SizeType cache_size,
-	rapidjson::SizeType idx,
-	size_t global_cache_size,
+	const rapidjson::SizeType cache_size,
+	const rapidjson::SizeType idx,
+	const size_t global_cache_size,
 	PCSTR name,
-	int find_type,
+	const int find_type,
 	Type default_val
 )
 {
@@ -119,15 +120,16 @@ Type get_cache_value(
 		{
 			assert(global_stat != nullptr && global_cache_configs_pointer != nullptr);
 			auto& global_cache_config_i_ref = (*global_cache_configs_pointer)[idx];
-#ifdef _DEBUG
-			try_read_optional_json(global_cache_config_i_ref, default_val, name, __FUNCTION__);
-#else
+			/*//#ifdef _DEBUG
+			//			try_read_optional_json(global_cache_config_i_ref, default_val, name, __FUNCTION__);
+			//#else
 			try_read_optional_json(global_cache_config_i_ref, default_val, name);
-#endif
-			return default_val;
+			//#endif
+			return default_val;*/
+			return global_cache_config_i_ref.value(name, default_val);
 		}
 	}
-	
+
 	if (find_type == 2 && idx < cache_size)
 	{
 		auto& d_cache_config_i_ref = (*d_cache_configs)[idx];

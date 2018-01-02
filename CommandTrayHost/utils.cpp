@@ -527,6 +527,7 @@ extern bool is_cache_valid;
 
 //extern BOOL isZHCN, isENUS;
 
+
 #ifdef _DEBUG
 void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cache)
 #else

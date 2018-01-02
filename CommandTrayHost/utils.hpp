@@ -9,12 +9,16 @@ int64_t FileSize(PCWSTR);
 
 bool json_object_has_member(const nlohmann::json&, PCSTR);
 
+/*#ifdef _DEBUG
+#define try_read_optional_json(a,b,c) try_read_optional_json_debug(a,b,c,__FUNCTION__)
+#endif*/
+
 /*
 * Make sure out is initialized with default value before call try_read_optional_json
 */
-template<typename Type>
+/*template<typename Type>
 #ifdef _DEBUG
-bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string, PCSTR caller_fuc_name)
+bool try_read_optional_json_debug(const nlohmann::json& root, Type& out, PCSTR query_string, PCSTR caller_fuc_name)
 #else
 bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_string)
 #endif
@@ -44,22 +48,10 @@ bool try_read_optional_json(const nlohmann::json& root, Type& out, PCSTR query_s
 	}
 	return true;
 }
-
+*/
 
 //void rapidjson_merge_object(rapidjson::Value &dstObject, rapidjson::Value &srcObject, rapidjson::Document::AllocatorType &allocator);
 
-//! Type of JSON value
-enum RapidJsonType {
-	iNullType = 0,      //!< null
-	iFalseType = 1,     //!< false
-	iTrueType = 2,      //!< true
-	iObjectType = 3,    //!< object
-	iArrayType = 4,     //!< array 
-	iStringType = 5,    //!< string
-	iNumberType = 6,    //!< number
-	iBoolType = 7,		//!< boolean
-	iIntType = 8		//!< integer
-};
 
 //bool operator != (const RECT&, const RECT&);
 

@@ -370,6 +370,18 @@ bool initial_configure()
 	else { return false; }
 }
 
+//! Type of JSON value
+enum RapidJsonType {
+	iNullType = 0,      //!< null
+	iFalseType = 1,     //!< false
+	iTrueType = 2,      //!< true
+	iObjectType = 3,    //!< object
+	iArrayType = 4,     //!< array
+	iStringType = 5,    //!< string
+	iNumberType = 6,    //!< number
+	iBoolType = 7,		//!< boolean
+	iIntType = 8		//!< integer
+};
 
 typedef struct {
 	PCSTR name;
@@ -1939,12 +1951,14 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		//assert(icon.empty());
 		if (icon.length())
 		{
-			int icon_size = 256;
-#ifdef _DEBUG
-			try_read_optional_json(global_stat, icon_size, "icon_size", __FUNCTION__);
-#else
+			/*int icon_size = 256;
+			//#ifdef _DEBUG
+			//			try_read_optional_json(global_stat, icon_size, "icon_size", __FUNCTION__);
+			//#else
 			try_read_optional_json(global_stat, icon_size, "icon_size");
-#endif
+			//#endif*/
+
+			const int icon_size = global_stat.value("icon_size", 256);
 
 			std::wstring icon_wfilename = utf8_to_wstring(icon);
 			if (FALSE == get_hicon(icon_wfilename.c_str(), icon_size, hIcon))
@@ -2112,13 +2126,14 @@ void start_all(HANDLE ghJob, bool force)
 
 		if (force)
 		{
-			bool ignore_all = false;
-#ifdef _DEBUG
-			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
-#else
+			/*bool ignore_all = false;
+			//#ifdef _DEBUG
+			//			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
+			//#else
 			try_read_optional_json(i, ignore_all, "ignore_all");
-#endif
-			if (false == ignore_all)
+			//#endif
+			if (false == ignore_all)*/
+			if (!i.value("ignore_all", false))
 			{
 				i["enabled"] = true;
 			}
@@ -2189,19 +2204,21 @@ void restart_all(HANDLE ghJob)
 	{
 		if (i["running"] == true)
 		{
-			bool ignore_all = false, require_admin = false;
-#ifdef _DEBUG
-			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
-#else
+			/*bool ignore_all = false, require_admin = false;
+			//#ifdef _DEBUG
+			//			try_read_optional_json(i, ignore_all, "ignore_all", __FUNCTION__);
+			//#else
 			try_read_optional_json(i, ignore_all, "ignore_all");
-#endif
-			if (false == ignore_all)
+			//#endif
+			if (false == ignore_all)*/
+			if (!i.value("ignore_all", false))
 			{
-#ifdef _DEBUG
-				try_read_optional_json(i, require_admin, "require_admin", __FUNCTION__);
-#else
+				/*//#ifdef _DEBUG
+				//				try_read_optional_json(i, require_admin, "require_admin", __FUNCTION__);
+				//#else
 				try_read_optional_json(i, require_admin, "require_admin");
-#endif
+				//#endif*/
+				const bool require_admin = i.value("require_admin", false);
 				create_process(i, ghJob, require_admin);
 			}
 
@@ -2461,23 +2478,31 @@ void create_process(
 #endif
 	}
 
-	bool not_host_by_commandtrayhost = false, not_monitor_by_commandtrayhost = false;
+	/*bool not_host_by_commandtrayhost = false, not_monitor_by_commandtrayhost = false;
 
 	bool require_admin = false, start_show = false;
 
-#ifdef _DEBUG
-	try_read_optional_json(jsp, require_admin, "require_admin", __FUNCTION__);
-	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost", __FUNCTION__);
-	if (not_host_by_commandtrayhost)start_show = true;
-	try_read_optional_json(jsp, start_show, "start_show", __FUNCTION__);
-	try_read_optional_json(jsp, not_monitor_by_commandtrayhost, "not_monitor_by_commandtrayhost", __FUNCTION__);
-#else
+	//#ifdef _DEBUG
+	//	try_read_optional_json(jsp, require_admin, "require_admin", __FUNCTION__);
+	//	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost", __FUNCTION__);
+	//	if (not_host_by_commandtrayhost)start_show = true;
+	//	try_read_optional_json(jsp, start_show, "start_show", __FUNCTION__);
+	//	try_read_optional_json(jsp, not_monitor_by_commandtrayhost, "not_monitor_by_commandtrayhost", __FUNCTION__);
+	//#else
 	try_read_optional_json(jsp, require_admin, "require_admin");
 	try_read_optional_json(jsp, not_host_by_commandtrayhost, "not_host_by_commandtrayhost");
 	if (not_host_by_commandtrayhost)start_show = true;
 	try_read_optional_json(jsp, start_show, "start_show");
 	try_read_optional_json(jsp, not_monitor_by_commandtrayhost, "not_monitor_by_commandtrayhost");
-#endif
+	//#endif*/
+
+	bool require_admin = jsp.value("require_admin", false);
+	const bool not_host_by_commandtrayhost = jsp.value("not_host_by_commandtrayhost", false);
+
+	bool start_show = false;
+	if (not_host_by_commandtrayhost)start_show = true;
+	start_show = jsp.value("start_show", start_show);
+	const bool not_monitor_by_commandtrayhost = jsp.value("not_monitor_by_commandtrayhost", false);
 
 	LOGMESSAGE(L"require_admin %d start_show %d\n", require_admin, start_show);
 
@@ -2950,12 +2975,13 @@ void show_hide_toggle(nlohmann::json& jsp)
 
 			ShowWindow(hWnd, SW_SHOW);
 			SetForegroundWindow(hWnd);
-			bool topmost = false;
-#ifdef _DEBUG
-			try_read_optional_json(jsp, topmost, "topmost", __FUNCTION__);
-#else
+			/*bool topmost = false;
+			//#ifdef _DEBUG
+			//			try_read_optional_json(jsp, topmost, "topmost", __FUNCTION__);
+			//#else
 			try_read_optional_json(jsp, topmost, "topmost");
-#endif
+			//#endif*/
+			const bool topmost = jsp.value("topmost", false);
 
 			if (topmost && 0 == set_wnd_pos(hWnd, 0, 0, 0, 0, topmost, false, false))
 			{
@@ -2978,12 +3004,13 @@ void show_hide_toggle(nlohmann::json& jsp)
 void unregisterhotkey_killtimer_all()
 {
 	LOGMESSAGE(L"GetCurrentThreadId:%d\n", GetCurrentThreadId());
-	bool enable_hotkey = true;
-#ifdef _DEBUG
-	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey", __FUNCTION__);
-#else
+	/*bool enable_hotkey = true;
+	//#ifdef _DEBUG
+	//	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey", __FUNCTION__);
+	//#else
 	try_read_optional_json(global_stat, enable_hotkey, "enable_hotkey");
-#endif
+	//#endif*/
+	const bool enable_hotkey = global_stat.value("enable_hotkey", true);
 	if (enable_hotkey && json_object_has_member(global_stat, "hotkey"))
 	{
 		const char* hotkey_name_global[] = {
@@ -3092,14 +3119,15 @@ void kill_all(bool is_exit/* = true*/)
 			}
 			if (is_exit == false)
 			{
-				bool ignore_all = false;
-#ifdef _DEBUG
-				try_read_optional_json(itm, ignore_all, "ignore_all", __FUNCTION__);
-#else
+				/*bool ignore_all = false;
+				//#ifdef _DEBUG
+				//				try_read_optional_json(itm, ignore_all, "ignore_all", __FUNCTION__);
+				//#else
 				try_read_optional_json(itm, ignore_all, "ignore_all");
-#endif
+				//#endif
 
-				if (true == ignore_all) // is_exit == false and ignore_all == true, then not kill it now
+				if (true == ignore_all)*/
+				if (itm.value("ignore_all", false)) // is_exit == false and ignore_all == true, then not kill it now
 				{
 					continue;
 				}
@@ -3110,7 +3138,7 @@ void kill_all(bool is_exit/* = true*/)
 			LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 #ifdef _DEBUG
-			std::string name = itm["name"];
+			const std::string name = itm["name"];
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str(), !is_exit);
 #else
 			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), !is_exit);

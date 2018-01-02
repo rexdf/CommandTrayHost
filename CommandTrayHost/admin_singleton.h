@@ -11,5 +11,5 @@ void RestartNow();
 //void delete_lockfile();
 void makeSingleInstance3();
 
-void check_admin(bool);
+void check_admin(/*bool*/);
 bool check_runas_admin();

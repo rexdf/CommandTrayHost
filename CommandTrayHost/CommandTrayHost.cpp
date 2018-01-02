@@ -1207,7 +1207,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return -1;
 	}
 	cachefile_invalid = true; // after first load, every time config is reload, cache must need to be write
-	check_admin(is_runas_admin);
+	check_admin(/*is_runas_admin*/);
 	if (is_from_self_restart && !keep_update_history)
 	{
 		_wsystem(L"rd /s /q " UPDATE_TEMP_DIR);
@@ -1225,6 +1225,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	experimental_test();
 #endif
 
+	//start update thread
 	if (auto_update)
 	{
 		assert(atom_variable_for_updater == 0);
@@ -1234,9 +1235,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	}
 	else
 	{
-		atom_variable_for_updater = -1;
+		atom_variable_for_updater = -1; // click on menu item `Check Update ...` to prompt Messagebox when no new version found!
 	}
 
+	//hot reloading
 	if (conform_cache_expire)
 	{
 		HANDLE filewatch_thread;
@@ -1249,11 +1251,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			CloseHandle(filewatch_thread);
 		}
 	}
+
 	while (GetMessage(&msg, NULL, 0, 0) > 0)
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
 	if (enable_cache && !is_cache_valid)
 	{
 		flush_cache(/*true*/);
