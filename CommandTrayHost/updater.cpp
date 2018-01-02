@@ -291,7 +291,7 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 #if VER_PRODUCTBUILD == 7600
 				init.SetRet(99);
 				msg_prompt(
-					(L"Windows XP cannot atomically download https from github, you need to do it by yourself.\n\n" + body).c_str(),
+					(L"New version found!\n\nWindows XP cannot atomically download https from github, you need to do it by yourself.\n\n" + body).c_str(),
 					tag_name.c_str(),
 					MB_ICONINFORMATION);
 				return 99;
