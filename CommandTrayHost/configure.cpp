@@ -60,7 +60,7 @@ bool initial_configure()
 	update_locale_name_by_alias();
 	update_isZHCN(true);
 
-	std::string config = isZHCN ? u8R"json({
+	const std::string config = isZHCN ? u8R"json({
     /**
      * 0. 常见样例可以参考项目wiki.
      * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c.

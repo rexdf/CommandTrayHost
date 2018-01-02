@@ -1252,7 +1252,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-	if (!is_cache_valid)
+	if (enable_cache && !is_cache_valid)
 	{
 		flush_cache(/*true*/);
 	}
