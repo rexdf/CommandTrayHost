@@ -1,6 +1,6 @@
 # CommandTrayHost
 
-Windows命令行程序系统托盘管理工具
+Windows命令行程序运行监控系统托盘管理工具
 
 [![Build status](https://ci.appveyor.com/api/projects/status/v5md4dc9q1oy6qxh?svg=true)](https://ci.appveyor.com/project/rexdf/commandtrayhost)
 

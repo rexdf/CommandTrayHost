@@ -68,7 +68,7 @@ void update_cache(/*int index, */PCSTR name, T value, const CacheType cnt)
 void update_cache_enabled_start_show(bool enabled, bool start_show);
 void update_cache_position_size(HWND hWnd);
 
-inline bool check_cache_valid(const int valid, CacheType cnt)
+inline bool check_cache_valid(const int valid, const CacheType cnt)
 {
 	assert(cnt >= 0 && cnt < 5);
 	return valid & (1 << cnt);
