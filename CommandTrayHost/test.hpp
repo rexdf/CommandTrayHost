@@ -60,6 +60,8 @@ void experimental_test()
 			LOGMESSAGE(L"j.get<std::vector<uint8_t>>().data() %d times, cost %lld miliseconds\n", test_times, std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
 		}
 	}
+	int kill_timeout = 5000;
+	LOGMESSAGE(L"kill_timeout < static_cast<unsigned>(-2):%S %u\n", kill_timeout < static_cast<unsigned>(-2) ? "true" : "false", static_cast<unsigned>(-2));
 	if (0) {
 		HRESULT hr;
 		//LPCTSTR Url = _T("https://api.github.com/repos/rexdf/CommandTrayHost/releases/latest"), File = _T("latest_commandtrayhost.json");

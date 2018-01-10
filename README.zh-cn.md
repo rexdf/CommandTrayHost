@@ -70,6 +70,7 @@ Windows命令行程序运行监控系统托盘管理工具
             },
             "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
             "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
+            "kill_timeout": 200, // 执行关闭操作时，先尝试通知程序自己关闭然后等多少ms，然后再杀进程，默认是200ms
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -130,7 +131,8 @@ Windows命令行程序运行监控系统托盘管理工具
             "addition_env_path": "",
             "use_builtin_console": false,
             "is_gui": false,
-            "enabled": true
+            "enabled": true,
+            "kill_timeout": 2000, // 等两秒钟，让aria2有足够的时间保存session
         },
         {
             "name": "JeliLicenseServer",
@@ -200,7 +202,7 @@ Windows命令行程序运行监控系统托盘管理工具
         "right_click": "Alt+Win+Shift+R",
         "add_alpha": "Alt+Ctrl+Win+0x26", // 修改当前激活的任何窗口(要可能)透明度，不仅仅只对本程序托管的有效，其他程序也行
         "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里下箭头 Alt+Ctrl+Win+↑↓
-        "topmost": "Alt+Ctrl+Winl+T", // 同样对任意程序都有效
+        "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度

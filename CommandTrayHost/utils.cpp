@@ -529,15 +529,15 @@ extern bool is_cache_valid;
 
 
 #ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cache)
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool is_update_cache)
 #else
-void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache)
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, bool is_update_cache)
 #endif
 {
 	assert(GetProcessId(hProcess) == pid);
 	if (GetProcessId(hProcess) == pid)
 	{
-		if (TA_FAILED == TerminateApp(pid, 200))
+		if (TA_FAILED == TerminateApp(pid, timeout))
 		{
 			LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
 				name, pid,

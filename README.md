@@ -65,6 +65,7 @@ example configure
             },
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
+            "kill_timeout": 200, // post a message to let program quit itself, if timeout killing the process
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -125,7 +126,8 @@ example configure
             "addition_env_path": "",
             "use_builtin_console": false,
             "is_gui": false,
-            "enabled": true
+            "enabled": true,
+            "kill_timeout": 2000, // wait 2 seconds for saving aria2.session
         },
         {
             "name": "JeliLicenseServer",

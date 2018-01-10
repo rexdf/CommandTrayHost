@@ -60,9 +60,9 @@ BOOL get_alpha(HWND hwnd, BYTE& alpha, bool no_exstyle_return = false);
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx = 0);
 
 #ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, PCWSTR name, bool is_update_cache = true);
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool is_update_cache = true);
 #else
-void check_and_kill(HANDLE hProcess, DWORD pid, bool is_update_cache = true);
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, bool is_update_cache = true);
 #endif
 
 int msg_prompt(

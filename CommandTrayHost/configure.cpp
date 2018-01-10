@@ -126,6 +126,7 @@ bool initial_configure()
             },
             "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
             "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
+            "kill_timeout": 200, // 执行关闭操作时，先尝试通知程序自己关闭然后等多少ms，然后再杀进程，默认是200ms
         },
         {
             "name": "cmd例子2",
@@ -140,7 +141,7 @@ bool initial_configure()
             "crontab_config": { // crontab配置
                 "crontab": "8 */2 15-16 29 2 *", // crontab语法具体参考上面8
                 "method": "start", // 支持的有 start restart stop start_count_stop restart_count_stop，最后两个表示count次数的最后一个会执行stop
-                "count": 0, // 0 表示infinite不只限制，大于0的整数，表示运行多少次就不运行了
+                "count": 0, // 0 表示infinite无限，大于0的整数，表示运行多少次就不运行了
                 // 可选
                 "enabled": true,
                 "log": "commandtrayhost.log", // 日志文件名,注释掉本行就禁掉log了
@@ -268,6 +269,7 @@ bool initial_configure()
             },
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
+            "kill_timeout": 200,
         },
         {
             "name": "cmd example 2",
@@ -828,11 +830,12 @@ rapidjson::SizeType configure_reader(std::string& out)
 			{
 				int64_t handle = (*_global_config_i_ref)["handle"];
 				int64_t pid = (*_global_config_i_ref)["pid"];
+				DWORD timeout = _global_config_i_ref->value("kill_timeout", 200);
 #ifdef _DEBUG
 				std::string name_A = (*_global_config_i_ref)["name"];
-				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name_A).c_str(), false);
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), false);
 #else
-				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, false);
 #endif
 				config_i_unchanged = false;
 			}
@@ -915,6 +918,10 @@ rapidjson::SizeType configure_reader(std::string& out)
 				(utf8_to_wstring(val["name"].GetString()) + L" config section").c_str(),
 				false);
 		} },
+		{ "kill_timeout", iIntType, true,  [](Value& val, PCSTR name)->bool {
+			int kill_timeout = val[name].GetInt();
+			return  kill_timeout >= 0 && kill_timeout < static_cast<uint64_t>((std::numeric_limits<DWORD>::max)());
+		}, },
 	};
 	PCSTR const global_menu[][2] = {
 		// with hotkey
@@ -1084,7 +1091,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 			enable_hotkey = val[name].GetBool();
 #endif
 			return true;
-		} },
+		}, },
 		{ "auto_hot_reloading_config", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			auto_hot_reloading_config = val[name].GetBool();
 			return true;
@@ -1203,7 +1210,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 				cnt++;
 			}
 			return true;
-		}},
+		} },
 		{ "require_admin", iBoolType, true, nullptr },
 		{ "enable_groups", iBoolType, true, [](const Value& val,PCSTR name)->bool {
 			if (val[name].GetBool() && val.HasMember("groups"))
@@ -2470,11 +2477,12 @@ void create_process(
 
 		LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
+		DWORD timeout = jsp.value("kill_timeout", 200);
 #ifdef _DEBUG
 		std::string name_A = jsp["name"];
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name_A).c_str(), false);
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), false);
 #else
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), false);
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, false);
 #endif
 	}
 
@@ -2828,13 +2836,15 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 					}
 				}
 			}
+
 			LOGMESSAGE(L"pid:%d disable_menu process running, now kill it\n", pid);
 
+			DWORD timeout = jsp.value("kill_timeout", 200);
 #ifdef _DEBUG
 			std::string name = jsp["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str());
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str());
 #else
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid));
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout);
 #endif
 		}
 		jsp["handle"] = 0;
@@ -3137,11 +3147,12 @@ void kill_all(bool is_exit/* = true*/)
 
 			LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
+			DWORD timeout = itm.value("kill_timeout", 200);
 #ifdef _DEBUG
 			const std::string name = itm["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), utf8_to_wstring(name).c_str(), !is_exit);
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str(), !is_exit);
 #else
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), !is_exit);
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, !is_exit);
 #endif
 			if (is_exit == false)
 			{
