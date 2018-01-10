@@ -158,7 +158,7 @@ bool reload_config()
 		{
 			result = msg_prompt(//NULL,
 				isZHCN ?
-				L"config.json被编辑过了,缓存可能已经失效！"
+				L"config.json被编辑过了,缓存可能已经失效！" L" 不想看到这个窗口，设置\"auto_hot_reloading_config\":true即可。"
 				L"\n\n选择 是 重新加载配置，但是清空缓存(如果启用缓存)，关闭全部运行中的程序"
 				L"\n\n选择 否 重新加载配置，尽最大努力保留缓存(如果启用缓存)，cmd path working_directory未修改的运行中的程序不会被关闭"
 				L"\n\n选择 取消 下次启动CommandTrayHost才加载配置"
