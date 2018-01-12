@@ -1183,7 +1183,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	MyRegisterClass(hInstance);
 	if (!InitInstance(hInstance, SW_HIDE))
 	{
-		return FALSE;
+		return -2;
 	}
 
 	/*if (!InitializeCriticalSectionAndSpinCount(&CriticalSection,
@@ -1204,7 +1204,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (NULL == init_global(ghJob, gHicon) || !get_filetime(CONFIG_FILENAMEW, config_last_timestamp))
 	{
 		msg_prompt(/*NULL, */L"Initialization failed!", L"Error", MB_OK | MB_ICONERROR);
-		return -1;
+		return -3;
 	}
 	cachefile_invalid = true; // after first load, every time config is reload, cache must need to be write
 	check_admin(/*is_runas_admin*/);

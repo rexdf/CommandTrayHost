@@ -27,7 +27,7 @@ Windows命令行程序运行监控系统托盘管理工具
 
 使用前可以先看一眼[wiki](https://github.com/rexdf/CommandTrayHost/wiki)
 
-配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。运行一次，会自动生成一个基本的模板。支持的编码为UTF8 UTF-16LE UTF-16BE UTF-32等，支持BOM识别。也就是支持记事本保存的Unicode和UTF-8格式。
+配置文件名必须是`config.json`，必须放到CommandTrayHost.exe所在目录。**运行一次，会自动生成一个基本的`config.json`模板(包括详细文档)**。支持的编码为UTF8 UTF-16LE UTF-16BE UTF-32等，支持BOM识别。也就是支持记事本保存的Unicode和UTF-8格式。
 
 配置样例
 

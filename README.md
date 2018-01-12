@@ -24,7 +24,7 @@ A Command Line program monitor systray for Windows
 
 [Download](https://github.com/rexdf/CommandTrayHost/releases) or [Mirrors](https://api.rexdf.org/download/rexdf/CommandTrayHost/releases/download/)
 
-configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json`. Supported encodings: `UTF-8 UTF-8BOM UTF-16LE UTF-16BE UTF-32LE UTF32-BE`.
+configure file name is `config.json`, in the same folder as CommandTrayHost.exe. Run once `CommandTrayHost.exe`, there will be a `config.json` with document. Supported encodings, `UTF-8 UTF-8BOM UTF-16LE UTF-16BE UTF-32LE UTF32-BE`.
 
 example configure
 
