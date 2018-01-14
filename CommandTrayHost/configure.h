@@ -76,6 +76,7 @@ void left_click_toggle();
 #define  CLEANUP_BEFORE_QUIT(where) {\
 	kill_all(); \
 	unregisterhotkey_killtimer_all(); \
+	undock_window(-1); \
 	CLEAN_MUTEX(); \
 	DeleteTrayIcon(); \
 	if (gHicon)DestroyIcon(gHicon); \

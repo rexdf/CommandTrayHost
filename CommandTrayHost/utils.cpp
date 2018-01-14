@@ -450,15 +450,17 @@ int get_caption_from_hwnd(HWND hwnd, std::wstring& caption)
 	const int max_caption_length = 64;
 	TCHAR caption_buffer[max_caption_length + 2];
 	int len = GetWindowTextLength(hwnd);
-	if (0 == len)len = max_caption_length;
 	if (len > 0)
 	{
-		GetWindowText(hwnd, caption_buffer, len);
+		//PWSTR caption_buffer=HeapAlloc(GetProcessHeap(), 0, sizeof(char) * (len + 1));
+		if (len > max_caption_length)len = max_caption_length;
+		GetWindowText(hwnd, caption_buffer, len + 1);
 		LOGMESSAGE(L"GetWindowText:%s\n", caption_buffer);
 		ret = 1;
 	}
 	else
 	{
+		if (0 == len)len = max_caption_length;
 		GetClassName(hwnd, caption_buffer, len);
 		LOGMESSAGE(L"GetClassName:%s\n", caption_buffer);
 		ret = 2;
