@@ -2975,20 +2975,24 @@ BOOL hide_current_window(HWND hwnd)
 				parent = GetParent(parent);
 			}
 		}
-		DWORD pid = NULL;
-		GetWindowThreadProcessId(hwnd, &pid);
-		std::wstring caption;
-		get_caption_from_hwnd(hwnd, caption);
+		if (IsWindowVisible(hwnd)) 
+		{
+			DWORD pid = NULL;
+			GetWindowThreadProcessId(hwnd, &pid);
+			std::wstring caption;
+			get_caption_from_hwnd(hwnd, caption);
 
-		//if (!json_object_has_member(global_stat, "docked"))global_stat["docked"] = nlohmann::json::array();
-		// according nlohmann document, [] will silent inset if not exist, push_back will silent push to object
-		global_stat["docked"].push_back({
-			{ "caption", wstring_to_utf8(caption) },
-			{ "hwnd", reinterpret_cast<int64_t>(hwnd) },
-			{ "pid", pid },
-			});
-		assert(global_stat["docked"].is_array());
-		ShowWindow(hwnd, SW_HIDE);
+			//if (!json_object_has_member(global_stat, "docked"))global_stat["docked"] = nlohmann::json::array();
+			// according nlohmann document, [] will silent inset if not exist, push_back will silent push to object
+			global_stat["docked"].push_back({
+				{ "caption", wstring_to_utf8(caption) },
+				{ "hwnd", reinterpret_cast<int64_t>(hwnd) },
+				{ "pid", pid },
+				});
+			assert(global_stat["docked"].is_array());
+			LOGMESSAGE(L"%s\n", utf8_to_wstring(global_stat["docked"].dump()).c_str());
+			ShowWindow(hwnd, SW_HIDE);
+		}
 	}
 	return TRUE;
 }
