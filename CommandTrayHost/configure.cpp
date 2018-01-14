@@ -2978,6 +2978,7 @@ BOOL hide_current_window(HWND hwnd)
 			{
 				hwnd = parent;
 				parent = GetParent(parent);
+				LOGMESSAGE(L"loop through HWND:0x%x\n", hwnd);
 			}
 		}
 		if (IsWindowVisible(hwnd)) 
@@ -2988,7 +2989,7 @@ BOOL hide_current_window(HWND hwnd)
 			get_caption_from_hwnd(hwnd, caption);
 
 			//if (!json_object_has_member(global_stat, "docked"))global_stat["docked"] = nlohmann::json::array();
-			// according nlohmann document, [] will silent inset if not exist, push_back will silent push to object
+			// according nlohmann document, object[] will silent insert if not exist, push_back will silent add to null
 			global_stat["docked"].push_back({
 				{ "caption", wstring_to_utf8(caption) },
 				{ "hwnd", reinterpret_cast<int64_t>(hwnd) },

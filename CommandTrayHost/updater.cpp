@@ -257,10 +257,18 @@ DWORD WINAPI CheckGithub(LPVOID lpParam)
 				try
 				{
 					tag_name = utf8_to_wstring(j.at("tag_name").get<std::string>());
-					body = utf8_to_wstring(j.at("body").get<std::string>());
 					browser_download_url = utf8_to_wstring(j.at("assets").at(0).at("browser_download_url").get<std::string>());
 					assets_name = utf8_to_wstring(j.at("assets").at(0).at("name").get<std::string>());
 					prerelease = j.at("prerelease");
+					std::string body_A = j.at("body").get<std::string>();
+					auto pos_st = body_A.find(isZHCN ? "<--zh-CN-->" : "<--en-US-->");
+					auto pos_ed = body_A.find(isZHCN ? "<++zh-CN++>" : "<++en-US++>");
+					if (pos_st != std::string::npos && pos_ed != std::string::npos)
+					{
+						int offset = ARRAYSIZE("<--zh-CN-->") + 1;
+						body_A = body_A.substr(pos_st + offset, pos_ed - pos_st - offset);
+					}
+					body = utf8_to_wstring(body_A);
 				}
 				catch (...)
 				{
