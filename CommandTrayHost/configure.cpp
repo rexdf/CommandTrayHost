@@ -40,6 +40,8 @@ extern bool auto_update;
 extern bool skip_prerelease;
 extern bool keep_update_history;
 
+extern bool enable_dock;
+
 extern bool repeat_mod_hotkey;
 extern int global_hotkey_alpha_step;
 
@@ -1831,6 +1833,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 
 	{ // scope for docked
 		nlohmann::json docked = nullptr;
+		enable_dock = false;
 		//using json = nlohmann::json;
 		//assert(global_stat == nullptr);
 		if (global_stat == nullptr)
@@ -1845,9 +1848,10 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		// I don't know where is js now? data? bss? heap? stack?
 		global_stat = nlohmann::json::parse(js_string);
 
-		if (docked != nullptr)
+		if (docked != nullptr && docked.size() > 0)
 		{
 			global_stat["docked"] = docked;
+			enable_dock = true;
 			//global_stat.emplace("docked", docked);
 			//docked = nullptr; // is this meaningful?
 		}
@@ -2920,6 +2924,7 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
  */
 BOOL undock_window(int idx)
 {
+	if (idx == -1 && !enable_dock)return FALSE;
 	auto& docked = global_stat["docked"];
 	assert(docked.is_array() && static_cast<int>(docked.size()) > idx);
 	if (docked.is_array() && static_cast<int>(docked.size()) > idx)
@@ -2958,7 +2963,7 @@ BOOL hide_current_window(HWND hwnd)
 {
 	if (!IsWindow(hwnd)) return FALSE;
 	static HWND desktop = GetDesktopWindow();
-	LOGMESSAGE(L"ownder:0x%x desktop:0x%x parent:0x%x\n", GetWindow(hwnd, GW_OWNER), desktop, GetParent(hwnd));
+	LOGMESSAGE(L"hwnd:0x%x ownder:0x%x desktop:0x%x parent:0x%x\n", hwnd, GetWindow(hwnd, GW_OWNER), desktop, GetParent(hwnd));
 	if (hwnd == desktop)
 	{
 		return FALSE;
@@ -2992,6 +2997,7 @@ BOOL hide_current_window(HWND hwnd)
 			assert(global_stat["docked"].is_array());
 			LOGMESSAGE(L"%s\n", utf8_to_wstring(global_stat["docked"].dump()).c_str());
 			ShowWindow(hwnd, SW_HIDE);
+			enable_dock = true;
 		}
 	}
 	return TRUE;

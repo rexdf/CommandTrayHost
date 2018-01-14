@@ -53,6 +53,8 @@ bool auto_update;
 bool skip_prerelease;
 bool keep_update_history;
 
+bool enable_dock;
+
 int volatile atom_variable_for_config;
 int volatile atom_variable_for_updater;
 bool cachefile_invalid;
