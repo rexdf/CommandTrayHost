@@ -83,12 +83,6 @@ void log_message(PCSTR, PCSTR, int, PCWSTR, ...);
 #define LOGMESSAGE( str, ... )
 #endif
 
-
-// WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE+10*i 是一级菜单 显示名称
-// WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE+10*i+j 是二级菜单 显示命令 显示/隐藏 重启命令 启用/禁用
-#define WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE (WM_APP + 0x50)
-#define WM_APP_END 0xBFFF
-
 #define CLEANUP_HISTORY_STARTUP
 
 #ifdef CLEANUP_HISTORY_STARTUP

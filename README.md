@@ -195,9 +195,12 @@ example configure
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
-        "add_alpha": "Alt+Ctrl+Win+0x26", // work for any program of current user
+        // work for any program of current user
+        "add_alpha": "Alt+Ctrl+Win+0x26", // add alpha of current windows
         "minus_alpha": "Alt+Ctrl+Win+0x28", // Alt+Ctrl+Win+↑↓
-        "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
+        "topmost": "Alt+Ctrl+Win+T", // toggle topmost status
+        "hide_current": "Alt+Ctrl+Win+H", // hide current window to tray menu
+        "show_all_docked": "Alt+Ctrl+Win+S", // show all windows hiden by above hotkey
     },
     "repeat_mod_hotkey": false,
     "global_hotkey_alpha_step": 5,

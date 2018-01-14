@@ -59,6 +59,10 @@ BOOL get_alpha(HWND hwnd, BYTE& alpha, bool no_exstyle_return = false);
 
 HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx = 0);
 
+int get_caption_from_hwnd(HWND hwnd, std::wstring& caption);
+
+BOOL is_hwnd_valid_caption(HWND hwnd, PCWSTR caption_, DWORD pid_);
+
 #ifdef _DEBUG
 void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool is_update_cache = true);
 #else

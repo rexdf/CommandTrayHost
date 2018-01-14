@@ -444,6 +444,51 @@ HWND GetHwnd(HANDLE hProcess, size_t& num_of_windows, int idx)
 	}
 }
 
+int get_caption_from_hwnd(HWND hwnd, std::wstring& caption)
+{
+	int ret;
+	const int max_caption_length = 64;
+	TCHAR caption_buffer[max_caption_length + 2];
+	int len = GetWindowTextLength(hwnd);
+	if (0 == len)len = max_caption_length;
+	if (len > 0)
+	{
+		GetWindowText(hwnd, caption_buffer, len);
+		LOGMESSAGE(L"GetWindowText:%s\n", caption_buffer);
+		ret = 1;
+	}
+	else
+	{
+		GetClassName(hwnd, caption_buffer, len);
+		LOGMESSAGE(L"GetClassName:%s\n", caption_buffer);
+		ret = 2;
+	}
+	caption = caption_buffer;
+	return ret;
+}
+
+BOOL is_hwnd_valid_caption(HWND hwnd, PCWSTR caption_, DWORD pid_)
+{
+	if (!IsWindow(hwnd)) return FALSE;
+	if (pid_)
+	{
+		DWORD pid = NULL;
+		GetWindowThreadProcessId(hwnd, &pid);
+		return pid == pid_;
+	}
+	else if (caption_ != NULL)
+	{
+		std::wstring caption_wstring;
+		get_caption_from_hwnd(hwnd, caption_wstring);
+
+		return caption_wstring == caption_;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
 #define TA_FAILED 0
 #define TA_SUCCESS_CLEAN 1
 #define TA_SUCCESS_KILL 2

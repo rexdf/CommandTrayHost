@@ -441,6 +441,52 @@ BOOL ShowPopupMenuJson4()
 	AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(menu_ref[mHelp]).c_str());
 	vctHmenu.push_back(hSubMenu);
 
+	if (json_object_has_member(global_stat, "docked"))
+	{
+		auto& docked = global_stat["docked"];
+		assert(docked.is_array());
+		const int docked_size = static_cast<int>(docked.size());
+		bool not_add_separator = true;
+		if (docked_size > 0)
+		{
+			hSubMenu = CreatePopupMenu();
+			int docked_cnt = 0, cnt = 0;
+			std::vector<int> invalid_id_vect;
+			for (auto& dk : docked)
+			{
+				if (is_hwnd_valid_caption(
+					reinterpret_cast<HWND>(dk["hwnd"].get<int64_t>()),
+					utf8_to_wstring(dk["caption"]).c_str(),
+					static_cast<DWORD>(dk["pid"])
+				))
+				{
+					if (not_add_separator)
+					{
+						AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
+						not_add_separator = false;
+					}
+					AppendMenu(hSubMenu, MF_STRING, WM_DOCKED_ID_BASE + docked_cnt, utf8_to_wstring(dk["caption"]).c_str());
+					docked_cnt++;
+				}
+				else
+				{
+					invalid_id_vect.emplace_back(cnt);
+				}
+				cnt++;
+			}
+			AppendMenu(vctHmenu[0], MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hSubMenu), utf8_to_wstring(menu_ref[mDocked]).c_str());
+			vctHmenu.push_back(hSubMenu);
+			if (!invalid_id_vect.empty())
+			{
+				// why reverse? docked index changed after erase
+				for (std::vector<int>::reverse_iterator it = invalid_id_vect.rbegin();
+					it != invalid_id_vect.rend(); ++it) {
+					docked.erase(*it);
+				}
+			}
+		}
+	}
+
 	AppendMenu(vctHmenu[0], MF_SEPARATOR, NULL, NULL);
 	//AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, (isZHCN ? L"\x9000\x51fa" : translate_w2w(L"Exit").c_str()));
 	AppendMenu(vctHmenu[0], MF_STRING, WM_TASKBARNOTIFY_MENUITEM_EXIT, utf8_to_wstring(menu_ref[mExit]).c_str());
@@ -783,7 +829,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				if (hConsole)
 				{
-					ShowWindow(hConsole, !IsWindowVisible(hConsole));
+					ShowWindow(hConsole, IsWindowVisible(hConsole) ? SW_HIDE : SW_SHOW);
 					SetForegroundWindow(hConsole);
 				}
 			}
@@ -934,6 +980,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				reload_config();
 			}
 		}
+		else if (WM_DOCKED_ID_BASE <= nID && nID <= WM_DOCKED_ID_END)
+		{
+			undock_window(nID - WM_DOCKED_ID_BASE);
+		}
 		else
 		{
 			LOGMESSAGE(L"%x Clicked\n", nID);
@@ -964,63 +1014,77 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			LOGMESSAGE(L"nId:0x%x\n", nID);
 			SendMessage(hWnd, WM_COMMAND, nID, NULL);
 		}
-		else if (WM_HOTKEY_ADD_ALPHA <= nID && nID <= WM_HOTKEY_TOPMOST)
+		else if (WM_HOTKEY_ADD_ALPHA <= nID && nID <= WM_HOTKEY_SHOWALL)
 		{
-			HWND cur_hwnd = GetForegroundWindow();
-			LOGMESSAGE(L"cur_hwnd:0x%x\n", cur_hwnd);
-			if (cur_hwnd)
+			if (nID == WM_HOTKEY_SHOWALL)
 			{
-				DWORD dwExStyle = GetWindowLong(cur_hwnd, GWL_EXSTYLE);
-				LOGMESSAGE(L"dwExStyle:0x%x\n", dwExStyle);
-				if (nID == WM_HOTKEY_ADD_ALPHA || nID == WM_HOTKEY_MINUS_ALPHA) {
-					BYTE alpha = 255;
-					if (0 == (dwExStyle | WS_EX_LAYERED))
+				undock_window(-1);
+			}
+			else
+			{
+				HWND cur_hwnd = GetForegroundWindow();
+				LOGMESSAGE(L"cur_hwnd:0x%x\n", cur_hwnd);
+				if (cur_hwnd)
+				{
+					if (nID == WM_HOTKEY_HIDE)
 					{
-						SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
-					}
-					if (GetLayeredWindowAttributes(cur_hwnd, NULL, &alpha, NULL))
-					{
-						if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;
-						if (nID == WM_HOTKEY_ADD_ALPHA)
-						{
-							if (alpha < 255 - global_hotkey_alpha_step)alpha += global_hotkey_alpha_step;
-							else alpha = 255;
-						}
-						else if (nID == WM_HOTKEY_MINUS_ALPHA)
-						{
-							if (alpha > global_hotkey_alpha_step)alpha -= global_hotkey_alpha_step;
-							else alpha = 0;
-						}
-						LOGMESSAGE(L"alpha:%d\n", alpha);
-						//SetLayeredWindowAttributes(hWnd, 0, alpha, LWA_ALPHA);
-						set_wnd_alpha(cur_hwnd, alpha);
+						hide_current_window(cur_hwnd);
 					}
 					else
 					{
-						set_wnd_alpha(cur_hwnd, alpha);
-						LOGMESSAGE(L"error code:0x%x", GetLastError());
+						DWORD dwExStyle = GetWindowLong(cur_hwnd, GWL_EXSTYLE);
+						LOGMESSAGE(L"dwExStyle:0x%x\n", dwExStyle);
+						if (nID == WM_HOTKEY_ADD_ALPHA || nID == WM_HOTKEY_MINUS_ALPHA)
+						{
+							BYTE alpha = 255;
+							if (0 == (dwExStyle | WS_EX_LAYERED))
+							{
+								SetWindowLong(cur_hwnd, GWL_EXSTYLE, dwExStyle | WS_EX_LAYERED);
+							}
+							if (GetLayeredWindowAttributes(cur_hwnd, NULL, &alpha, NULL))
+							{
+								if (0 == (dwExStyle & WS_EX_LAYERED) && alpha == 0)alpha = 255;
+								if (nID == WM_HOTKEY_ADD_ALPHA)
+								{
+									if (alpha < 255 - global_hotkey_alpha_step)alpha += global_hotkey_alpha_step;
+									else alpha = 255;
+								}
+								else if (nID == WM_HOTKEY_MINUS_ALPHA)
+								{
+									if (alpha > global_hotkey_alpha_step)alpha -= global_hotkey_alpha_step;
+									else alpha = 0;
+								}
+								LOGMESSAGE(L"alpha:%d\n", alpha);
+								//SetLayeredWindowAttributes(hWnd, 0, alpha, LWA_ALPHA);
+								set_wnd_alpha(cur_hwnd, alpha);
+							}
+							else
+							{
+								set_wnd_alpha(cur_hwnd, alpha);
+								LOGMESSAGE(L"error code:0x%x", GetLastError());
+							}
+						}
+						else if (nID == WM_HOTKEY_TOPMOST)
+						{
+							LOGMESSAGE(L"(dwExStyle & WS_EX_TOPMOST):%d\n", (dwExStyle & WS_EX_TOPMOST));
+							//set_wnd_pos(cur_hwnd, 0, 0, 0, 0, WS_EX_TOPMOST != (dwExStyle & WS_EX_TOPMOST), false, false);
+							/*SetWindowLong(
+								cur_hwnd,
+								GWL_EXSTYLE,
+								(dwExStyle & WS_EX_TOPMOST) ? (dwExStyle - WS_EX_LAYERED) : (dwExStyle | WS_EX_LAYERED)
+							);*/
+							SetWindowPos(cur_hwnd,
+								(dwExStyle & WS_EX_TOPMOST) ? HWND_NOTOPMOST : HWND_TOPMOST,
+								0,
+								0,
+								0,
+								0,
+								SWP_NOSIZE | SWP_NOMOVE | SWP_ASYNCWINDOWPOS
+							);
+						}
 					}
 				}
-				else if (nID == WM_HOTKEY_TOPMOST)
-				{
-					LOGMESSAGE(L"(dwExStyle & WS_EX_TOPMOST):%d\n", (dwExStyle & WS_EX_TOPMOST));
-					//set_wnd_pos(cur_hwnd, 0, 0, 0, 0, WS_EX_TOPMOST != (dwExStyle & WS_EX_TOPMOST), false, false);
-					/*SetWindowLong(
-						cur_hwnd,
-						GWL_EXSTYLE,
-						(dwExStyle & WS_EX_TOPMOST) ? (dwExStyle - WS_EX_LAYERED) : (dwExStyle | WS_EX_LAYERED)
-					);*/
-					SetWindowPos(cur_hwnd,
-						(dwExStyle & WS_EX_TOPMOST) ? HWND_NOTOPMOST : HWND_TOPMOST,
-						0,
-						0,
-						0,
-						0,
-						SWP_NOSIZE | SWP_NOMOVE | SWP_ASYNCWINDOWPOS
-					);
-				}
 			}
-
 		}
 		else
 		{

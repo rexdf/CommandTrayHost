@@ -210,9 +210,12 @@ bool initial_configure()
         "exit": "Alt+Win+Shift+X", // 但是比较推荐这种格式
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
+        // 下面的五个快捷键，可以对外部程序生效
         "add_alpha": "Alt+Ctrl+Win+0x26", // 修改当前激活的任何窗口(要可能)透明度，不仅仅只对本程序托管的有效，其他程序也行
-        "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里0x26 0x28代表方向键上下键 Ctrl+Win+↑↓
-        "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
+        "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里下箭头 Alt+Ctrl+Win+↑↓
+        "topmost": "Alt+Ctrl+Win+T", // 切换当前窗口的置顶状态
+        "hide_current": "Alt+Ctrl+Win+H", // 隐藏当前窗口，可以在托盘图标上找到对应项目
+        "show_all_docked": "Alt+Ctrl+Win+S", // 显示所有被上面这个快捷键隐藏的窗口
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
@@ -353,9 +356,12 @@ bool initial_configure()
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
-        "add_alpha": "Alt+Ctrl+Win+0x26", // work for any program of current user
-        "minus_alpha": "Alt+Ctrl+Win+0x28", // Ctrl+Win+↑↓
-        "topmost": "Alt+Ctrl+Win+T", // as above work for any program,toggle topmost status
+        // work for any program of current user
+        "add_alpha": "Alt+Ctrl+Win+0x26", // add alpha of current windows
+        "minus_alpha": "Alt+Ctrl+Win+0x28", // Alt+Ctrl+Win+↑↓
+        "topmost": "Alt+Ctrl+Win+T", // toggle topmost status
+        "hide_current": "Alt+Ctrl+Win+H", // hide current window to tray menu
+        "show_all_docked": "Alt+Ctrl+Win+S", // show all windows hidden by above hotkey
     },
     "repeat_mod_hotkey": false,
     "global_hotkey_alpha_step": 5,
@@ -923,7 +929,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 			return  kill_timeout >= 0 && kill_timeout < static_cast<uint64_t>((std::numeric_limits<DWORD>::max)());
 		}, },
 	};
-	PCSTR const global_menu[][2] = {
+	PCSTR const global_menu[][2] = { // order is important, commandtrayhost marked word: 4bfsza3ay
 		// with hotkey
 		{ u8"全部禁用", u8"Disable All" },
 		{ u8"全部启动", u8"Enable All"},
@@ -939,6 +945,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ u8"关于", u8"About" },
 		{ u8"帮助", u8"Help" },
 		{ u8"检查更新...", u8"Check for Updates..." },
+		{ u8"停泊窗口", u8"Docked Windows" },
 	};
 	auto lambda_menu_check = [&global_menu, &configs_menu, &d, &allocator](Value& val, PCSTR name)->bool {
 		auto& menu_ref = d["menu"];
@@ -1033,6 +1040,8 @@ rapidjson::SizeType configure_reader(std::string& out)
 		{ "add_alpha", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 		{ "minus_alpha", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 		{ "topmost", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "hide_current", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
+		{ "show_all_docked", iStringType, true, lambda_global_hotkey, lambda_global_hotkey_idx },
 	};
 
 	int cache_cnt = 0;
@@ -1309,6 +1318,11 @@ rapidjson::SizeType configure_reader(std::string& out)
 			}
 			return ret;
 		}, lambda_menu_check },
+		{ "docked", iNullType, true, nullptr,[](Value& val,PCSTR name)->bool {
+			// docked used for hotkey hide window
+			if (val.HasMember(name))val.RemoveMember(name);
+			return true;
+		} },
 			//{ "enable_crontab", iBoolType, true, nullptr },
 			//{ "crontabs", iArrayType, true, nullptr }
 	};
@@ -1814,15 +1828,30 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 		return NULL;
 	}
 	number_of_configs = cmd_cnt;
-	//using json = nlohmann::json;
-	//assert(global_stat == nullptr);
-	if (global_stat == nullptr)
-	{
-		LOGMESSAGE(L"nlohmann::json& js not initialize\n");
-	}
 
-	// I don't know where is js now? data? bss? heap? stack?
-	global_stat = nlohmann::json::parse(js_string);
+	{ // scope for docked
+		nlohmann::json docked = nullptr;
+		//using json = nlohmann::json;
+		//assert(global_stat == nullptr);
+		if (global_stat == nullptr)
+		{
+			LOGMESSAGE(L"nlohmann::json& js not initialize\n");
+		}
+		else //backup docked
+		{
+			docked = global_stat.value<nlohmann::json>("docked", nullptr);
+		}
+
+		// I don't know where is js now? data? bss? heap? stack?
+		global_stat = nlohmann::json::parse(js_string);
+
+		if (docked != nullptr)
+		{
+			global_stat["docked"] = docked;
+			//global_stat.emplace("docked", docked);
+			//docked = nullptr; // is this meaningful?
+		}
+	}
 
 	if (enable_cache)
 	{
@@ -1990,85 +2019,91 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 	{
 		size_t num_of_windows = 0;
 		HANDLE hProcess = reinterpret_cast<HANDLE>(jsp["handle"].get<int64_t>());
-		hWnd = GetHwnd(hProcess, num_of_windows);
-		if (num_of_windows)
-		{
-			jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
-			jsp["win_num"] = static_cast<int>(num_of_windows);
-			auto& cache_i_ref = (*global_cache_configs_pointer)[cache_config_cursor];
-			int valid = 0;
-			if (enable_cache)
-			{
-				valid = cache_i_ref["valid"].get<int>();
-			}
-			if (json_object_has_member(jsp, "alpha"))
-			{
-				bool sucess_set_alpha = false;
-				if (enable_cache && !disable_cache_alpha)
-				{
 
-					if (check_cache_valid(valid, cAlpha))
+		DWORD lpExitCode;
+		BOOL retValue = GetExitCodeProcess(hProcess, &lpExitCode);
+		if (retValue != 0 && lpExitCode == STILL_ACTIVE)
+		{
+			hWnd = GetHwnd(hProcess, num_of_windows);
+			if (num_of_windows)
+			{
+				jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
+				jsp["win_num"] = static_cast<int>(num_of_windows);
+				auto& cache_i_ref = (*global_cache_configs_pointer)[cache_config_cursor];
+				int valid = 0;
+				if (enable_cache)
+				{
+					valid = cache_i_ref["valid"].get<int>();
+				}
+				if (json_object_has_member(jsp, "alpha"))
+				{
+					bool sucess_set_alpha = false;
+					if (enable_cache && !disable_cache_alpha)
 					{
-						set_wnd_alpha(hWnd, cache_i_ref["alpha"]);
-						sucess_set_alpha = true;
+
+						if (check_cache_valid(valid, cAlpha))
+						{
+							set_wnd_alpha(hWnd, cache_i_ref["alpha"]);
+							sucess_set_alpha = true;
+						}
+					}
+					if (!sucess_set_alpha)
+					{
+						set_wnd_alpha(hWnd, jsp["alpha"]);
 					}
 				}
-				if (!sucess_set_alpha)
+				bool topmost = false;
+				if (json_object_has_member(jsp, "topmost"))
 				{
-					set_wnd_alpha(hWnd, jsp["alpha"]);
+					topmost = jsp["topmost"];
 				}
-			}
-			bool topmost = false;
-			if (json_object_has_member(jsp, "topmost"))
-			{
-				topmost = jsp["topmost"];
-			}
 
-			bool use_pos = false;
-			bool use_size = false;
-			int x = 0, y = 0, cx = 0, cy = 0;
-			if (enable_cache && !disable_cache_position && check_cache_valid(valid, cPosition))
-			{
-				x = cache_i_ref["left"];
-				y = cache_i_ref["top"];
-				use_pos = true;
-			}
-			else
-			{
-				use_pos = json_object_has_member(jsp, "position");
-				if (use_pos)
+				bool use_pos = false;
+				bool use_size = false;
+				int x = 0, y = 0, cx = 0, cy = 0;
+				if (enable_cache && !disable_cache_position && check_cache_valid(valid, cPosition))
 				{
-					auto& ref = jsp["position"];
-					x = ref[0]; y = ref[1];
+					x = cache_i_ref["left"];
+					y = cache_i_ref["top"];
+					use_pos = true;
 				}
-			}
-			if (enable_cache && !disable_cache_size && check_cache_valid(valid, cSize))
-			{
-				cx = cache_i_ref["right"].get<int>() - cache_i_ref["left"].get<int>();
-				cy = cache_i_ref["bottom"].get<int>() - cache_i_ref["top"].get<int>();
-				use_size = true;
-			}
-			else
-			{
-				use_size = json_object_has_member(jsp, "size");
-				if (use_size)
+				else
 				{
-					auto& ref = jsp["size"];
-					cx = ref[0]; cy = ref[1];
+					use_pos = json_object_has_member(jsp, "position");
+					if (use_pos)
+					{
+						auto& ref = jsp["position"];
+						x = ref[0]; y = ref[1];
+					}
 				}
-			}
+				if (enable_cache && !disable_cache_size && check_cache_valid(valid, cSize))
+				{
+					cx = cache_i_ref["right"].get<int>() - cache_i_ref["left"].get<int>();
+					cy = cache_i_ref["bottom"].get<int>() - cache_i_ref["top"].get<int>();
+					use_size = true;
+				}
+				else
+				{
+					use_size = json_object_has_member(jsp, "size");
+					if (use_size)
+					{
+						auto& ref = jsp["size"];
+						cx = ref[0]; cy = ref[1];
+					}
+				}
 
 
-			if (0 == set_wnd_pos(hWnd, x, y, cx, cy, topmost, use_pos, use_size))
-			{
-				LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
-			}
-			if (json_object_has_member(jsp, "icon"))
-			{
-				HICON config_icon;
-				if (get_hicon(utf8_to_wstring(jsp["icon"]).c_str(), 0, config_icon, true))
+				if (0 == set_wnd_pos(hWnd, x, y, cx, cy, topmost, use_pos, use_size))
 				{
-					set_wnd_icon(hWnd, config_icon);
+					LOGMESSAGE(L"SetWindowPos Failed! error code:0x%x\n", GetLastError());
+				}
+				if (json_object_has_member(jsp, "icon"))
+				{
+					HICON config_icon;
+					if (get_hicon(utf8_to_wstring(jsp["icon"]).c_str(), 0, config_icon, true))
+					{
+						set_wnd_icon(hWnd, config_icon);
+					}
 				}
 			}
 		}
@@ -2321,6 +2356,18 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 				is_running = false;
 				is_show = false;
 				is_enabled = false;
+			}
+			else // dock hotkey may affect on this
+			{
+				HWND hwnd = reinterpret_cast<HWND>(itm["hwnd"].get<int64_t>());
+				if (hwnd != NULL)
+				{
+					if (is_show != static_cast<bool>(IsWindowVisible(hwnd)))
+					{
+						itm["hwnd"] = !is_show;
+						is_show = !is_show;
+					}
+				}
 			}
 		}
 
@@ -2646,12 +2693,15 @@ void create_process(
 		crontab_log(crontab_ref, 0, 0, jsp["name"].get<std::string>().c_str(), buffer, __FUNCTION__, 0, 1);
 	}
 
+	LOGMESSAGE(L"%s\n", commandLine);
+
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
 	if (false == require_admin && CreateProcess(NULL, commandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB, NULL, working_directory, &si, &pi))
 	{
 		if (!not_host_by_commandtrayhost)
 		{
+			LOGMESSAGE(L"hProcess:0x%x dwProcessId:%d\n", pi.hProcess, pi.dwProcessId);
 			jsp["handle"] = reinterpret_cast<int64_t>(pi.hProcess);
 			jsp["pid"] = static_cast<int64_t>(pi.dwProcessId);
 			// current hWnd is always 0. We should call GetHwnd later
@@ -2863,6 +2913,86 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 	}
 }
 
+/*
+ * idx:
+ *      0 ~ docked.size()-1   undock the idx index HWND
+ *      -1                    undock all
+ */
+BOOL undock_window(int idx)
+{
+	auto& docked = global_stat["docked"];
+	assert(docked.is_array() && static_cast<int>(docked.size()) > idx);
+	if (docked.is_array() && static_cast<int>(docked.size()) > idx)
+	{
+		if (idx >= 0)
+		{
+			auto& docked_i = docked[idx];
+			std::wstring caption = utf8_to_wstring(docked_i["caption"]);
+			HWND hwnd = reinterpret_cast<HWND>(docked_i["hwnd"].get<int64_t>());
+			if (IsWindow(hwnd) && !IsWindowVisible(hwnd))ShowWindow(hwnd, SW_SHOW);
+			docked.erase(idx);
+		}
+		else if (!docked.empty())
+		{
+			for (auto& dk_i : docked)
+			{
+				HWND hwnd = reinterpret_cast<HWND>(dk_i["hwnd"].get<int64_t>());
+				if (IsWindow(hwnd) && !IsWindowVisible(hwnd))ShowWindow(hwnd, SW_SHOW);
+			}
+			docked.clear();
+		}
+	}
+	else
+	{
+		msg_prompt(L"You should never see this!\n\n"
+			L"Please open an issue on github with this following message to developer.\n\n"
+			L"keyword:undock_window",
+			L"Fatal Error",
+			MB_ICONERROR);
+	}
+	return TRUE;
+}
+
+
+BOOL hide_current_window(HWND hwnd)
+{
+	if (!IsWindow(hwnd)) return FALSE;
+	static HWND desktop = GetDesktopWindow();
+	LOGMESSAGE(L"ownder:0x%x desktop:0x%x parent:0x%x\n", GetWindow(hwnd, GW_OWNER), desktop, GetParent(hwnd));
+	if (hwnd == desktop)
+	{
+		return FALSE;
+	}
+	else
+	{
+		HWND parent = GetParent(hwnd);
+		if (parent == GetWindow(hwnd, GW_OWNER) || parent == desktop) {}
+		else
+		{
+			while (parent != NULL && parent != desktop)
+			{
+				hwnd = parent;
+				parent = GetParent(parent);
+			}
+		}
+		DWORD pid = NULL;
+		GetWindowThreadProcessId(hwnd, &pid);
+		std::wstring caption;
+		get_caption_from_hwnd(hwnd, caption);
+
+		//if (!json_object_has_member(global_stat, "docked"))global_stat["docked"] = nlohmann::json::array();
+		// according nlohmann document, [] will silent inset if not exist, push_back will silent push to object
+		global_stat["docked"].push_back({
+			{ "caption", wstring_to_utf8(caption) },
+			{ "hwnd", reinterpret_cast<int64_t>(hwnd) },
+			{ "pid", pid },
+			});
+		assert(global_stat["docked"].is_array());
+		ShowWindow(hwnd, SW_HIDE);
+	}
+	return TRUE;
+}
+
 void hideshow_all(bool is_hideall)
 {
 	cache_config_cursor = 0;
@@ -3023,7 +3153,7 @@ void unregisterhotkey_killtimer_all()
 	const bool enable_hotkey = global_stat.value("enable_hotkey", true);
 	if (enable_hotkey && json_object_has_member(global_stat, "hotkey"))
 	{
-		const char* hotkey_name_global[] = {
+		const char* hotkey_name_global[] = { // order is important, commandtrayhost marked word: 4bfsza3ay
 			"disable_all",
 			"enable_all",
 			"hide_all",
@@ -3036,6 +3166,8 @@ void unregisterhotkey_killtimer_all()
 			"add_alpha",
 			"minus_alpha",
 			"topmost",
+			"hide_current",
+			"show_all_docked",
 		};
 		auto& global_hotkey_ref = global_stat["hotkey"];
 		for (int i = 0; i < ARRAYSIZE(hotkey_name_global); i++)

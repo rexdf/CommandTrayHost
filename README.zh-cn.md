@@ -200,9 +200,12 @@ Windows命令行程序运行监控系统托盘管理工具
         "exit": "Alt+Win+Shift+X",
         "left_click": "Alt+Win+Shift+L",
         "right_click": "Alt+Win+Shift+R",
+        // 下面的五个快捷键，可以对外部程序生效
         "add_alpha": "Alt+Ctrl+Win+0x26", // 修改当前激活的任何窗口(要可能)透明度，不仅仅只对本程序托管的有效，其他程序也行
         "minus_alpha": "Alt+Ctrl+Win+0x28", //上面上箭头 这里下箭头 Alt+Ctrl+Win+↑↓
-        "topmost": "Alt+Ctrl+Win+T", // 同样对任意程序都有效
+        "topmost": "Alt+Ctrl+Win+T", // 切换当前窗口的置顶状态
+        "hide_current": "Alt+Ctrl+Win+H", // 隐藏当前窗口，可以在托盘图标上找到对应项目
+        "show_all_docked": "Alt+Ctrl+Win+S", // 显示所有被上面这个快捷键隐藏的窗口
     },
     "repeat_mod_hotkey": false, // 是否长按算多次
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度

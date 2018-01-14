@@ -25,6 +25,7 @@ enum GloabalMenuNameIndx
 	mAbout,
 	mHelp,
 	mUpdate,
+	mDocked,
 };
 
 const int hotkey_ids_global_section[] = {
@@ -40,6 +41,8 @@ const int hotkey_ids_global_section[] = {
 	WM_HOTKEY_ADD_ALPHA,
 	WM_HOTKEY_MINUS_ALPHA,
 	WM_HOTKEY_TOPMOST,
+	WM_HOTKEY_HIDE,
+	WM_HOTKEY_SHOWALL,
 };
 
 void get_command_submenu(std::vector<HMENU>&);
@@ -50,6 +53,8 @@ void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false
 void show_hide_toggle(nlohmann::json& jsp);
 void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 
+BOOL undock_window(int idx);
+BOOL hide_current_window(HWND hwnd);
 
 void hideshow_all(bool is_hideall = true);
 void start_all(HANDLE, bool force = false);
