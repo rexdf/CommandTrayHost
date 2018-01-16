@@ -1,5 +1,5 @@
 # CommandTrayHost
-A Command Line program monitor systray for Windows
+A command line program monitor systray for Windows
 
 [![Build status](https://ci.appveyor.com/api/projects/status/v5md4dc9q1oy6qxh?svg=true)](https://ci.appveyor.com/project/rexdf/commandtrayhost)
 
