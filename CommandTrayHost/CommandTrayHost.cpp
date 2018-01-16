@@ -1138,25 +1138,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (wParam == PBT_APMSUSPEND) {
 				//Computer is suspending
 			}
+			break;
+		case WM_ENDSESSION:
+
 			break;*/
 	case WM_QUERYENDSESSION:
-		/*if (lParam == 0) {
-			//Computer is shutting down
-		}
-		if ((lParam & ENDSESSION_LOGOFF) == ENDSESSION_LOGOFF) {
-			//User is logging off
-		}*/
-		LOGMESSAGE(L"WM_QUERYENDSESSION\n");
-#if VER_PRODUCTBUILD != 7600
-		if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
+		if ((lParam == 0) || (lParam & ENDSESSION_LOGOFF))
 		{
-#endif
-			kill_all();
+			//Computer is shutting down
+			//User is logging off
+
+			LOGMESSAGE(L"WM_QUERYENDSESSION\n");
 #if VER_PRODUCTBUILD != 7600
-			ShutdownBlockReasonDestroy(hWnd);
-		}
+			if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
+			{
 #endif
-		return DefWindowProc(hWnd, message, wParam, lParam);
+				kill_all();
+#ifdef _DEBUG
+				//msg_prompt(L"Done!", L"Shutdown");
+				//Sleep(10000);
+#endif
+
+#if VER_PRODUCTBUILD != 7600
+				ShutdownBlockReasonDestroy(hWnd);
+			}
+#endif
+		}
+		return TRUE;
 		break;
 	default:
 		if (message == WM_TASKBARCREATED)
