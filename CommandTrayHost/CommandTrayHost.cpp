@@ -802,10 +802,65 @@ BOOL ReloadCmdline()
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static UINT WM_TASKBARCREATED = 0;
+	static UINT WM_TASKBARCREATED = 0, before_shutdown = 0;
 	if (WM_TASKBARCREATED == 0)
 		WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
+	if (before_shutdown == 0x233)
+	{
+		if (message == WM_ENDSESSION)
+		{
+			if (0 != (lParam & ENDSESSION_CLOSEAPP) && wParam == FALSE)
+			{
+				before_shutdown = 0;
+			}
+			else if ((lParam == 0) ||
+				(lParam & ENDSESSION_LOGOFF) ||
+				(lParam & ENDSESSION_CLOSEAPP) ||
+				(lParam & ENDSESSION_CRITICAL))
+			{
+				//Computer is shutting down
+				//User is logging off
+				//the application must shut down
+				//forced to shut down
 
+				LOGMESSAGE(L"WM_QUERYENDSESSION\n");
+				// https://www.apriorit.com/dev-blog/413-win-api-shutdown-events
+#if VER_PRODUCTBUILD != 7600
+				if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
+				{
+#endif
+					kill_all();
+#ifdef _DEBUG
+					//msg_prompt(L"Done!", L"Shutdown");
+					//Sleep(10000);
+#endif
+
+#if VER_PRODUCTBUILD != 7600
+					ShutdownBlockReasonDestroy(hWnd);
+				}
+#ifdef _DEBUG
+				else
+				{
+					std::ofstream o("ShutdownBlockReasonCreate_failed.txt");
+					o << "ok!" << std::endl;
+				}
+#endif
+
+#endif
+			}
+#ifdef _DEBUG
+			else {
+				std::ofstream o("lParam_failed.txt");
+				o << wParam << " ok! " << lParam << std::endl;
+			}
+#endif
+			return 0;
+		}
+		else
+		{
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+	}
 	UINT nID;
 	switch (message)
 	{
@@ -1143,27 +1198,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			break;*/
 	case WM_QUERYENDSESSION:
-		if ((lParam == 0) || (lParam & ENDSESSION_LOGOFF))
-		{
-			//Computer is shutting down
-			//User is logging off
-
-			LOGMESSAGE(L"WM_QUERYENDSESSION\n");
-#if VER_PRODUCTBUILD != 7600
-			if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
-			{
-#endif
-				kill_all();
-#ifdef _DEBUG
-				//msg_prompt(L"Done!", L"Shutdown");
-				//Sleep(10000);
-#endif
-
-#if VER_PRODUCTBUILD != 7600
-				ShutdownBlockReasonDestroy(hWnd);
-			}
-#endif
-		}
+		before_shutdown = 0x233;
 		return TRUE;
 		break;
 	default:
@@ -1362,6 +1397,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 #endif
 		SetProcessShutdownParameters(0x3FF, SHUTDOWN_NORETRY); // CommandTrayHost quit first
+#ifdef _DEBUG
+		LOGMESSAGE(L"Error:0x%x\n", GetLastError());
+#endif
 	}
 
 	while (GetMessage(&msg, NULL, 0, 0) > 0)

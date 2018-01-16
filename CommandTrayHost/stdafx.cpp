@@ -18,8 +18,9 @@
 void log_message(PCSTR caller_filename, PCSTR caller_function, int line_number, PCWSTR pszFormat, ...)
 {
 	// Expression: ("Buffer too small", 0)
-	const size_t len = 2048 * 16;
+	const size_t len = 2048 * 16; // *2048;
 	static wchar_t s_acBuf[len]; // this here is a caveat!
+	//wchar_t* s_acBuf = new wchar_t[len];
 	int len_caller = swprintf_s(s_acBuf, len, L"%S(%d) : [ %S ]\n", caller_filename, line_number, caller_function);
 	if (len_caller >= 0)
 	{
@@ -33,6 +34,7 @@ void log_message(PCSTR caller_filename, PCSTR caller_function, int line_number, 
 	{
 		assert(false);
 	}
+	//delete[]s_acBuf;
 }
 /*
  #include "configure.h"

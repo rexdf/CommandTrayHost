@@ -117,6 +117,7 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 {
 	if (!s || !s[0])return false;
 	extern bool repeat_mod_hotkey;
+// https://stackoverflow.com/questions/6103059/registerhotkey-only-working-in-windows-7-not-in-xp-server-2003
 #if VER_PRODUCTBUILD == 7600
 	fsModifiers = NULL;
 #else

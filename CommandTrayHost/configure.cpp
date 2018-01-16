@@ -3236,6 +3236,10 @@ void unregisterhotkey_killtimer_all()
 
 void kill_all(bool is_exit/* = true*/)
 {
+#ifdef _DEBUG
+	std::ofstream o("kill_all.txt");
+	o << "ok!" << std::endl;
+#endif
 	cache_config_cursor = -1;
 	for (auto& itm : (*global_configs_pointer))
 	{
