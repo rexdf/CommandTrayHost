@@ -207,7 +207,7 @@ Windows命令行程序运行监控系统托盘管理工具
         "hide_current": "Alt+Ctrl+Win+H", // 隐藏当前窗口，可以在托盘图标上找到对应项目
         "show_all_docked": "Alt+Ctrl+Win+S", // 显示所有被上面这个快捷键隐藏的窗口
     },
-    "repeat_mod_hotkey": false, // 是否长按算多次
+    "repeat_mod_hotkey": false, // 是否长按算多次,Windows XP下面无效
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,

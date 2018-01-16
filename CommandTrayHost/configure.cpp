@@ -219,7 +219,7 @@ bool initial_configure()
         "hide_current": "Alt+Ctrl+Win+H", // 隐藏当前窗口，可以在托盘图标上找到对应项目
         "show_all_docked": "Alt+Ctrl+Win+S", // 显示所有被上面这个快捷键隐藏的窗口
     },
-    "repeat_mod_hotkey": false, // 是否长按算多次
+    "repeat_mod_hotkey": false, // 是否长按算多次,Windows XP下面无效
     "global_hotkey_alpha_step": 5, // 上面透明度调节的幅度
     "show_hotkey_in_menu": true, // 在菜单后面加上成功注册的热键
     "enable_hotkey": true,
@@ -365,7 +365,7 @@ bool initial_configure()
         "hide_current": "Alt+Ctrl+Win+H", // hide current window to tray menu
         "show_all_docked": "Alt+Ctrl+Win+S", // show all windows hidden by above hotkey
     },
-    "repeat_mod_hotkey": false,
+    "repeat_mod_hotkey": false, // not work for XP
     "global_hotkey_alpha_step": 5,
     "show_hotkey_in_menu": true,
     "enable_hotkey": true,
@@ -1096,11 +1096,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 	// type check for global optional items
 	const RapidJsonObjectChecker global_optional_items[] = {
 		{ "enable_hotkey", iBoolType, true, [&enable_hotkey](const Value& val,PCSTR name)->bool {
-#if VER_PRODUCTBUILD == 7600
-			enable_hotkey = false;
-#else
 			enable_hotkey = val[name].GetBool();
-#endif
 			return true;
 		}, },
 		{ "auto_hot_reloading_config", iBoolType, true, [](const Value& val,PCSTR name)->bool {

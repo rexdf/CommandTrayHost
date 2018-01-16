@@ -1133,6 +1133,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CLEANUP_BEFORE_QUIT(4);
 		PostQuitMessage(0);
 		break;
+
+		/*case WM_POWERBROADCAST:
+			if (wParam == PBT_APMSUSPEND) {
+				//Computer is suspending
+			}
+			break;*/
+	case WM_QUERYENDSESSION:
+		/*if (lParam == 0) {
+			//Computer is shutting down
+		}
+		if ((lParam & ENDSESSION_LOGOFF) == ENDSESSION_LOGOFF) {
+			//User is logging off
+		}*/
+		LOGMESSAGE(L"WM_QUERYENDSESSION\n");
+#if VER_PRODUCTBUILD != 7600
+		if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
+		{
+#endif
+			kill_all();
+#if VER_PRODUCTBUILD != 7600
+			ShutdownBlockReasonDestroy(hWnd);
+		}
+#endif
+		return DefWindowProc(hWnd, message, wParam, lParam);
+		break;
 	default:
 		if (message == WM_TASKBARCREATED)
 		{
@@ -1316,6 +1341,19 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		{
 			CloseHandle(filewatch_thread);
 		}
+	}
+
+	{
+#ifdef _DEBUG
+		DWORD dwLevel = 0;
+		DWORD dwFlags = 0;
+		if (GetProcessShutdownParameters(&dwLevel, &dwFlags))
+		{
+			LOGMESSAGE(L"dwLevel:0x%x dwFlags:0x%x", dwLevel, dwFlags);
+		}
+
+#endif
+		SetProcessShutdownParameters(0x3FF, SHUTDOWN_NORETRY); // CommandTrayHost quit first
 	}
 
 	while (GetMessage(&msg, NULL, 0, 0) > 0)

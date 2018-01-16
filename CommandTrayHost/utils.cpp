@@ -117,7 +117,11 @@ bool get_vk_from_string(const char* s, UINT& fsModifiers, UINT& vk)
 {
 	if (!s || !s[0])return false;
 	extern bool repeat_mod_hotkey;
+#if VER_PRODUCTBUILD == 7600
+	fsModifiers = NULL;
+#else
 	fsModifiers = repeat_mod_hotkey ? NULL : MOD_NOREPEAT;
+#endif
 	int idx = 0;
 	while (s[idx])
 	{

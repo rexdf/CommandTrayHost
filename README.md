@@ -202,7 +202,7 @@ example configure
         "hide_current": "Alt+Ctrl+Win+H", // hide current window to tray menu
         "show_all_docked": "Alt+Ctrl+Win+S", // show all windows hiden by above hotkey
     },
-    "repeat_mod_hotkey": false,
+    "repeat_mod_hotkey": false, // not work for XP
     "global_hotkey_alpha_step": 5,
     "show_hotkey_in_menu": true,
     "enable_hotkey": true,
