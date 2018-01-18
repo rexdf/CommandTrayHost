@@ -142,7 +142,10 @@ struct ComInit
 		}
 		else
 		{
-			msg_prompt((L"Updater error code: " + std::to_wstring(ret)).c_str(), L"Update error!");
+			if (last_atom_updater)
+			{
+				msg_prompt((L"Updater error code: " + std::to_wstring(ret)).c_str(), L"Update error!");
+			}
 		}
 		atom_variable_for_updater = -1;
 		//delete[] _buffer;
