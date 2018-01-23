@@ -1158,8 +1158,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		if (VM_TIMER_BASE <= wParam && wParam <= 0xBF00)
 		{
-			size_t idx = static_cast<size_t>(wParam - VM_TIMER_BASE);
-			if (idx >= number_of_configs || idx < 0)
+			size_t idx = /*static_cast<size_t>*/(wParam - VM_TIMER_BASE);
+			if (idx >= number_of_configs/* || idx < 0*/)
 			{
 				msg_prompt(L"Crontab has some fatal error unknown idx! Please report this windows screenshot to author!",
 					L"Crontab Error",

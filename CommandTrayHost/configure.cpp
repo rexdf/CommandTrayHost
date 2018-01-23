@@ -63,7 +63,7 @@ bool initial_configure()
 	update_locale_name_by_alias();
 	update_isZHCN(true);
 
-	const std::string config = isZHCN ? u8R"json({
+	const char* config = isZHCN ? u8R"json({
     /**
      * 0. 常见样例可以参考项目wiki.
      * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c.
@@ -2372,6 +2372,10 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		}
 
 		UINT uSubFlags = (is_en_job && is_running) ? (MF_STRING) : (MF_STRING | MF_GRAYED);
+		if (json_object_has_member(itm, "crontab_config") && itm.value("enabled", false))
+		{
+			uSubFlags |= MF_CHECKED;
+		}
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
 			utf8_to_wstring(itm["path"]).c_str());
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
@@ -2977,7 +2981,7 @@ BOOL hide_current_window(HWND hwnd)
 				LOGMESSAGE(L"loop through HWND:0x%x\n", hwnd);
 			}
 		}
-		if (IsWindowVisible(hwnd)) 
+		if (IsWindowVisible(hwnd))
 		{
 			DWORD pid = NULL;
 			GetWindowThreadProcessId(hwnd, &pid);
