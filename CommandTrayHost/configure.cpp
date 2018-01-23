@@ -2372,7 +2372,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		}
 
 		UINT uSubFlags = (is_en_job && is_running) ? (MF_STRING) : (MF_STRING | MF_GRAYED);
-		if (json_object_has_member(itm, "crontab_config") && itm.value("enabled", false))
+		if (json_object_has_member(itm, "crontab_config") && itm["crontab_config"].value("enabled", false))
 		{
 			uSubFlags |= MF_CHECKED;
 		}
