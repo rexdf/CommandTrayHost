@@ -132,7 +132,7 @@ Windows命令行程序运行监控系统托盘管理工具
             "use_builtin_console": false,
             "is_gui": false,
             "enabled": true,
-            "kill_timeout": 2000, // 等两秒钟，让aria2有足够的时间保存session
+            "kill_timeout": 2000, // 最多等2秒钟，让aria2有足够的时间保存session, 根据硬盘速度可适当增加，比如移动硬盘最好4秒
         },
         {
             "name": "JeliLicenseServer",

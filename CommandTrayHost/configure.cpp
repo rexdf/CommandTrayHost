@@ -3240,6 +3240,9 @@ void unregisterhotkey_killtimer_all()
 
 void kill_all(bool is_exit/* = true*/)
 {
+	static int volatile atomic_variable_singlton = 0;
+	if (atomic_variable_singlton)return;
+	atomic_variable_singlton = 1;
 #ifdef _DEBUG
 	std::ofstream o("kill_all.txt");
 	o << "ok!" << std::endl;
@@ -3316,4 +3319,5 @@ void kill_all(bool is_exit/* = true*/)
 	{
 		flush_cache(/*is_exit*/);
 	}
+	atomic_variable_singlton = 0;
 }
