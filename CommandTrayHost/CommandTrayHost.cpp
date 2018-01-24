@@ -8,6 +8,7 @@
 #include "updater.h"
 #include "admin_singleton.h"
 #include "cron.h"
+#include "shutdownblock.h"
 
 #ifdef _DEBUG
 #include "test.hpp"
@@ -82,9 +83,10 @@ HINSTANCE hInst;
 HWND hWnd;
 HWND hConsole;
 HANDLE hProcessCommandTrayHost;
+HANDLE hThreadShutdown;
 WCHAR szTitle[64] = L"";
 WCHAR szWindowClass[36] = L"command-tray-host";
-WCHAR szCommandLine[1024] = L"";
+WCHAR szCommandLine[64] = L"";
 WCHAR szTooltip[512] = L"";
 WCHAR szBalloon[512] = L"";
 WCHAR szEnvironment[1024] = L"";
@@ -1197,30 +1199,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (wParam == PBT_APMSUSPEND) {
 				//Computer is suspending
 			}
-			break;
-		case WM_ENDSESSION:
-
 			break;*/
+	case WM_ENDSESSION:
+		if (hThreadShutdown) {
+			WaitForSingleObject(hThreadShutdown, INFINITE);
+			CloseHandle(hThreadShutdown);
+		}
+		break;
 	case WM_QUERYENDSESSION:
 		//before_shutdown = 0x233;
-#if VER_PRODUCTBUILD != 7600
-		if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
+		if (NULL == hThreadShutdown)
 		{
-#endif
-			kill_all();
-#ifdef _DEBUG
-			{
-				//msg_prompt(L"Done!", L"Shutdown");
-				//Sleep(20000);
-				std::ofstream o("finished_killall.txt");
-				o << wParam << " ok! " << lParam << std::endl;
-			}
-#endif
-
-#if VER_PRODUCTBUILD != 7600
-			ShutdownBlockReasonDestroy(hWnd);
+			CreateShutdownHook(hThreadShutdown);
 		}
-#endif
 		return TRUE;
 		break;
 	default:
