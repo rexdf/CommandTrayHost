@@ -804,7 +804,7 @@ BOOL ReloadCmdline()
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static UINT WM_TASKBARCREATED = 0, is_blocked/*, before_shutdown = 0*/;
+	static UINT WM_TASKBARCREATED = 0/*, before_shutdown = 0*/;
 	if (WM_TASKBARCREATED == 0)
 		WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 	/*if (before_shutdown == 0x233)
@@ -1212,11 +1212,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			(lParam & ENDSESSION_CLOSEAPP) ||
 			(lParam & ENDSESSION_CRITICAL))
 		{*/
-		if (hThreadShutdown) {
+		if (hThreadShutdown)
+		{
 #if VER_PRODUCTBUILD != 7600
+			bool is_blocked = false;
 			if (ShutdownBlockReasonCreate(hWnd, isZHCN ? L"正在通知被托管的程序自己关闭" : L"Notify program to quit itself"))
 			{
-				is_blocked = TRUE;
+				is_blocked = true;
 			}
 #endif
 			WaitForSingleObject(hThreadShutdown, INFINITE);
