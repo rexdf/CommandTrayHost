@@ -2029,7 +2029,7 @@ inline HWND get_hwnd_from_json(nlohmann::json& jsp)
 			{
 				jsp["hwnd"] = reinterpret_cast<int64_t>(hWnd);
 				jsp["win_num"] = static_cast<int>(num_of_windows);
-				auto& cache_i_ref = (*global_cache_configs_pointer)[cache_config_cursor];
+				nlohmann::json& cache_i_ref = global_cache_configs_pointer != nullptr ? (*global_cache_configs_pointer)[cache_config_cursor] : nullptr;
 				int valid = 0;
 				if (enable_cache)
 				{
