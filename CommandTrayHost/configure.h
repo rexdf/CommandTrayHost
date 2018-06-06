@@ -61,7 +61,7 @@ void start_all(HANDLE, bool force = false);
 void restart_all(HANDLE);
 void update_hwnd_all();
 void unregisterhotkey_killtimer_all();
-void kill_all(bool is_exit = true);
+void kill_all(bool is_exit = true, int exclusion_id = 0);
 void left_click_toggle();
 
 

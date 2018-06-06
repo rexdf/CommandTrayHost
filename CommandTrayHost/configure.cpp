@@ -129,6 +129,7 @@ bool initial_configure()
             "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
             "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
             "kill_timeout": 200, // 执行关闭操作时，先尝试通知程序自己关闭然后等多少ms，然后再杀进程，默认是200ms
+            "exclusion_id": 1, // 互斥id，要求是大于0的整数。相同的互斥id启动时，会先杀掉其他。
         },
         {
             "name": "cmd例子2",
@@ -150,6 +151,7 @@ bool initial_configure()
                 "log_level": 0, // log级别，缺省默认为0。0为仅仅记录crontab触发记录，1附加启动时的信息，2附加下次触发的信息
                 "start_show": false,  // 注释掉的话，使用cache值(如果有)，cache禁用的状态下的默认值是false
             },
+            "exclusion_id": 1,
         },
         {
             "name": "cmd例子3",
@@ -275,6 +277,7 @@ bool initial_configure()
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
             "kill_timeout": 200,
+            "exclusion_id": 1, // kill all configs with same `exclusion_id` before to run current config. greater than 0.
         },
         {
             "name": "cmd example 2",
@@ -296,6 +299,7 @@ bool initial_configure()
                 "log_level": 0, // log level 0 1 2
                 "start_show": false, // comment out to use cache
             },
+            "exclusion_id": 1,
         },
         {
             "name": "cmd example 3",
@@ -930,6 +934,10 @@ rapidjson::SizeType configure_reader(std::string& out)
 			int kill_timeout = val[name].GetInt();
 			return  kill_timeout >= 0 && kill_timeout < static_cast<uint64_t>((std::numeric_limits<DWORD>::max)());
 		}, },
+		{ "exclusion_id", iIntType, true, [](Value& val, PCSTR name)->bool {
+			int exclusion_id = val[name].GetInt();
+			return exclusion_id > 0;
+		},},
 	};
 	PCSTR const global_menu[][2] = { // order is important, commandtrayhost marked word: 4bfsza3ay
 		// with hotkey
@@ -2912,6 +2920,11 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 	}
 	else
 	{
+		int exclusion_id = jsp.value("exclusion_id", 0);
+		if (exclusion_id > 0)
+		{
+			kill_all(false, exclusion_id);
+		}
 		jsp["enabled"] = true;
 		create_process(jsp, ghJob, runas_admin);
 	}
@@ -3238,7 +3251,8 @@ void unregisterhotkey_killtimer_all()
 	}
 }
 
-void kill_all(bool is_exit/* = true*/)
+
+void kill_all(bool is_exit/* = true*/, int exclusion_id)
 {
 	static int volatile atomic_variable_singlton = 0;
 	if (atomic_variable_singlton)return;
@@ -3266,6 +3280,10 @@ void kill_all(bool is_exit/* = true*/)
 		}*/
 		if (is_running)
 		{
+			if (exclusion_id > 0 && itm.value("exclusion_id", 0) != exclusion_id)
+			{
+				continue;
+			}
 			if (enable_cache && (!disable_cache_position || !disable_cache_size || !disable_cache_alpha))
 			{
 				if (true == itm["en_job"])
