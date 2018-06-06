@@ -66,6 +66,7 @@ example configure
             "not_host_by_commandtrayhost": false, // if true, commandtrayhost will not monitor it
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
             "kill_timeout": 200, // post a message to let program quit itself, if timeout killing the process
+            "exclusion_id": 1, // kill all configs with same `exclusion_id` before to run current config. greater than 0.
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",
@@ -87,6 +88,7 @@ example configure
                 "log_level": 0, // log level 0 1 2
                 "start_show": false, // comment out to use cache
             },
+            "exclusion_id": 1,
         },
         {
             "name": "herokuapp",
