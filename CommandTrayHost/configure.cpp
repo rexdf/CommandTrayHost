@@ -2453,7 +2453,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		if (!is_runas_admin)
 		{
 			AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);
-			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + 5,
+			AppendMenu(hSubMenu, MF_STRING, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + info_items_cnt + 3,
 				utf8_to_wstring((*menu_translation_pointer)[mRunAsAdministrator]).c_str()
 			);
 		}
