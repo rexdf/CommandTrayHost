@@ -251,10 +251,6 @@ See this file : [CommandTrayHost/CommandTrayHost/language_data.h](https://github
 
 - [ ] When restart process, keep the history standard output and standard error output in a ConsoleHelper.  That's why there is  a `use_builtin_console`. Maybe I have to inject some code to child process. [ConEmu](https://github.com/Maximus5/ConEmu)
 
-- [ ] Auto update check for some github projects, etc kcptun-windows.
-
-- [ ] ProxyAgent，Socks5--> http，IE Proxy setting。
-
 - [ ] [Elevated Startup](https://stefansundin.github.io/elevatedstartup/)
 
 - [ ] UIPI (User Interface Privilege Isolation) Bypass. `ChangeWindowMessageFilterEx`
