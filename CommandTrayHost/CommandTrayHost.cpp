@@ -942,10 +942,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_ABOUT)
 		{
 			PCWSTR msg = (isZHCN) ?
-				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n\n作者: rexdf" L"\n\n编译时间: " BUILD_TIME_CN) :
-				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\n\nAuthor: rexdf" L"\n\nBuild Timestamp: " BUILD_TIME_EN);
+				(L"CommandTrayHost\n\n" L"版本: " VERSION_NUMS L"\n\n作者: rexdf" L"\n\n编译时间: " BUILD_TIME_CN "\n\n") :
+				(L"CommandTrayHost\n\n" L"Version: " VERSION_NUMS L"\n\nAuthor: rexdf" L"\n\nBuild Timestamp: " BUILD_TIME_EN "\n\n");
 
-			MessageBox(hWnd, msg, isZHCN ? L"关于" : utf8_to_wstring(translate("About")).c_str(), 0);
+			MessageBox(hWnd, msg, isZHCN ? L"关于" : utf8_to_wstring(translate("About")).c_str(), MB_TOPMOST | MB_SETFOREGROUND);
 		}
 		else if (nID == WM_TASKBARNOTIFY_MENUITEM_HIDEALL)
 		{
