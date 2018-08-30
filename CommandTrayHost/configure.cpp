@@ -2185,7 +2185,10 @@ void start_all(HANDLE ghJob, bool force)
 			if (false == ignore_all)*/
 			if (!i.value("ignore_all", false))
 			{
-				i["enabled"] = true;
+				if (!json_object_has_member(i, "exclusion_id"))
+				{
+					i["enabled"] = true;
+				}
 			}
 		}
 		else
