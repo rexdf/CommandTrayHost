@@ -16,13 +16,13 @@ install:
 - cmd: >-
     cd /d c:\tools\vcpkg
 
-    rem git reset --hard
+     git reset --hard
 
-    rem git clean -ffdx
+     git clean -ffdx
 
-    rem git pull
+     git pull
 
-    rem bootstrap-vcpkg.bat
+     bootstrap-vcpkg.bat
 
     cd /d c:\projects\CommandTrayHost
 
