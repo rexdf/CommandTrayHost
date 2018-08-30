@@ -153,6 +153,7 @@ Windows命令行程序运行监控系统托盘管理工具
     // 绝大部分情况不需要admin的，但是如果真的需要，自动启动应该会有问题，可以参考使用 https://stefansundin.github.io/elevatedstartup/
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // 自定义托盘图标路径，空为默认内置 256x256
     "icon_size": 256, // 256 32 16
+    "cmd_menu_max_length": 0, // cmd和path最大字符串个数，0表示不限制，大于0整数表示超过之后用...标出
     "lang": "auto", // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
     "groups": [ // groups的值是一个数组，可以有两种类型，一种为数值，一种为object。object代表下级菜单。object必须有name字段
         {

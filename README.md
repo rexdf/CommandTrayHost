@@ -149,6 +149,7 @@ example configure
     "icon": "E:\\icons\\Mahm0udwally-All-Flat-Computer.ico", // Customize Tray Icon path
     // when empty, builtin default icon will be used. 256x256
     "icon_size": 256, // 256 32 16
+    "cmd_menu_max_length": 0, // maximium character limit for cmd and path item in menu. 0 infinite
     "lang": "auto", // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
     "groups": [ // groups is an array. Allowed element types are object and number.
         {

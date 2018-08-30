@@ -169,6 +169,7 @@ bool initial_configure()
     "require_admin": false, // 是否让CommandTrayHost运行时弹出UAC对自身提权
     "icon": "", // 托盘图标路径，只支持ico文件，可以是多尺寸的ico； 空为内置图标
     "icon_size": 256, // 图标尺寸 可以用值有256 32 16
+    "cmd_menu_max_length": 0, // cmd和path最大字符串个数，0表示不限制，大于0整数表示超过之后用...标出
     "lang": "auto", // zh-CN en-US https://msdn.microsoft.com/en-us/library/cc233982.aspx
     "groups": [ // groups的值是一个数组(方括号)，可以有两种类型，一种为数值，一种为object(花括号)。object代表下级菜单。最多可以40层嵌套。object必须有name字段
         {
@@ -317,6 +318,7 @@ bool initial_configure()
     "require_admin": false, // To Run CommandTrayHost runas privileged
     "icon": "", // icon path, empty for default
     "icon_size": 256, // icon size, valid value: 256 32 16
+    "cmd_menu_max_length": 0, // maximium character limit for cmd and path item in menu. 0 infinite
     "lang": "auto", // zh-CN en-US etc https://msdn.microsoft.com/en-us/library/cc233982.aspx
     "groups": [ // groups is an array. Allow element is object and number.
         {
