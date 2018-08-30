@@ -1,3 +1,5 @@
+8/30/2018 [nlohmann-json] update to 3.2.0
+
 3/26/2018 [nlohmann-json] update to 3.1.2
 
 2/2/2018 [nlohmann-json] update to 3.1.0
