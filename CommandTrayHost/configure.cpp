@@ -66,14 +66,14 @@ bool initial_configure()
 	const char* config = isZHCN ? u8R"json({
     /**
      * 0. 常见样例可以参考项目wiki.
-     * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c.
+     * 1. "cmd"必须包含.exe.如果要运行批处理.bat, 可以使用 cmd.exe /c或者cmd.exe /k.
      * 2. 所有的路径必须要是C:\\Windows这样的双斜杠分割，这是json的字符串规定。
      * 3. 所有的路径都可以是相对路径，比如 ..\..\icons\icon.ico这种形式。
      *    但是参考各有不同：
      *    cmd里面的子程序工作路径由working_directory指定
      *    其他路径则是CommandTrayHost.exe所在目录指定
      * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
-     *    如果用VS Code或者Sublime Text编辑，可以用JavaScript语法着色
+     *    如果用VS Code或者Sublime Text编辑，可以用JSON with Comments语法着色
      * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响. 当然了默认配置是为了演示用，
      *    启用了全部热键，第二个启动时会提示热键冲突，禁用或者修改第二个的热键即可。
      * 6. 如果改成 "enable_cache": true ，则会将用户操作缓存到command_tray_host.cache
