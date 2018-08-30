@@ -30,6 +30,23 @@ std::wstring s2ws(const std::string& s)
 }
 #endif
 
+std::string truncate(std::string str, size_t width, bool show_ellipsis)
+{
+	if (width > 0 && str.length() > width)
+	{
+		if (show_ellipsis)
+		{
+			return str.substr(0, width) + "...";
+		}
+		else
+		{
+			return str.substr(0, width);
+		}
+	}
+
+	return str;
+}
+
 // convert UTF-8 string to wstring
 std::wstring utf8_to_wstring(const std::string& str)
 {

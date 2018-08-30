@@ -1280,6 +1280,14 @@ rapidjson::SizeType configure_reader(std::string& out)
 			}
 			return true;
 		} },
+		{ "cmd_menu_max_length", iIntType, true, [](const Value& val,PCSTR name)->bool {
+			int cmd_menu_max_length = val[name].GetInt();
+			if (cmd_menu_max_length < 0)
+			{
+				return false;
+			}
+			return true;
+		} },
 
 		{ "enable_cache", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
 		{ "conform_cache_expire", iBoolType, true, lambda_cache_option, lambda_cache_option_value_pointer_idx },
@@ -2342,6 +2350,7 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		hSubMenu = CreatePopupMenu();
 		outVcHmenu.push_back(hSubMenu);
 	}
+	int cmd_menu_max_length = global_stat.value("cmd_menu_max_length", 0);
 	int i = 0;
 	//std::wstring local_wstring;
 	for (auto& itm : (*global_configs_pointer))
@@ -2393,9 +2402,9 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 			uSubFlags |= MF_CHECKED;
 		}
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
-			utf8_to_wstring(itm["path"]).c_str());
+			utf8_to_wstring(truncate(itm["path"], cmd_menu_max_length)).c_str());
 		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
-			utf8_to_wstring(itm["cmd"]).c_str());
+			utf8_to_wstring(truncate(itm["cmd"], cmd_menu_max_length)).c_str());
 		//AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
 		//utf8_to_wstring(itm["working_directory"]).c_str());
 		AppendMenu(hSubMenu, MF_SEPARATOR, NULL, NULL);

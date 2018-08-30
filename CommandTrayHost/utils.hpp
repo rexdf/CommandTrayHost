@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+std::string truncate(std::string str, size_t width, bool show_ellipsis = true);
 std::wstring utf8_to_wstring(const std::string&);
 std::string wstring_to_utf8(const std::wstring&);
 
