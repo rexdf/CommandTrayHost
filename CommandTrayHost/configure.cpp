@@ -2271,8 +2271,11 @@ void restart_all(HANDLE ghJob)
 				//#else
 				try_read_optional_json(i, require_admin, "require_admin");
 				//#endif*/
-				const bool require_admin = i.value("require_admin", false);
-				create_process(i, ghJob, require_admin);
+				if (!json_object_has_member(i, "exclusion_id") || i.value("enabled", false))
+				{
+					const bool require_admin = i.value("require_admin", false);
+					create_process(i, ghJob, require_admin);
+				}
 			}
 
 		}
