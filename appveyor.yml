@@ -55,7 +55,7 @@ after_build:
 
     copy XP-Release\CommandTrayHost.exe CommandTrayHost-xp-x86\
 
-    curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.94/upx394w.zip
+    curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.95/upx-3.95-win64.zip
 
     7z e upx.zip *.exe -r
 
