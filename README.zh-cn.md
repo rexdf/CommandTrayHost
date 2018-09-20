@@ -59,7 +59,7 @@ Windows命令行程序运行监控系统托盘管理工具
             "icon": "", // 命令行窗口的图标
             "alpha": 170, // 命令行窗口的透明度，0-255之间的整数,0为完全看不见，255完全不透明
             "topmost": false, // 命令行窗口置顶
-            // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
+            // 可以使用的有alt win shift ctrl 0-9 A-Z 空格或者+号分割
             // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             "hotkey": { // 下面并不需要都出现，可以只设置部分
@@ -190,7 +190,7 @@ Windows命令行程序运行监控系统托盘管理工具
     "disable_cache_enabled": true, // 禁止缓存启用禁用状态
     "disable_cache_show": false, // 禁止缓存显示隐藏状态
     "disable_cache_alpha": false, // 禁止缓存透明度 (缓存时只对有alpha值的configs有作用)
-    // 可以使用的有alt win shit ctrl 0-9 A-Z 空格或者+号分割
+    // 可以使用的有alt win shift ctrl 0-9 A-Z 空格或者+号分割
     // 或者使用这种形式 "ALT+WIN+CTRL+0x20" 鼠标手柄的键盘码参考
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
