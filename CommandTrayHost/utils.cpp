@@ -597,27 +597,120 @@ extern bool is_cache_valid;
 //extern BOOL isZHCN, isENUS;
 
 
+#ifdef _DEBUG_PROCESS_TREE
+// not working for nginx continuous fork
 #ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool is_update_cache)
+bool kill_child_tree(int dep, DWORD pid, DWORD timeout, PCWSTR name)
 #else
-void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, bool is_update_cache)
+bool kill_child_tree(int dep, DWORD pid, DWORD timeout)
+#endif
+{
+	LOGMESSAGE(L"kill_child_tree running %s PID=%d", name, pid);
+	PROCESSENTRY32 pe;
+
+	memset(&pe, 0, sizeof(PROCESSENTRY32));
+	pe.dwSize = sizeof(PROCESSENTRY32);
+
+	HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	if (::Process32First(hSnap, &pe))
+	{
+		BOOL bContinue = TRUE;
+
+		// kill child processes
+		while (bContinue)
+		{
+			// only kill child processes
+			if (pe.th32ParentProcessID == pid)
+			{
+				LOGMESSAGE(L"dep:%d found child pid PID=%d", dep, pe.th32ProcessID);
+
+#ifdef _DEBUG
+				kill_child_tree(dep + 1, pe.th32ProcessID, timeout, name);
+#else
+				kill_child_tree(dep + 1, pe.th32ProcessID, timeout);
+#endif
+
+				/*if (TA_FAILED == TerminateApp(pe.th32ProcessID, timeout))
+				{
+					LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+						name, pid,
+						__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+					//TerminateProcess(pe.th32ProcessID, 0);
+					HANDLE hChildProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
+
+					if (hChildProc)
+					{
+						::TerminateProcess(hChildProc, 1);
+						::CloseHandle(hChildProc);
+					}
+				}*/
+			}
+
+			bContinue = ::Process32Next(hSnap, &pe);
+		}
+
+		// kill the main process
+		if (dep > 0)
+		{
+			LOGMESSAGE(L"killing pid PID=%d", pid);
+			if (TA_FAILED == TerminateApp(pid, timeout))
+			{
+				LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+					name, pid,
+					__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+				HANDLE hChildProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+
+				if (hChildProc)
+				{
+					::TerminateProcess(hChildProc, 1);
+					::CloseHandle(hChildProc);
+				}
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+#endif
+
+#ifdef _DEBUG
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool kill_process_tree, bool is_update_cache)
+#else
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, bool kill_process_tree, bool is_update_cache)
 #endif
 {
 	assert(GetProcessId(hProcess) == pid);
 	if (GetProcessId(hProcess) == pid)
 	{
-		if (TA_FAILED == TerminateApp(pid, timeout))
+		if (kill_process_tree)
 		{
-			LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
-				name, pid,
-				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
-			TerminateProcess(hProcess, 0);
+			std::wstring system_cmd = L"TASKKILL /F /T /PID " + std::to_wstring(pid);
+			_wsystem(system_cmd.c_str());
+#ifdef _DEBUG_PROCESS_TREE
+#ifdef _DEBUG
+			kill_child_tree(0, pid, timeout, name);
+#else
+			kill_child_tree(0, pid, timeout);
+#endif
+#endif
 		}
 		else
 		{
-			LOGMESSAGE(L"TerminateApp %S pid: %d successed.  File = %S Line = %d Func=%S Date=%S Time=%S\n",
-				name, pid,
-				__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+			if (TA_FAILED == TerminateApp(pid, timeout))
+			{
+				LOGMESSAGE(L"TerminateApp %s pid: %d failed!!  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+					name, pid,
+					__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+				TerminateProcess(hProcess, 0);
+			}
+			else
+			{
+				LOGMESSAGE(L"TerminateApp %S pid: %d successed.  File = %S Line = %d Func=%S Date=%S Time=%S\n",
+					name, pid,
+					__FILE__, __LINE__, __FUNCTION__, __DATE__, __TIME__);
+			}
 		}
 		CloseHandle(hProcess);
 	}

@@ -33,6 +33,9 @@
 #include <atlbase.h>  // CComPtr
 #include <ShlDisp.h>
 
+#ifdef _DEBUG_PROCESS_TREE
+#include <TlHelp32.h>
+#endif
 
 #include <fstream>
 #include <iomanip>

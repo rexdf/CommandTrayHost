@@ -71,7 +71,8 @@ Windows命令行程序运行监控系统托盘管理工具
             "not_host_by_commandtrayhost": false, // 如果设置成了true，那么CommandTrayHost就不会监控它的运行了
             "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
             "kill_timeout": 200, // 执行关闭操作时，先尝试通知程序自己关闭然后等多少ms，然后再杀进程，默认是200ms
-            "exclusion_id": 1, // 互斥id，要求是大于0的整数。相同的互斥id启动时，会先杀掉其他。
+            "exclusion_id": 1, // 互斥id，要求是大于0的整数。相同的互斥id启动时，会先杀掉其他
+            "kill_process_tree": false, // 杀进程的时候同时杀掉其子进程，用于nginx. 为true时,kill_timeout无效
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",

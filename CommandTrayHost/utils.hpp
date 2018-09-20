@@ -65,9 +65,9 @@ int get_caption_from_hwnd(HWND hwnd, std::wstring& caption);
 BOOL is_hwnd_valid_caption(HWND hwnd, PCWSTR caption_, DWORD pid_);
 
 #ifdef _DEBUG
-void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name, bool is_update_cache = true);
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, PCWSTR name,bool kill_process_tree, bool is_update_cache = true);
 #else
-void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout, bool is_update_cache = true);
+void check_and_kill(HANDLE hProcess, DWORD pid, DWORD timeout,bool kill_process_tree, bool is_update_cache = true);
 #endif
 
 int msg_prompt(
