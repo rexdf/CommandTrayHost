@@ -55,7 +55,7 @@ example configure
             "icon": "", // icon for console windows
             "alpha": 170, // alpha for console windows, 0-255 integer
             "topmost": false, // topmost for console windows
-            // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
+            // alt win shift ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             "hotkey": { // you don't nedd to set up all
                 "disable_enable": "Shift+Win+D", // disable/enable toggle
@@ -186,7 +186,7 @@ example configure
     "disable_cache_enabled": true,
     "disable_cache_show": false,
     "disable_cache_alpha": false, // (only work for configs with alpha)
-    // alt win shit ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
+    // alt win shift ctrl 0-9 A-Z, seperated by space or +. You can also use "ALT+WIN+CTRL+0x20"
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
     "hotkey": {
         "disable_all": "Alt+Win+Shift+D",
