@@ -67,6 +67,7 @@ example configure
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
             "kill_timeout": 200, // post a message to let program quit itself, if timeout killing the process
             "exclusion_id": 1, // kill all configs with same `exclusion_id` before to run current config. greater than 0.
+            "kill_process_tree": false, // kill all child process tree，for nginx
         },
         {
             "name": "kcptun 1081 8.8.8.1:12346",

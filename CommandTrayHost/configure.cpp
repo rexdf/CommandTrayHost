@@ -130,6 +130,7 @@ bool initial_configure()
             "not_monitor_by_commandtrayhost": false, // 如果设置成true同上，但是会随着CommandTrayHost退出而关闭。
             "kill_timeout": 200, // 执行关闭操作时，先尝试通知程序自己关闭然后等多少ms，然后再杀进程，默认是200ms
             "exclusion_id": 1, // 互斥id，要求是大于0的整数。相同的互斥id启动时，会先杀掉其他。
+            "kill_process_tree": false, // 杀进程的时候同时杀掉其子进程，用于nginx. 为true时,kill_timeout无效
         },
         {
             "name": "cmd例子2",
@@ -279,6 +280,7 @@ bool initial_configure()
             "not_monitor_by_commandtrayhost": false, // if true, same as above. But quit with CommandTrayHost
             "kill_timeout": 200,
             "exclusion_id": 1, // kill all configs with same `exclusion_id` before to run current config. greater than 0.
+            "kill_process_tree": false, // kill all child process tree，for nginx
         },
         {
             "name": "cmd example 2",
@@ -845,11 +847,12 @@ rapidjson::SizeType configure_reader(std::string& out)
 				int64_t handle = (*_global_config_i_ref)["handle"];
 				int64_t pid = (*_global_config_i_ref)["pid"];
 				DWORD timeout = _global_config_i_ref->value("kill_timeout", 200);
+				bool kill_process_tree = _global_config_i_ref->value("kill_process_tree", false);
 #ifdef _DEBUG
 				std::string name_A = (*_global_config_i_ref)["name"];
-				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), false);
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), kill_process_tree, false);
 #else
-				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, false);
+				check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, kill_process_tree, false);
 #endif
 				config_i_unchanged = false;
 			}
@@ -940,6 +943,7 @@ rapidjson::SizeType configure_reader(std::string& out)
 			int exclusion_id = val[name].GetInt();
 			return exclusion_id > 0;
 		},},
+		{ "kill_process_tree", iBoolType, true, nullptr, },
 	};
 	PCSTR const global_menu[][2] = { // order is important, commandtrayhost marked word: 4bfsza3ay
 		// with hotkey
@@ -2554,11 +2558,12 @@ void create_process(
 		LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 		DWORD timeout = jsp.value("kill_timeout", 200);
+		bool kill_process_tree = jsp.value("kill_process_tree", false);
 #ifdef _DEBUG
 		std::string name_A = jsp["name"];
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), false);
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name_A).c_str(), kill_process_tree, false);
 #else
-		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, false);
+		check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, kill_process_tree, false);
 #endif
 	}
 
@@ -2919,11 +2924,12 @@ void disable_enable_menu(nlohmann::json& jsp, HANDLE ghJob, bool runas_admin)
 			LOGMESSAGE(L"pid:%d disable_menu process running, now kill it\n", pid);
 
 			DWORD timeout = jsp.value("kill_timeout", 200);
+			bool kill_process_tree = jsp.value("kill_process_tree", false);
 #ifdef _DEBUG
 			std::string name = jsp["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str());
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str(), kill_process_tree);
 #else
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout);
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, kill_process_tree);
 #endif
 		}
 		jsp["handle"] = 0;
@@ -3333,11 +3339,13 @@ void kill_all(bool is_exit/* = true*/, int exclusion_id)
 			LOGMESSAGE(L"pid:%d process running, now kill it\n", pid);
 
 			DWORD timeout = itm.value("kill_timeout", 200);
+			bool kill_process_tree = itm.value("kill_process_tree", false);
 #ifdef _DEBUG
 			const std::string name = itm["name"];
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str(), !is_exit);
+
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, utf8_to_wstring(name).c_str(), kill_process_tree, !is_exit);
 #else
-			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, !is_exit);
+			check_and_kill(reinterpret_cast<HANDLE>(handle), static_cast<DWORD>(pid), timeout, kill_process_tree, !is_exit);
 #endif
 			if (is_exit == false)
 			{
