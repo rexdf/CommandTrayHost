@@ -61,6 +61,21 @@ std::string wstring_to_utf8(const std::wstring& str)
 	return myconv.to_bytes(str);
 }
 
+extern TCHAR szPathToExeDir[MAX_PATH * 10];
+
+std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& cmd_wstring) {
+	if (path_wstring.compare(0, 2, L"..") || (path_wstring == L"" && cmd_wstring.compare(0, 2, L".."))) {
+		TCHAR abs_path[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
+		if (NULL == PathCombine(abs_path, szPathToExeDir, path_wstring.c_str()))
+		{
+			LOGMESSAGE(L"Copy CTH path failed\n");
+			msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+		}
+		return abs_path;
+	}
+	return path_wstring;
+}
+
 /*
 // convert UTF-8 string to u16string
 std::u16string utf8_to_u16string(const std::string& str)

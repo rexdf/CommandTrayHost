@@ -1919,6 +1919,7 @@ int init_global(HANDLE& ghJob, HICON& hIcon)
 			i["en_job"] = false;
 		}
 		std::wstring cmd = utf8_to_wstring(i["cmd"]), path = utf8_to_wstring(i["path"]);
+		path = get_abs_path(path, cmd);
 		TCHAR commandLine[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 		if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
 		{
@@ -2516,6 +2517,9 @@ void create_process(
 	std::wstring cmd_wstring = utf8_to_wstring(jsp["cmd"]);
 	std::wstring path_wstring = utf8_to_wstring(jsp["path"]);
 	std::wstring working_directory_wstring = utf8_to_wstring(jsp["working_directory"]);
+
+	path_wstring = get_abs_path(path_wstring, cmd_wstring);
+
 	LPCTSTR cmd = cmd_wstring.c_str();
 	LPCTSTR path = path_wstring.c_str();
 	//LPCTSTR working_directory = working_directory_wstring.c_str();

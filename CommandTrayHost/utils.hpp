@@ -4,6 +4,8 @@ std::string truncate(std::string str, size_t width, bool show_ellipsis = true);
 std::wstring utf8_to_wstring(const std::string&);
 std::string wstring_to_utf8(const std::wstring&);
 
+std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& cmd_wstring);
+
 bool printf_to_bufferA(char* dst, size_t max_len, size_t& cursor, PCSTR fmt, ...);
 
 int64_t FileSize(PCWSTR);
