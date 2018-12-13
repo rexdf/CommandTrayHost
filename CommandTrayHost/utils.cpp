@@ -64,7 +64,7 @@ std::string wstring_to_utf8(const std::wstring& str)
 extern TCHAR szPathToExeDir[MAX_PATH * 10];
 
 std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& cmd_wstring) {
-	if (path_wstring.compare(0, 2, L"..") || (path_wstring == L"" && cmd_wstring.compare(0, 2, L".."))) {
+	if (0 == path_wstring.compare(0, 2, L"..") || (path_wstring == L"" && cmd_wstring.compare(0, 2, L".."))) {
 		TCHAR abs_path[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 		if (NULL == PathCombine(abs_path, szPathToExeDir, path_wstring.c_str()))
 		{
