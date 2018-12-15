@@ -3128,11 +3128,27 @@ void select_file(nlohmann::json& jsp)
 
 	if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
 	{
-		//_wsystem((std::wstring(L"explorer /select,") + commandLine).c_str());
-		if (1)
+		int exe_seperator = jsp.value<int>("exe_seperator", -1);
+
+		/*PTSTR pIdx = StrStr(commandLine, L".exe");
+		if (pIdx == NULL)
 		{
+			msg_prompt(L"cmd must contain .exe four characters", L"Warning", MB_OK | MB_ICONWARNING);
+		}
+		if (pIdx)
+		{
+			*(pIdx + 4) = 0;
+		}
+		bool file_exist = PathFileExists(commandLine);*/
+
+		//_wsystem((std::wstring(L"explorer /select,") + commandLine).c_str());
+		if (exe_seperator >= 0)
+		{
+			int str_len_exe_filename = exe_seperator + 4;
+			commandLine[str_len_exe_filename] = 0;
+
 			TCHAR commandPath[MAX_PATH * 128];
-			StringCchCopy(commandPath, MAX_PATH * 128, commandLine);
+			StringCchCopy(commandPath, str_len_exe_filename + 2, commandLine);
 			PathRemoveFileSpec(commandPath);
 			LOGMESSAGE("!!\n%s %s", commandPath, commandLine);
 			HRESULT hr;
