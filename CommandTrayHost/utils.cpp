@@ -91,7 +91,10 @@ std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& 
 			LOGMESSAGE(L"Copy CTH path failed\n");
 			msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 		}
-		return abs_path;
+		else
+		{
+			return abs_path;
+		}
 	}
 	return path_wstring;
 }
