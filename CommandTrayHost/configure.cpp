@@ -3154,11 +3154,11 @@ void select_file(nlohmann::json& jsp)
 			HRESULT hr;
 			hr = CoInitializeEx(0, COINIT_MULTITHREADED);
 
-			ITEMIDLIST* folder = ILCreateFromPath(commandPath);
+			auto folder = ILCreateFromPath(commandPath);
 			std::vector<LPITEMIDLIST> v;
 			v.push_back(ILCreateFromPath(commandLine));
 
-			SHOpenFolderAndSelectItems(folder, v.size(), const_cast<LPCITEMIDLIST*>(v.data()), 0);
+			SHOpenFolderAndSelectItems(folder, static_cast<UINT>(v.size()), const_cast<LPCITEMIDLIST*>(v.data()), 0);
 
 			for (auto idl : v)
 			{

@@ -84,7 +84,7 @@ std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& 
 		LOGMESSAGE(L"Copy CTH path failed\n");
 		msg_prompt(L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 	}
-	if (NULL == StrChr(abs_path, ':'))
+	if (abs_path[1] != L':') // if : exist in parameter
 	{
 		if (NULL == PathCombine(abs_path, szPathToExeDir, path_wstring.c_str()))
 		{
