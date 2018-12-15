@@ -3151,21 +3151,26 @@ void select_file(nlohmann::json& jsp)
 			StringCchCopy(commandPath, str_len_exe_filename + 2, commandLine);
 			PathRemoveFileSpec(commandPath);
 			LOGMESSAGE("!!\n%s %s", commandPath, commandLine);
-			HRESULT hr;
-			hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-
-			auto folder = ILCreateFromPath(commandPath);
-			std::vector<LPITEMIDLIST> v;
-			v.push_back(ILCreateFromPath(commandLine));
-
-			SHOpenFolderAndSelectItems(folder, static_cast<UINT>(v.size()), const_cast<LPCITEMIDLIST*>(v.data()), 0);
-
-			for (auto idl : v)
 			{
-				ILFree(const_cast<LPITEMIDLIST>(idl));
+				HRESULT hr;
+				hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+				if (SUCCEEDED(hr))
+				{
+					auto folder = ILCreateFromPath(commandPath);
+					std::vector<LPITEMIDLIST> v;
+					v.push_back(ILCreateFromPath(commandLine));
+
+					SHOpenFolderAndSelectItems(folder, static_cast<UINT>(v.size()),
+					                           const_cast<LPCITEMIDLIST*>(v.data()), 0);
+
+					for (auto idl : v)
+					{
+						ILFree(const_cast<LPITEMIDLIST>(idl));
+					}
+					ILFree(folder);
+					CoUninitialize();
+				}
 			}
-			ILFree(folder);
-			if (SUCCEEDED(hr)) ::CoUninitialize();
 		}
 	}
 }
