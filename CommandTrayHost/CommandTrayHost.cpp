@@ -991,7 +991,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			LOGMESSAGE(L"%x Clicked. %d %d\n", nID, menu_idx, submenu_idx);
 			nlohmann::json& js = (*global_configs_pointer)[menu_idx];
 			cache_config_cursor = menu_idx;
-			if (submenu_idx < 3)
+			if (submenu_idx == 0)
+			{
+				open_path(js);
+			}
+			else if (submenu_idx == 1)
+			{
+				select_file(js);
+			}
+			else if (submenu_idx == 2)
 			{
 				show_hide_toggle(js);
 			}

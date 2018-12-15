@@ -264,3 +264,5 @@ __pycache__/
 # Visual Studio Code
 .vscode/
 
+enc_temp_folder/
+

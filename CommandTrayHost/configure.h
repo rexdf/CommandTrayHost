@@ -51,6 +51,8 @@ int init_global(HANDLE&, HICON&);
 
 void create_process(nlohmann::json& jsp, const HANDLE&, bool runas_admin = false, bool log_crontab = false);
 void show_hide_toggle(nlohmann::json& jsp);
+void open_path(nlohmann::json& jsp);
+void select_file(nlohmann::json& jsp);
 void disable_enable_menu(nlohmann::json& jsp, HANDLE, bool runas_admin = false);
 
 BOOL undock_window(int idx);

@@ -2406,9 +2406,9 @@ void get_command_submenu(std::vector<HMENU>& outVcHmenu)
 		{
 			uSubFlags |= MF_CHECKED;
 		}
-		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
+		AppendMenu(hSubMenu, uSubFlags&(~MF_GRAYED), WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 0,
 			utf8_to_wstring(truncate(itm["path"], cmd_menu_max_length)).c_str());
-		AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
+		AppendMenu(hSubMenu, uSubFlags&(~MF_GRAYED), WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 1,
 			utf8_to_wstring(truncate(itm["cmd"], cmd_menu_max_length)).c_str());
 		//AppendMenu(hSubMenu, uSubFlags, WM_TASKBARNOTIFY_MENUITEM_COMMAND_BASE + i * 0x10 + 2,
 		//utf8_to_wstring(itm["working_directory"]).c_str());
@@ -3110,6 +3110,47 @@ void left_click_toggle()
 	if (enable_cache && false == is_cache_valid)
 	{
 		flush_cache();
+	}
+}
+
+void open_path(nlohmann::json& jsp)
+{
+	std::wstring cmd = utf8_to_wstring(jsp["cmd"]), path = utf8_to_wstring(jsp["path"]);
+	path = get_abs_path(path, cmd);
+	ShellExecute(NULL, NULL, path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+void select_file(nlohmann::json& jsp)
+{
+	std::wstring cmd = utf8_to_wstring(jsp["cmd"]), path = utf8_to_wstring(jsp["path"]);
+	path = get_abs_path(path, cmd);
+	TCHAR commandLine[MAX_PATH * 128];
+
+	if (NULL != PathCombine(commandLine, path.c_str(), cmd.c_str()))
+	{
+		//_wsystem((std::wstring(L"explorer /select,") + commandLine).c_str());
+		if (1)
+		{
+			TCHAR commandPath[MAX_PATH * 128];
+			StringCchCopy(commandPath, MAX_PATH * 128, commandLine);
+			PathRemoveFileSpec(commandPath);
+			LOGMESSAGE("!!\n%s %s", commandPath, commandLine);
+			HRESULT hr;
+			hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+
+			ITEMIDLIST* folder = ILCreateFromPath(commandPath);
+			std::vector<LPITEMIDLIST> v;
+			v.push_back(ILCreateFromPath(commandLine));
+
+			SHOpenFolderAndSelectItems(folder, v.size(), const_cast<LPCITEMIDLIST*>(v.data()), 0);
+
+			for (auto idl : v)
+			{
+				ILFree(const_cast<LPITEMIDLIST>(idl));
+			}
+			ILFree(folder);
+			if (SUCCEEDED(hr)) ::CoUninitialize();
+		}
 	}
 }
 
