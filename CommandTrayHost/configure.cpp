@@ -2731,7 +2731,7 @@ void create_process(
 		crontab_log(crontab_ref, 0, 0, jsp["name"].get<std::string>().c_str(), buffer, __FUNCTION__, 0, 1);
 	}
 
-	LOGMESSAGE(L"%s\n", commandLine);
+	LOGMESSAGE(L"%s\n%s\n", commandLine, working_directory);
 
 	// https://stackoverflow.com/questions/53208/how-do-i-automatically-destroy-child-processes-in-windows
 	// Launch child process - example is notepad.exe
