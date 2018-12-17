@@ -96,12 +96,12 @@ std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& 
 			return abs_path;
 		}
 	}
-	else if(path_wstring == L"")
+	else if(path_wstring == L"") // path: C:\windows, cmd: system32\cmd.exe
 	{
 		PathRemoveFileSpec(abs_path);
 		return abs_path;
 	}
-	return path_wstring;
+	return path_wstring; // path: C:\windows, cmd: system32\cmd.exe
 }
 
 /*
