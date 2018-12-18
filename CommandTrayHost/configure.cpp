@@ -2520,6 +2520,8 @@ void create_process(
 
 	path_wstring = get_abs_path(path_wstring, cmd_wstring);
 
+	working_directory_wstring = get_abs_working_directory(path_wstring, working_directory_wstring);
+
 	LPCTSTR cmd = cmd_wstring.c_str();
 	LPCTSTR path = path_wstring.c_str();
 	//LPCTSTR working_directory = working_directory_wstring.c_str();
