@@ -76,7 +76,7 @@ extern TCHAR szPathToExeDir[MAX_PATH * 10];
 	return path_wstring;
 }*/
 
-std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& cmd_wstring)
+/*std::wstring get_abs_path_old2(const std::wstring& path_wstring, const std::wstring& cmd_wstring)
 {
 	TCHAR abs_path[MAX_PATH * 128]; // 这个必须要求是可写的字符串，不能是const的。
 	if (NULL == PathCombine(abs_path, path_wstring.c_str(), cmd_wstring.c_str()))
@@ -89,7 +89,7 @@ std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& 
 		if (NULL == PathCombine(abs_path, szPathToExeDir, path_wstring.c_str()))
 		{
 			LOGMESSAGE(L"Copy CTH path failed\n");
-			msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+			msg_prompt(L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
 		}
 		else
 		{
@@ -102,6 +102,60 @@ std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& 
 		return abs_path;
 	}
 	return path_wstring; // path: C:\windows, cmd: system32\cmd.exe
+}*/
+
+std::wstring get_abs_path(const std::wstring& path_wstring, const std::wstring& cmd_wstring)
+{
+	if (path_wstring.length() > 2 && path_wstring[1] == L':')
+	{
+		return path_wstring;
+	}
+	TCHAR abs_path[MAX_PATH * 128];
+	if (path_wstring == L"" && cmd_wstring.length() > 2 && cmd_wstring[1] == L':')
+	{
+		StringCchCopy(abs_path, cmd_wstring.length() + 2, cmd_wstring.c_str());
+		PathRemoveFileSpec(abs_path);
+		return abs_path;
+	}
+	if (NULL == PathCombine(abs_path, szPathToExeDir, path_wstring.c_str()))
+	{
+		LOGMESSAGE(L"Copy CTH path failed\n");
+		msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+		return L"";
+	}
+	else
+	{
+		return abs_path;
+	}
+}
+
+std::wstring get_abs_working_directory(const std::wstring& path_wstring, const std::wstring& working_directory_wstring)
+{
+	if (working_directory_wstring.length() > 2 && working_directory_wstring[1] == L':')
+	{
+		return working_directory_wstring;
+	}
+	TCHAR abs_path[MAX_PATH * 128];
+	if (working_directory_wstring.length() > 1 && working_directory_wstring[0] == L'>')
+	{
+		if (NULL == PathCombine(abs_path, szPathToExeDir, working_directory_wstring.c_str() + 1))
+		{
+			LOGMESSAGE(L"Copy CTH path failed\n");
+			msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+			return L"";
+		}
+
+		return abs_path;
+	}
+
+	if (NULL == PathCombine(abs_path, path_wstring.c_str(), working_directory_wstring.c_str()))
+	{
+		LOGMESSAGE(L"Copy CTH path failed\n");
+		msg_prompt(/*NULL, */L"PathCombine Failed", L"Error", MB_OK | MB_ICONERROR);
+		return L"";
+	}
+
+	return abs_path;
 }
 
 /*
