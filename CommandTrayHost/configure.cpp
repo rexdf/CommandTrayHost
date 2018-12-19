@@ -72,21 +72,27 @@ bool initial_configure()
      *    但是参考各有不同：
      *    cmd里面的子程序工作路径由working_directory指定
      *    其他路径则是CommandTrayHost.exe所在目录指定
-     * 4. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
+     * 4. 相对路径规则。首先绝对路径不会改变，规则只对相对路径有效，其次cmd只会相对path。
+     *    path:  i) path为空且cmd为绝对路径，此时path会从cmd提取路径
+     *          ii) 除 i) 以外的相对路径都是相对于CommandTrayHost.exe所在路径
+     *    working_directory:
+     *           i) 如果working_directory以>开头，那么它会相对于CommandTrayHost.exe所在目录
+     *          ii) 除 i) 以外的情况都是相对于经过处理过的path
+     * 5. 本文可以用系统自带的记事本编辑，然后保存选Unicode(大小端无所谓)或者UTF-8都可以
      *    如果用VS Code或者Sublime Text编辑，可以用JSON with Comments语法着色
-     * 5. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响. 当然了默认配置是为了演示用，
+     * 6. 多个CommandTrayHost.exe只要放到不同目录，就可以同时运行与开机启动，互相不影响. 当然了默认配置是为了演示用，
      *    启用了全部热键，第二个启动时会提示热键冲突，禁用或者修改第二个的热键即可。
-     * 6. 如果改成 "enable_cache": true ，则会将用户操作缓存到command_tray_host.cache
+     * 7. 如果改成 "enable_cache": true ，则会将用户操作缓存到command_tray_host.cache
      *    可以缓存用户的启用停用状态，窗口的位置大小，以及显示隐藏状态。作用下次启动
      *    CommandTrayHost.exe时，会忽略config.json里面的值。
      *    缓存失效判定是与config.json之间的时间戳先后对比。缓存写入磁盘只会在全部操作(全部启用
      *    全部禁用，全部显示隐藏)，以及退出时发现缓存发生有效更改时才会写入磁盘。
-     * 7. 全局热键格式： 可以使用alt win shift ctrl的任意个组合加上一个按键
+     * 8. 全局热键格式： 可以使用alt win shift ctrl的任意个组合加上一个按键
      *    加上的按键支持0-9的数字 A-Z的字母，其他特殊按钮，鼠标左右键，滚轮，甚至手柄按钮也是可以的.比如上方向键0x26
      *    键盘码参考这里 https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
      *    大小写无关，顺序无关，如果多个非修饰符的按钮，最后的那个按钮会起作用。
      *    热键注册失败，一般是与系统中存在的冲突了，换一个再试
-     * 8. crontab语法，秒 分 时 日期 月份 星期，比常规crontab多了个秒钟，具体语法使用搜索引擎
+     * 9. crontab语法，秒 分 时 日期 月份 星期，比常规crontab多了个秒钟，具体语法使用搜索引擎
      *    例子 0 0/10 * * * *  每10分钟运行一次
      *    例子 0 1,11,21 * * * 每小时的1分 11分 21分运行一次
      *    例子 0 2/10 12-14 * * * 12点到14点，每小时从2分钟开始每10分钟运行一次
@@ -98,7 +104,7 @@ bool initial_configure()
             "name": "cmd例子", // 系统托盘菜单名字
             "path": "C:\\Windows\\System32", // cmd的exe所在目录,相对路径是可以的,参考目录是CommandTrayHost.exe所在目录
             "cmd": "cmd.exe", // cmd命令，必须含有.exe
-            "working_directory": "", // 命令行的工作目录，为空时自动用path
+            "working_directory": "", // 命令行的工作目录. 如果是相对路径，>开头意味着相对于CommandTrayHost.exe，否则相对于path。
             "addition_env_path": "", // dll搜索目录，暂时没用到
             "use_builtin_console": false, // 是否用CREATE_NEW_CONSOLE，暂时没用到
             "is_gui": false, // 是否是 GUI图形界面程序
@@ -249,7 +255,7 @@ bool initial_configure()
             "name": "cmd example", // Menu item name in systray
             "path": "C:\\Windows\\System32", // path which includes cmd exe, relative path is ok.
             "cmd": "cmd.exe", // must contain .exe
-            "working_directory": "", // working directory. empty is same as path
+            "working_directory": "", // working directory. relative to path usually. start with > symbol to use relative path from CommandTrayHost.exe
             "addition_env_path": "", //dll search path
             "use_builtin_console": false, //CREATE_NEW_CONSOLE
             "is_gui": false,
