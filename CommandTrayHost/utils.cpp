@@ -133,7 +133,7 @@ std::wstring get_abs_working_directory(const std::wstring& path_wstring, const s
 		return working_directory_wstring;
 	}
 	TCHAR abs_path[MAX_PATH * 128];
-	if (working_directory_wstring.length() > 1 && working_directory_wstring[0] == L'>')
+	if (working_directory_wstring.length() >= 1 && working_directory_wstring[0] == L'>')
 	{
 		if (NULL == PathCombine(abs_path, szPathToExeDir, working_directory_wstring.c_str() + 1))
 		{
