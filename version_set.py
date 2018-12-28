@@ -51,6 +51,14 @@ def main():
     rc_string2 = r'VALUE "FileVersion", "{}, {}, {}, {}\\0"'.format(
         MAJOR_VERSION, MINOR_VERSION, FIX_VERSION, build_version_number)
 
+    pattern3_rc = re.compile(r'^FILEVERSION \d+, \d+, \d+, \d+', re.M)
+    rc_string3 = r'FILEVERSION {}, {}, {}, {}'.format(
+        MAJOR_VERSION, MINOR_VERSION, FIX_VERSION, build_version_number)
+
+    pattern4_rc = re.compile(r'^PRODUCTVERSION \d+, \d+, \d+, \d+', re.M)
+    rc_string4 = r'PRODUCTVERSION {}, {}, {}, {}'.format(
+        MAJOR_VERSION, MINOR_VERSION, FIX_VERSION, build_version_number)
+
     pattern_stdafx_h = re.compile(
         r'^#define VERSION_NUMS L"\d+[.]\d+[.][0-9b-]+"', re.M)
     stdafx_h_string = r'#define VERSION_NUMS L"{}.{}.{}-b{}"'.format(
@@ -66,6 +74,8 @@ def main():
         (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-8'),
         (rc_file, pattern_rc, rc_string, 'utf-16le'),
         (rc_file, pattern2_rc, rc_string2, 'utf-16le'),
+        (rc_file, pattern3_rc, rc_string3, 'utf-16le'),
+        (rc_file, pattern4_rc, rc_string4, 'utf-16le'),
     ):
         # CommandTrayHost.rc # stdafx.h
         print(f'opening {file_name}')
