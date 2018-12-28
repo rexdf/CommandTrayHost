@@ -60,7 +60,7 @@ def main():
     rc_file = os.path.join(base_dir, "CommandTrayHost", "CommandTrayHost.rc")
     stdafx_h_file = os.path.join(base_dir, "CommandTrayHost", "stdafx.h")
 
-    print(stdafx_h_string, '\n', rc_string)
+    print(stdafx_h_string, '\n', rc_string, '\n', rc_string2)
 
     for file_name, pattern_re, replace_string, encoding in (
         (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-8'),
