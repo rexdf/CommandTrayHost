@@ -73,7 +73,7 @@ void crontab_log(const nlohmann::json& jsp_crontab_config,
 	//if (json_object_has_member(jsp, "crontab_config"))
 	{
 		//auto& crontab_config_ref = jsp["crontab_config"];
-		int log_level = jsp_crontab_config["log_level"];
+		int log_level = jsp_crontab_config.value("log_level", 0);
 		if (log_level < log_level_limit) { return; }
 		const size_t buffer_len = 256;
 		char buffer[buffer_len];
