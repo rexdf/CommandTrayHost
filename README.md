@@ -35,7 +35,7 @@ example configure
             "name": "kcptun 1080 8.8.8.1:12345", // Menu item name in systray
             "path": "E:\\program\\kcptun-windows-amd64", // path which includes cmd exe, relative path is ok.
             "cmd": "client_windows_amd64.exe -c client.json", // must contain .exe
-            "working_directory": "", // working directory, for client.json path. empty is same as path
+            "working_directory": "", // working directory, for client.json path. relative to path usually. start with > symbol to use relative path from CommandTrayHost.exe
             "addition_env_path": "", //dll search path
             "use_builtin_console": false, //CREATE_NEW_CONSOLE
             "is_gui": false,
