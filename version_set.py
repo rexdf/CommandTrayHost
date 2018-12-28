@@ -47,6 +47,10 @@ def main():
     rc_string = r'VALUE "ProductVersion", "{}, {}, {}, {}\\0"'.format(
         MAJOR_VERSION, MINOR_VERSION, FIX_VERSION, build_version_number)  # .encode('utf-8')
 
+    pattern2_rc = re.compile(r'^VALUE "FileVersion", "\d+, \d+, \d+, \d+[\\]0"', re.M)
+    rc_string2 = r'VALUE "FileVersion", "{}, {}, {}, {}\\0"'.format(
+        MAJOR_VERSION, MINOR_VERSION, FIX_VERSION, build_version_number)
+
     pattern_stdafx_h = re.compile(
         r'^#define VERSION_NUMS L"\d+[.]\d+[.][0-9b-]+"', re.M)
     stdafx_h_string = r'#define VERSION_NUMS L"{}.{}.{}-b{}"'.format(
@@ -61,6 +65,7 @@ def main():
     for file_name, pattern_re, replace_string, encoding in (
         (stdafx_h_file, pattern_stdafx_h, stdafx_h_string, 'utf-8'),
         (rc_file, pattern_rc, rc_string, 'utf-16le'),
+        (rc_file, pattern2_rc, rc_string2, 'utf-16le'),
     ):
         # CommandTrayHost.rc # stdafx.h
         print(f'opening {file_name}')
