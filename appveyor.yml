@@ -7,81 +7,81 @@ platform:
   - x86
   # - x64
 init:
-  - cmd: echo %cd%
-  - cmd: curl -L -o %temp%\add_gitutf16.py https://raw.githubusercontent.com/rexdf/CommandTrayHost/master/add_gitutf16.py
-  - cmd: C:\Python39\python.exe %temp%\add_gitutf16.py
+- cmd: echo %cd%
+- cmd: curl -L -o %temp%\add_gitutf16.py https://raw.githubusercontent.com/rexdf/CommandTrayHost/master/add_gitutf16.py
+- cmd: C:\Python39\python.exe %temp%\add_gitutf16.py
 # clone_depth: 1
 clone_folder: c:\projects\CommandTrayHost
 install:
-  - cmd: >-
-      cd /d c:\tools\vcpkg
+- cmd: >-
+    cd /d c:\tools\vcpkg
 
-      rem git reset --hard
+    rem git reset --hard
 
-      rem git clean -ffdx
+    rem git clean -ffdx
 
-      rem git pull
+    rem git pull
 
-      rem bootstrap-vcpkg.bat
+    rem bootstrap-vcpkg.bat
 
-      cd /d c:\projects\CommandTrayHost
+    cd /d c:\projects\CommandTrayHost
 
-      vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
+    vcpkg install rapidjson rapidjson:x64-windows nlohmann-json nlohmann-json:x64-windows
 
-      C:\Python39\python.exe vcpkg_patch.py
+    C:\Python39\python.exe vcpkg_patch.py
 before_build:
-  # - cmd: cd c:\projects\CommandTrayHost
-  - cmd: >-
-      C:\Python39\Scripts\pip.exe install chardet pytz
+    # - cmd: cd c:\projects\CommandTrayHost
+    - cmd: >-
+        C:\Python39\Scripts\pip.exe install chardet pytz
 
-      C:\Python39\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 2 3 4
+        C:\Python39\python.exe version_set.py %APPVEYOR_BUILD_NUMBER% 2 3 4
 build:
   project: c:\projects\CommandTrayHost\CommandTrayHost.sln
   verbosity: minimal
 after_build:
-  - cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=XP-Release /p:Platform=x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  # - cmd: cd c:\projects\CommandTrayHost
-  - cmd: >-
-      mkdir CommandTrayHost-x64
+- cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmd: msbuild "c:\projects\CommandTrayHost\CommandTrayHost.sln" /verbosity:minimal /p:Configuration=XP-Release /p:Platform=x86 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+# - cmd: cd c:\projects\CommandTrayHost
+- cmd: >-
+    mkdir CommandTrayHost-x64
 
-      mkdir CommandTrayHost-x86
+    mkdir CommandTrayHost-x86
 
-      mkdir CommandTrayHost-xp-x86
+    mkdir CommandTrayHost-xp-x86
 
-      copy x64\Release\CommandTrayHost.exe CommandTrayHost-x64\
+    copy x64\Release\CommandTrayHost.exe CommandTrayHost-x64\
 
-      copy Release\CommandTrayHost.exe CommandTrayHost-x86\
+    copy Release\CommandTrayHost.exe CommandTrayHost-x86\
 
-      copy XP-Release\CommandTrayHost.exe CommandTrayHost-xp-x86\
+    copy XP-Release\CommandTrayHost.exe CommandTrayHost-xp-x86\
 
-      curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.95/upx-3.95-win64.zip
+    curl -L -o upx.zip https://github.com/upx/upx/releases/download/v3.95/upx-3.95-win64.zip
 
-      7z e upx.zip *.exe -r
+    7z e upx.zip *.exe -r
 
-      upx CommandTrayHost-x64\CommandTrayHost.exe
+    upx CommandTrayHost-x64\CommandTrayHost.exe
 
-      upx CommandTrayHost-x86\CommandTrayHost.exe
+    upx CommandTrayHost-x86\CommandTrayHost.exe
 
-      upx CommandTrayHost-xp-x86\CommandTrayHost.exe
+    upx CommandTrayHost-xp-x86\CommandTrayHost.exe
 
-      7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\ .\CommandTrayHost-xp-x86\
+    7z a -tzip CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip .\CommandTrayHost-x64\ .\CommandTrayHost-x86\ .\CommandTrayHost-xp-x86\
 artifacts:
-  - path: CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip
-    name: CommandTrayHost
+- path: CommandTrayHost-%APPVEYOR_BUILD_VERSION%.zip
+  name: CommandTrayHost
 
 deploy:
   release: $(appveyor_build_version)
-  description: "nightly"
+  description: 'nightly'
   provider: GitHub
   auth_token:
     secure: 6BqGKqbQbDfnZ3Y7SHvdQkPVCjXcJ1GIgPe41oD8K7ttPY/ivWN3iMyq2eZ1s4RD # your encrypted token from GitHub
-  artifact: CommandTrayHost # upload all NuGet packages to release assets
+  artifact: CommandTrayHost            # upload all NuGet packages to release assets
   prerelease: true
   force_update: true
   on:
     branch: release
-    appveyor_repo_tag: false # deploy on tag push only
+    appveyor_repo_tag: false        # deploy on tag push only
 
-cache:
+cache: 
   - c:\tools\vcpkg\installed\ -> vcpkg_cache.txt
