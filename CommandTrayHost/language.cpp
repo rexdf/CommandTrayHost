@@ -3,6 +3,7 @@
 //#include "configure.h"
 #include "language_data.h"
 #include "utils.hpp"
+#include <ciso646>
 
 
 //extern nlohmann::json global_stat;
